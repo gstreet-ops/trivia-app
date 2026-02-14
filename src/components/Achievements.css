@@ -1,0 +1,12 @@
+﻿.achievements-section { margin-top: 30px; }
+.achievements-section h3 { color: #333; font-size: 1.5rem; margin-bottom: 20px; }
+.badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+.badge-card { background: white; border: 3px solid; border-radius: 12px; padding: 20px; text-align: center; transition: all 0.3s; position: relative; }
+.badge-card.earned { background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.badge-card.earned:hover { transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.badge-card.locked { opacity: 0.5; border-color: #ccc; }
+.badge-icon { font-size: 3rem; margin-bottom: 10px; }
+.badge-name { font-weight: 600; color: #333; margin-bottom: 5px; }
+.badge-description { font-size: 0.85rem; color: #888; }
+.badge-earned { position: absolute; top: 10px; right: 10px; background: #27ae60; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
+@media (max-width: 768px) { .badges-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } .badge-card { padding: 15px; } .badge-icon { font-size: 2.5rem; } }

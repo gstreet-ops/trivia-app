@@ -1,0 +1,53 @@
+﻿import React, { useState } from 'react';
+import './App.css';
+import StartScreen from './components/StartScreen';
+import QuizScreen from './components/QuizScreen';
+import ResultsScreen from './components/ResultsScreen';
+
+function App() {
+  const [screen, setScreen] = useState('start'); // 'start', 'quiz', 'results'
+  const [quizConfig, setQuizConfig] = useState({
+    category: '',
+    difficulty: ''
+  });
+  const [score, setScore] = useState(0);
+
+  const startQuiz = (category, difficulty) => {
+    setQuizConfig({ category, difficulty });
+    setScore(0);
+    setScreen('quiz');
+  };
+
+  const endQuiz = (finalScore) => {
+    setScore(finalScore);
+    setScreen('results');
+  };
+
+  const restartQuiz = () => {
+    setScreen('start');
+    setScore(0);
+  };
+
+  return (
+    <div className="App">
+      {screen === 'start' && <StartScreen onStart={startQuiz} />}
+      {screen === 'quiz' && (
+        <QuizScreen 
+          category={quizConfig.category}
+          difficulty={quizConfig.difficulty}
+          onEnd={endQuiz}
+        />
+      )}
+      {screen === 'results' && (
+        <ResultsScreen 
+          score={score}
+          onRestart={restartQuiz}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
+
+

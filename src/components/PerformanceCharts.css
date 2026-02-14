@@ -1,0 +1,6 @@
+﻿.performance-charts { margin-top: 30px; padding: 20px; background: white; border-radius: 12px; }
+.performance-charts h3 { color: #333; font-size: 1.5rem; margin-bottom: 20px; }
+.no-data { text-align: center; padding: 40px; color: #999; font-style: italic; }
+.chart-container { margin-bottom: 40px; }
+.chart-container h4 { color: #555; font-size: 1.2rem; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #667eea; }
+@media (max-width: 768px) { .performance-charts { padding: 15px; } .chart-container h4 { font-size: 1rem; } }

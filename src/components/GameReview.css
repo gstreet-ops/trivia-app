@@ -1,0 +1,136 @@
+﻿.game-review {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.review-header h1 {
+  color: #667eea;
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.score-large {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.percentage {
+  font-size: 1.5rem;
+  color: #888;
+}
+
+.game-meta {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  background: #f8f9ff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+.answers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.answer-card {
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.answer-card.correct {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.answer-card.incorrect {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+.question-number {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.question-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.answer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.your-answer {
+  font-size: 1rem;
+  color: #555;
+}
+
+.correct-answer {
+  font-size: 1rem;
+  color: #28a745;
+}
+
+.back-btn {
+  padding: 10px 20px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+}
+
+.back-btn:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .game-review {
+    padding: 20px;
+  }
+  .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .score-display {
+    align-items: flex-start;
+  }
+}

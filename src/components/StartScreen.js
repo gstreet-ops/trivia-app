@@ -1,73 +1,63 @@
 import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
 import './StartScreen.css';
 
-const CATEGORIES = [
-  { id: '9', name: 'General Knowledge' },
-  { id: '17', name: 'Science & Nature' },
-  { id: '21', name: 'Sports' },
-  { id: '23', name: 'History' },
-  { id: '11', name: 'Film' },
-  { id: '12', name: 'Music' },
-  { id: '22', name: 'Geography' },
-  { id: '18', name: 'Computers' },
-];
+function StartScreen({ onStart, onBack }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-const DIFFICULTIES = ['easy', 'medium', 'hard'];
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-function StartScreen({ onStart }) {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
-
-  const handleStart = () => {
-    if (selectedCategory && selectedDifficulty) {
-      onStart(selectedCategory, selectedDifficulty);
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) throw signUpError;
+        const { error: profileError } = await supabase.from('profiles').insert([{ id: authData.user.id, username: username }]);
+        if (profileError) throw profileError;
+      }
+    } catch (error) {
+      setError(error.message);
     }
+    setLoading(false);
   };
 
   return (
     <div className="start-screen">
       <h1>Trivia Quiz</h1>
-      <p className="subtitle">Test your knowledge with 10 questions</p>
-
-      <div className="selection-container">
-        <div className="selection-group">
-          <h2>Choose a Category</h2>
-          <div className="options-grid">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category.id}
-                className={`option-btn ${selectedCategory === category.id ? 'selected' : ''}`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
+      <div className="auth-container">
+        <div className="auth-tabs">
+          <button className={isLogin ? 'active' : ''} onClick={() => setIsLogin(true)}>Login</button>
+          <button className={!isLogin ? 'active' : ''} onClick={() => setIsLogin(false)}>Sign Up</button>
         </div>
-
-        <div className="selection-group">
-          <h2>Choose Difficulty</h2>
-          <div className="difficulty-options">
-            {DIFFICULTIES.map((difficulty) => (
-              <button
-                key={difficulty}
-                className={`option-btn ${selectedDifficulty === difficulty ? 'selected' : ''}`}
-                onClick={() => setSelectedDifficulty(difficulty)}
-              >
-                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-              </button>
-            ))}
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleAuth}>
+          {!isLogin && (
+            <div className="form-group">
+              <label>Username</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+          )}
+          <div className="form-group">
+            <label>Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
-        </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          <button type="submit" disabled={loading}>{loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}</button>
+        </form>
       </div>
-
-      <button 
-        className="start-btn" 
-        onClick={handleStart}
-        disabled={!selectedCategory || !selectedDifficulty}
-      >
-        Start Quiz
-      </button>
     </div>
   );
 }
