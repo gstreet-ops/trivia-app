@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './QuizScreen.css';
 
-function QuizScreen({ category, difficulty, onEnd }) {
+function QuizScreen({ config, onEnd }) {
+  const { category, difficulty } = config;
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
