@@ -1,0 +1,193 @@
+.community-detail {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 1200px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  
+  .back-btn {
+    padding: 10px 20px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 8px;
+    color: #666;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+  }
+  
+  .back-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+  }
+  
+  .community-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .community-header h1 {
+    color: #667eea;
+    font-size: 2.5rem;
+    margin: 0;
+  }
+  
+  .commissioner-badge {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  .community-info {
+    background: #f8f9ff;
+    padding: 20px;
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .info-item .label {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 600;
+  }
+  
+  .info-item .value {
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+  }
+  
+  .value.code {
+    background: #667eea;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    font-family: monospace;
+  }
+  
+  .start-community-quiz-btn {
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    margin-bottom: 40px;
+  }
+  
+  .start-community-quiz-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  
+  .community-sections {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+  }
+  
+  .section {
+    background: #f8f9ff;
+    padding: 20px;
+    border-radius: 12px;
+  }
+  
+  .section h2 {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+  
+  .empty-message {
+    text-align: center;
+    color: #888;
+    padding: 40px 0;
+  }
+  
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .leaderboard-table th {
+    background: #667eea;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  
+  .leaderboard-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .leaderboard-table tr:hover {
+    background: #fff;
+  }
+  
+  .leaderboard-table tr.current-user {
+    background: #fffbea;
+    font-weight: 600;
+  }
+  
+  .members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .member-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .member-name {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .member-joined {
+    color: #888;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 768px) {
+    .community-detail {
+      padding: 20px;
+    }
+    .community-sections {
+      grid-template-columns: 1fr;
+    }
+    .community-info {
+      grid-template-columns: 1fr;
+    }
+  }
