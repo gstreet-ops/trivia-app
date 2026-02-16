@@ -111,3 +111,43 @@
     padding: 20px;
   }
 }
+.forgot-password-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #667eea;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+  text-decoration: underline;
+}
+
+.forgot-password-btn:hover {
+  color: #5568d3;
+}
+
+.back-to-login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.back-to-login-btn:hover {
+  background: #e0e0e0;
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #28a745;
+}
