@@ -5,7 +5,7 @@ function QuizSourceSelector({ onStart, userRole, communityId }) {
   const [category, setCategory] = useState('General Knowledge');
   const [difficulty, setDifficulty] = useState('medium');
   const [questionSource, setQuestionSource] = useState('trivia_api');
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(3);
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
