@@ -2,7 +2,7 @@
 import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
 
-function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz }) {
+function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onManageCommunity }) {
   const [community, setCommunity] = useState(null);
   const [members, setMembers] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -84,6 +84,12 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz }) {
           <span className="value">{questions.length}</span>
         </div>
       </div>
+
+      {isCommissioner && (
+        <button className="manage-community-btn" onClick={() => onManageCommunity(communityId)}>
+          ⚙️ Manage Community
+        </button>
+      )}
 
       <button className="start-community-quiz-btn" onClick={() => onStartQuiz(communityId)}>
         Play Community Quiz

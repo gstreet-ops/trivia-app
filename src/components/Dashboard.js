@@ -12,6 +12,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [allGames, setAllGames] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     fetchStats();
@@ -21,8 +22,9 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   }, [user]);
 
   const checkAdminStatus = async () => {
-    const { data } = await supabase.from('profiles').select('role, super_admin').eq('id', user.id).single();
+    const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
     setIsAdmin(data?.role === 'admin' || data?.super_admin === true);
+    setUsername(data?.username || 'User');
   };
 
   const fetchAllGames = async () => {
@@ -69,7 +71,10 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Dashboard</h1>
+        <div>
+          <h1>Dashboard</h1>
+          <p className="username-display">Welcome, {username}!</p>
+        </div>
         <div className="header-actions">
           {isAdmin && <button className="admin-btn" onClick={onAdmin}>Admin</button>}
           {onCommunities && <button className="communities-btn" onClick={onCommunities}>My Leagues</button>}

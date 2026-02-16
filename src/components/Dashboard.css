@@ -32,3 +32,10 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
 }
+
+.username-display {
+  margin: 5px 0 0 0;
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 600;
+}

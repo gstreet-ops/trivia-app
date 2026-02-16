@@ -13,6 +13,7 @@ import AdminDashboard from './components/AdminDashboard';
 import QuestionCreator from './components/QuestionCreator';
 import CommunitiesList from './components/CommunitiesList';
 import CommunityDetail from './components/CommunityDetail';
+import CommissionerDashboard from './components/CommissionerDashboard';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -155,7 +156,22 @@ function App() {
           }}
         />
       )}
-      {screen === 'communityDetail' && <CommunityDetail communityId={viewCommunityId} currentUserId={session.user.id} onBack={() => setScreen('communities')} onStartQuiz={(commId) => { setViewCommunityId(commId); setScreen('quizConfig'); }} />}
+      {screen === 'communityDetail' && (
+        <CommunityDetail
+          communityId={viewCommunityId}
+          currentUserId={session.user.id}
+          onBack={() => setScreen('communities')}
+          onStartQuiz={(commId) => { setViewCommunityId(commId); setScreen('quizConfig'); }}
+          onManageCommunity={(commId) => { setViewCommunityId(commId); setScreen('commissionerDashboard'); }}
+        />
+      )}
+      {screen === 'commissionerDashboard' && (
+        <CommissionerDashboard
+          communityId={viewCommunityId}
+          currentUserId={session.user.id}
+          onBack={() => setScreen('communityDetail')}
+        />
+      )}
       {screen === 'settings' && <Settings user={session.user} onBack={() => setScreen('dashboard')} />}
     </div>
   );

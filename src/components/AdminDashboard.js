@@ -24,18 +24,31 @@ function AdminDashboard({ onBack }) {
       const { data: games } = await supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10);
       setRecentGames(games || []);
       const { data: pending } = await supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false });
+      setPendingQuestions(pending || []);
     } catch (err) { console.error('Error:', err); }
     setLoading(false);
   };
 
   const handleApprove = async (questionId) => {
-    const { error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
-    if (!error) setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
+    const { data, error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
+    if (error) {
+      console.error('Error approving question:', error);
+      alert('Failed to approve question: ' + error.message);
+    } else {
+      console.log('Question approved successfully:', data);
+      setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
+    }
   };
 
   const handleReject = async (questionId) => {
-    const { error } = await supabase.from('custom_questions').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', questionId);
-    if (!error) setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
+    const { data, error } = await supabase.from('custom_questions').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', questionId);
+    if (error) {
+      console.error('Error rejecting question:', error);
+      alert('Failed to reject question: ' + error.message);
+    } else {
+      console.log('Question rejected successfully:', data);
+      setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
+    }
   };
 
   if (loading) return (<div className="admin-dashboard"><button className="back-btn" onClick={onBack}>Back to Dashboard</button><h1>Admin Dashboard</h1><p className="loading">Loading...</p></div>);
