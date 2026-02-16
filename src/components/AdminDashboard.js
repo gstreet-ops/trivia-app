@@ -23,8 +23,7 @@ function AdminDashboard({ onBack }) {
       setUsers(allUsers?.slice(0, 10) || []);
       const { data: games } = await supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10);
       setRecentGames(games || []);
-      const { data: pending } = await supabase.from('custom_questions').select('*, profiles(username)').eq('status', 'pending').order('created_at', { ascending: false });
-      setPendingQuestions(pending || []);
+      const { data: pending } = await supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false });
     } catch (err) { console.error('Error:', err); }
     setLoading(false);
   };
