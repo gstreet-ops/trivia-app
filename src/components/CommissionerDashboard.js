@@ -556,7 +556,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       .eq('id', questionId);
 
     if (error) {
-      alert('Failed to restore version: ' + error.message');
+      alert('Failed to restore version: ' + error.message);
     } else {
       alert('Version restored successfully');
       setShowVersionHistory(null);
