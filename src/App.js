@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import './App.css';
 import StartScreen from './components/StartScreen';
@@ -12,6 +12,7 @@ import UserProfile from './components/UserProfile';
 import AdminDashboard from './components/AdminDashboard';
 import QuestionCreator from './components/QuestionCreator';
 import CommunitiesList from './components/CommunitiesList';
+import CommunityDetail from './components/CommunityDetail';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -154,6 +155,7 @@ function App() {
           }}
         />
       )}
+      {screen === 'communityDetail' && <CommunityDetail communityId={viewCommunityId} currentUserId={session.user.id} onBack={() => setScreen('communities')} onStartQuiz={(commId) => { setViewCommunityId(commId); setScreen('quizConfig'); }} />}
       {screen === 'settings' && <Settings user={session.user} onBack={() => setScreen('dashboard')} />}
     </div>
   );
