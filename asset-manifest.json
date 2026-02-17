@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/trivia-app/static/css/main.a54c3b0c.css",
-    "main.js": "/trivia-app/static/js/main.7bac2d2f.js",
+    "main.js": "/trivia-app/static/js/main.cb6f3bb2.js",
     "index.html": "/trivia-app/index.html",
     "main.a54c3b0c.css.map": "/trivia-app/static/css/main.a54c3b0c.css.map",
-    "main.7bac2d2f.js.map": "/trivia-app/static/js/main.7bac2d2f.js.map"
+    "main.cb6f3bb2.js.map": "/trivia-app/static/js/main.cb6f3bb2.js.map"
   },
   "entrypoints": [
     "static/css/main.a54c3b0c.css",
-    "static/js/main.7bac2d2f.js"
+    "static/js/main.cb6f3bb2.js"
   ]
 }
