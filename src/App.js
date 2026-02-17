@@ -25,6 +25,7 @@ function App() {
   const [viewUsername, setViewUsername] = useState(null);
   const [viewCommunityId, setViewCommunityId] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [appUsername, setAppUsername] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,10 +49,11 @@ function App() {
   }, []);
 
   const fetchUserRole = async (userId) => {
-    const { data } = await supabase.from('profiles').select('role, super_admin').eq('id', userId).single();
+    const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', userId).single();
     if (data?.super_admin) setUserRole('super_admin');
     else if (data?.role === 'admin') setUserRole('admin');
     else setUserRole('user');
+    setAppUsername(data?.username || '');
   };
 
   const startQuizConfig = (config) => {
@@ -96,6 +98,12 @@ function App() {
 
   return (
     <div className="App">
+      {appUsername && (
+        <div className="app-user-bar">
+          <div className="app-user-bar-avatar">{appUsername.charAt(0).toUpperCase()}</div>
+          <span className="app-user-bar-name">{appUsername}</span>
+        </div>
+      )}
       {screen === 'dashboard' && (
         <Dashboard
           user={session.user}

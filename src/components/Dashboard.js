@@ -13,6 +13,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [allGames, setAllGames] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState('');
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -68,18 +69,48 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
     }
   };
 
+  const navItems = [
+    { label: 'My Leagues', icon: '🏆', action: onCommunities, show: !!onCommunities },
+    { label: 'Community Feed', icon: '👥', action: onCommunity, show: true },
+    { label: 'Create Question', icon: '✍️', action: onCreateQuestion, show: true },
+    { label: 'Settings', icon: '⚙️', action: onSettings, show: true },
+    { label: 'Admin Panel', icon: '🛡️', action: onAdmin, show: isAdmin },
+  ].filter(item => item.show);
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <div>
+        <div className="dashboard-header-left">
           <h1>Dashboard</h1>
           <p className="username-display">Welcome, {username}!</p>
         </div>
-        <div className="header-actions">
-          {isAdmin && <button className="admin-btn" onClick={onAdmin}>Admin</button>}
-          {onCommunities && <button className="communities-btn" onClick={onCommunities}>My Leagues</button>}
-          <button className="community-btn" onClick={onCommunity}>Community</button>
-          <button className="settings-btn" onClick={onSettings}>Settings</button>
+        <div className="dashboard-header-right">
+          <div className="dash-user-avatar">{username.charAt(0).toUpperCase()}</div>
+          <div className="dash-nav-dropdown">
+            <button
+              className="dash-nav-btn"
+              onClick={() => setNavOpen(prev => !prev)}
+            >
+              Menu <span className={`dash-nav-chevron ${navOpen ? 'open' : ''}`}>▾</span>
+            </button>
+            {navOpen && (
+              <>
+                <div className="dash-nav-backdrop" onClick={() => setNavOpen(false)} />
+                <div className="dash-nav-menu">
+                  {navItems.map(item => (
+                    <button
+                      key={item.label}
+                      className="dash-nav-item"
+                      onClick={() => { item.action(); setNavOpen(false); }}
+                    >
+                      <span className="dash-nav-icon">{item.icon}</span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <div className="stats-grid">
@@ -87,7 +118,6 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
         <div className="stat-card"><div className="stat-number">{stats.avgScore}%</div><div className="stat-label">Average Score</div></div>
         <div className="stat-card"><div className="stat-number">{stats.bestScore}%</div><div className="stat-label">Best Score</div></div>
       </div>
-      <button className="create-question-btn" onClick={onCreateQuestion}>✍️ Create Question</button>
       <button className="start-quiz-btn" onClick={onStartQuiz}>Start New Quiz</button>
       <Achievements earnedBadges={earnedBadges} />
       <PerformanceCharts games={allGames} />
