@@ -743,26 +743,44 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   // Analytics Functions
   const fetchAnalytics = async () => {
     try {
-      // Fetch game data for analytics
-      const { data: gamesData } = await supabase
+      // Fetch games for this community
+      const { data: gamesData, error: gamesError } = await supabase
         .from('games')
-        .select('*, game_answers(*)')
+        .select('id')
         .eq('community_id', communityId);
 
-      if (!gamesData) {
+      if (gamesError) {
+        console.error('Error fetching games:', gamesError);
         setAnalytics(null);
         return;
+      }
+
+      if (!gamesData || gamesData.length === 0) {
+        setAnalytics(null);
+        return;
+      }
+
+      const gameIds = gamesData.map(g => g.id);
+
+      // Fetch game_answers for these games
+      const { data: answersData, error: answersError } = await supabase
+        .from('game_answers')
+        .select('*')
+        .in('game_id', gameIds);
+
+      if (answersError) {
+        console.error('Error fetching game answers:', answersError);
       }
 
       // Calculate question usage statistics
       const questionUsage = {};
       const questionPerformance = {};
 
-      gamesData.forEach(game => {
-        if (game.game_answers) {
-          game.game_answers.forEach(answer => {
-            const qId = answer.question_id;
+      if (answersData) {
+        answersData.forEach(answer => {
+          const qId = answer.question_id;
 
+          if (qId) {
             // Track usage
             questionUsage[qId] = (questionUsage[qId] || 0) + 1;
 
@@ -774,9 +792,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             if (answer.is_correct) {
               questionPerformance[qId].correct += 1;
             }
-          });
-        }
-      });
+          }
+        });
+      }
 
       // Category and difficulty distribution
       const categoryDist = {};
@@ -818,6 +836,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
       setAnalytics({
         totalGamesPlayed: gamesData.length,
+        totalAnswers: answersData ? answersData.length : 0,
         questionUsage,
         questionPerformance,
         categoryDistribution: categoryDist,
