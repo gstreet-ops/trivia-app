@@ -15,7 +15,7 @@ function GameReview({ gameId, onBack }) {
     try {
       const { data: gameData } = await supabase.from('games').select('*').eq('id', gameId).single();
       setGame(gameData);
-      const { data: answerData } = await supabase.from('game_answers').select('*').eq('game_id', gameId).order('question_order', { ascending: true });
+      const { data: answerData } = await supabase.from('game_answers').select('*').eq('game_id', gameId).order('id', { ascending: true });
       setAnswers(answerData || []);
     } catch (error) {
       console.error('Error fetching game:', error);

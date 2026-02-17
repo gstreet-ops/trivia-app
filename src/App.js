@@ -26,6 +26,10 @@ function App() {
   const [viewCommunityId, setViewCommunityId] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [appUsername, setAppUsername] = useState('');
+  const [appCommunityName, setAppCommunityName] = useState('');
+  const [userProfileReturn, setUserProfileReturn] = useState('community');
+  const [appIsAdmin, setAppIsAdmin] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -53,7 +57,18 @@ function App() {
     if (data?.super_admin) setUserRole('super_admin');
     else if (data?.role === 'admin') setUserRole('admin');
     else setUserRole('user');
+    setAppIsAdmin(data?.super_admin === true || data?.role === 'admin');
     setAppUsername(data?.username || '');
+
+    // Pre-load community name if user belongs to exactly one community
+    const { data: memberships } = await supabase
+      .from('community_members')
+      .select('communities(id, name)')
+      .eq('user_id', userId);
+    if (memberships && memberships.length === 1) {
+      setAppCommunityName(memberships[0].communities?.name || '');
+      setViewCommunityId(memberships[0].communities?.id || null);
+    }
   };
 
   const startQuizConfig = (config) => {
@@ -61,7 +76,7 @@ function App() {
     setScreen('quiz');
   };
 
-  const endQuiz = async (score, totalQuestions) => {
+  const endQuiz = async (score, totalQuestions, answers = []) => {
     try {
       const { data, error } = await supabase.from('games').insert([{
         user_id: session.user.id,
@@ -72,6 +87,11 @@ function App() {
         community_id: quizConfig.communityId || null
       }]).select().single();
       if (error) throw error;
+      if (answers.length > 0 && data?.id) {
+        await supabase.from('game_answers').insert(
+          answers.map(a => ({ ...a, game_id: data.id, user_id: session.user.id }))
+        );
+      }
       setScreen('dashboard');
     } catch (error) {
       console.error('Error saving game:', error);
@@ -84,9 +104,10 @@ function App() {
     setScreen('review');
   };
 
-  const viewUserGames = (userId, username) => {
+  const viewUserGames = (userId, username, returnScreen = 'community') => {
     setViewUserId(userId);
     setViewUsername(username);
+    setUserProfileReturn(returnScreen);
     setScreen('userProfile');
   };
 
@@ -98,12 +119,51 @@ function App() {
 
   return (
     <div className="App">
-      {appUsername && (
-        <div className="app-user-bar">
-          <div className="app-user-bar-avatar">{appUsername.charAt(0).toUpperCase()}</div>
-          <span className="app-user-bar-name">{appUsername}</span>
-        </div>
-      )}
+      {appUsername && (() => {
+        const navItems = [
+          { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
+          { label: 'Community Feed', icon: '👥', action: () => setScreen('community') },
+          { label: 'Create Question', icon: '✍️', action: () => setScreen('createQuestion') },
+          { label: 'Settings', icon: '⚙️', action: () => setScreen('settings') },
+          ...(appIsAdmin ? [{ label: 'Admin Panel', icon: '🛡️', action: () => setScreen('admin') }] : []),
+        ];
+        return (
+          <div className="app-user-bar">
+            <div className="app-user-bar-left">
+              <div className="app-user-bar-avatar">{appUsername.charAt(0).toUpperCase()}</div>
+              <span className="app-user-bar-name">{appUsername}</span>
+              {appCommunityName && (
+                <>
+                  <span className="app-user-bar-divider">|</span>
+                  <button
+                    className="app-user-bar-community"
+                    onClick={() => { if (viewCommunityId) setScreen('communityDetail'); }}
+                  >
+                    🏆 {appCommunityName}
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="app-nav-dropdown">
+              <button className="app-nav-btn" onClick={() => setNavOpen(p => !p)}>
+                Menu <span className={`app-nav-chevron${navOpen ? ' open' : ''}`}>▾</span>
+              </button>
+              {navOpen && (
+                <>
+                  <div className="app-nav-backdrop" onClick={() => setNavOpen(false)} />
+                  <div className="app-nav-menu">
+                    {navItems.map(item => (
+                      <button key={item.label} className="app-nav-item" onClick={() => { item.action(); setNavOpen(false); }}>
+                        <span className="app-nav-icon">{item.icon}</span>{item.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {screen === 'dashboard' && (
         <Dashboard
           user={session.user}
@@ -114,6 +174,7 @@ function App() {
           onAdmin={() => setScreen('admin')}
           onCreateQuestion={() => setScreen('createQuestion')}
           onCommunities={() => setScreen('communities')}
+          onViewUserProfile={(userId, username) => viewUserGames(userId, username, 'dashboard')}
         />
       )}
       {screen === 'quizConfig' && (
@@ -139,15 +200,16 @@ function App() {
           userId={viewUserId}
           username={viewUsername}
           currentUserId={session.user.id}
-          onBack={() => setScreen('community')}
+          onBack={() => setScreen(userProfileReturn)}
           onViewGame={viewGame}
         />
       )}
       {screen === 'communities' && (
         <CommunitiesList
           user={session.user}
-          onViewCommunity={(communityId) => {
+          onViewCommunity={(communityId, communityName) => {
             setViewCommunityId(communityId);
+            setAppCommunityName(communityName || '');
             setScreen('communityDetail');
           }}
           onBack={() => setScreen('dashboard')}

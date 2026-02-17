@@ -58,7 +58,7 @@ function CommunitiesList({ user, onViewCommunity, onBack }) {
       {myCommunities.length === 0 ? <div className="empty-state"><p>You haven't joined any communities yet.</p><p>Create your own or join with an invite code!</p></div> : (
         <div className="communities-grid">
           {myCommunities.map(community => (
-            <div key={community.id} className="community-card" onClick={() => onViewCommunity(community.id)}>
+            <div key={community.id} className="community-card" onClick={() => onViewCommunity(community.id, community.name)}>
               <h3>{community.name}</h3>
               <p className="commissioner">Commissioner: {community.profiles?.username}</p>
               <p className="dates">{new Date(community.season_start).toLocaleDateString()} - {new Date(community.season_end).toLocaleDateString()}</p>

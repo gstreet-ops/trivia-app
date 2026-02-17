@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './QuizScreen.css';
 
 function QuizScreen({ config, onEnd }) {
-  const { category, difficulty } = config;
+  const { category, difficulty, count } = config;
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -12,6 +12,7 @@ function QuizScreen({ config, onEnd }) {
   const [error, setError] = useState(null);
   const [hintUsed, setHintUsed] = useState(false);
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
+  const [answersLog, setAnswersLog] = useState([]);
 
   useEffect(() => {
     fetchQuestions();
@@ -32,7 +33,7 @@ function QuizScreen({ config, onEnd }) {
   const fetchQuestions = async () => {
     try {
       const apiCategory = categoryMap[category] || 'general_knowledge';
-      const url = `https://the-trivia-api.com/v2/questions?limit=10&categories=${apiCategory}&difficulties=${difficulty}`;
+      const url = `https://the-trivia-api.com/v2/questions?limit=${count || 10}&categories=${apiCategory}&difficulties=${difficulty}`;
       const response = await fetch(url);
       const data = await response.json();
       
@@ -74,13 +75,19 @@ function QuizScreen({ config, onEnd }) {
 
   const handleAnswerClick = (answer) => {
     if (showResult) return;
-    
+
     setSelectedAnswer(answer);
     setShowResult(true);
-    
-    if (answer === questions[currentQuestionIndex].correctAnswer) {
-      setScore(score + 1);
-    }
+
+    const q = questions[currentQuestionIndex];
+    const isCorrect = answer === q.correctAnswer;
+    if (isCorrect) setScore(score + 1);
+    setAnswersLog(prev => [...prev, {
+      question_text: q.question,
+      correct_answer: q.correctAnswer,
+      user_answer: answer,
+      is_correct: isCorrect
+    }]);
   };
 
   const handleNext = () => {
@@ -91,7 +98,7 @@ function QuizScreen({ config, onEnd }) {
       setHintUsed(false);
       setHiddenAnswers([]);
     } else {
-      onEnd(score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0));
+      onEnd(score, questions.length, answersLog);
     }
   };
 

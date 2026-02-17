@@ -30,12 +30,21 @@ body {
   color: #fff;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 8px 20px;
+  padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
   flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(4,30,66,0.2);
+  position: relative;
+  z-index: 200;
+}
+.app-user-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 .app-user-bar-avatar {
   width: 26px;
@@ -51,3 +60,74 @@ body {
   flex-shrink: 0;
 }
 .app-user-bar-name { opacity: 0.9; }
+.app-user-bar-divider { opacity: 0.35; margin: 0 2px; }
+.app-user-bar-community {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(139,157,195,0.25);
+  border: 1px solid rgba(139,157,195,0.5);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.app-user-bar-community:hover {
+  background: rgba(139,157,195,0.45);
+}
+
+/* App-level nav dropdown (in top bar) */
+.app-nav-dropdown { position: relative; flex-shrink: 0; }
+.app-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.app-nav-btn:hover { background: rgba(255,255,255,0.22); }
+.app-nav-chevron { font-size: 12px; transition: transform 0.2s; display: inline-block; }
+.app-nav-chevron.open { transform: rotate(180deg); }
+.app-nav-backdrop { position: fixed; inset: 0; z-index: 299; }
+.app-nav-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 210px;
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(4,30,66,0.18);
+  z-index: 300;
+  overflow: hidden;
+}
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #212529;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+  border-bottom: 1px solid #F0F0F0;
+}
+.app-nav-item:last-child { border-bottom: none; }
+.app-nav-item:hover { background: #E8ECF0; color: #041E42; }
+.app-nav-icon { font-size: 16px; width: 22px; text-align: center; }

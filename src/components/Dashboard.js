@@ -5,7 +5,7 @@ import Achievements from './Achievements';
 import PerformanceCharts from './PerformanceCharts';
 import { checkAchievements } from '../utils/achievementChecker';
 
-function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities }) {
+function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
   const [stats, setStats] = useState({ totalGames: 0, avgScore: 0, bestScore: 0 });
   const [recentGames, setRecentGames] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -13,7 +13,6 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [allGames, setAllGames] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState('');
-  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -29,7 +28,8 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   };
 
   const fetchAllGames = async () => {
-    const { data } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (error) console.error('fetchAllGames error:', error);
     setAllGames(data || []);
   };
 
@@ -39,7 +39,8 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   };
 
   const fetchStats = async () => {
-    const { data: games } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const { data: games, error: gamesError } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (gamesError) console.error('fetchStats games error:', gamesError);
     if (games && games.length > 0) {
       const totalGames = games.length;
       const totalScore = games.reduce((sum, g) => sum + g.score, 0);
@@ -58,7 +59,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       leaderboardData.forEach(game => {
         if (game.profiles?.leaderboard_visibility === false && game.user_id !== user.id) return;
         if (!userScores[game.user_id]) {
-          userScores[game.user_id] = { username: game.profiles?.username, totalScore: 0, totalQuestions: 0, games: 0 };
+          userScores[game.user_id] = { userId: game.user_id, username: game.profiles?.username, totalScore: 0, totalQuestions: 0, games: 0 };
         }
         userScores[game.user_id].totalScore += game.score;
         userScores[game.user_id].totalQuestions += game.total_questions;
@@ -69,63 +70,44 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
     }
   };
 
-  const navItems = [
-    { label: 'My Leagues', icon: '🏆', action: onCommunities, show: !!onCommunities },
-    { label: 'Community Feed', icon: '👥', action: onCommunity, show: true },
-    { label: 'Create Question', icon: '✍️', action: onCreateQuestion, show: true },
-    { label: 'Settings', icon: '⚙️', action: onSettings, show: true },
-    { label: 'Admin Panel', icon: '🛡️', action: onAdmin, show: isAdmin },
-  ].filter(item => item.show);
-
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <div className="dashboard-header-left">
-          <h1>Dashboard</h1>
-          <p className="username-display">Welcome, {username}!</p>
-        </div>
-        <div className="dashboard-header-right">
-          <div className="dash-user-avatar">{username.charAt(0).toUpperCase()}</div>
-          <div className="dash-nav-dropdown">
-            <button
-              className="dash-nav-btn"
-              onClick={() => setNavOpen(prev => !prev)}
-            >
-              Menu <span className={`dash-nav-chevron ${navOpen ? 'open' : ''}`}>▾</span>
-            </button>
-            {navOpen && (
-              <>
-                <div className="dash-nav-backdrop" onClick={() => setNavOpen(false)} />
-                <div className="dash-nav-menu">
-                  {navItems.map(item => (
-                    <button
-                      key={item.label}
-                      className="dash-nav-item"
-                      onClick={() => { item.action(); setNavOpen(false); }}
-                    >
-                      <span className="dash-nav-icon">{item.icon}</span>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+      <h1 className="dashboard-title">Dashboard</h1>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'10px', width:'100%'}}>
+        {[
+          {num: stats.totalGames, label: 'Games'},
+          {num: stats.avgScore + '%', label: 'Avg Score'},
+          {num: stats.bestScore + '%', label: 'Best'},
+        ].map(({num, label}) => (
+          <div key={label} style={{background:'#fff', border:'1px solid #DEE2E6', borderTop:'2px solid #041E42', borderRadius:'6px', padding:'10px 3px', textAlign:'center'}}>
+            <div style={{fontSize:'0.75rem', fontWeight:700, color:'#041E42', lineHeight:1.2}}>{num}</div>
+            <div style={{fontSize:'0.5rem', color:'#54585A', marginTop:'1px', textTransform:'uppercase', letterSpacing:'0.02em'}}>{label}</div>
           </div>
-        </div>
+        ))}
       </div>
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-number">{stats.totalGames}</div><div className="stat-label">Games Played</div></div>
-        <div className="stat-card"><div className="stat-number">{stats.avgScore}%</div><div className="stat-label">Average Score</div></div>
-        <div className="stat-card"><div className="stat-number">{stats.bestScore}%</div><div className="stat-label">Best Score</div></div>
+      <div style={{textAlign:'center', marginBottom:'10px'}}>
+        <button onClick={onStartQuiz} style={{display:'inline-block', padding:'12px 20px', fontSize:'0.72rem', fontWeight:600, background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer'}}>Start New Quiz</button>
       </div>
-      <button className="start-quiz-btn" onClick={onStartQuiz}>Start New Quiz</button>
       <Achievements earnedBadges={earnedBadges} />
       <PerformanceCharts games={allGames} />
       <div className="leaderboard">
         <h3>🏆 Community Leaderboard</h3>
         <table>
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
-          <tbody>{leaderboard.map((player, index) => (<tr key={index}><td>{index + 1}</td><td>{player.username}</td><td>{player.avgPercentage}%</td><td>{player.games}</td></tr>))}</tbody>
+          <tbody>{leaderboard.map((player, index) => (
+            <tr key={index}>
+              <td>{index + 1}</td>
+              <td>
+                {player.userId !== user.id && onViewUserProfile ? (
+                  <button className="leaderboard-player-link" onClick={() => onViewUserProfile(player.userId, player.username)}>
+                    {player.username}
+                  </button>
+                ) : player.username}
+              </td>
+              <td>{player.avgPercentage}%</td>
+              <td>{player.games}</td>
+            </tr>
+          ))}</tbody>
         </table>
       </div>
       {recentGames.length > 0 && (

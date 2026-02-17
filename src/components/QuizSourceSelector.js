@@ -54,6 +54,7 @@ function QuizSourceSelector({ onStart, userRole, communityId }) {
       <div className='form-group'>
         <label>Number of Questions</label>
         <select value={questionCount} onChange={(e) => setQuestionCount(Number(e.target.value))}>
+          <option value={3}>3</option>
           <option value={5}>5</option>
           <option value={10}>10</option>
           <option value={15}>15</option>
