@@ -35,6 +35,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [showBulkTagging, setShowBulkTagging] = useState(false);
   const [bulkTagInput, setBulkTagInput] = useState('');
   const [analytics, setAnalytics] = useState(null);
+  const [username, setUsername] = useState('');
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     fetchCommissionerData();
@@ -57,6 +59,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       }
 
       setCommunity(communityData);
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', currentUserId)
+        .single();
+      setUsername(profileData?.username || '');
+
       setEditForm({
         name: communityData.name,
         season_start: communityData.season_start?.split('T')[0] || '',
@@ -608,26 +618,56 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           <h1>Commissioner Dashboard</h1>
           <span className="community-name">{community.name}</span>
         </div>
+        {username && (
+          <div className="dashboard-user">
+            <div className="user-avatar">{username.charAt(0).toUpperCase()}</div>
+            <span className="username-label">{username}</span>
+          </div>
+        )}
       </div>
 
-      {/* Tab Navigation */}
-      <nav className="dashboard-tabs">
-        {[
-          { id: 'overview', label: 'Overview' },
-          { id: 'questions', label: `Questions (${questions.length})` },
-          { id: 'members', label: `Members (${members.length})` },
-          { id: 'settings', label: 'Settings' },
-          { id: 'analytics', label: 'Analytics' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      {/* Dropdown Navigation */}
+      <div className="dashboard-nav">
+        <button
+          className="nav-dropdown-btn"
+          onClick={() => setNavOpen(prev => !prev)}
+        >
+          <span className="nav-current-label">
+            {{
+              overview: 'Overview',
+              questions: `Questions (${questions.length})`,
+              members: `Members (${members.length})`,
+              settings: 'Settings',
+              analytics: 'Analytics'
+            }[activeTab]}
+          </span>
+          <span className={`nav-chevron ${navOpen ? 'open' : ''}`}>▾</span>
+        </button>
+
+        {navOpen && (
+          <>
+            <div className="nav-backdrop" onClick={() => setNavOpen(false)} />
+            <div className="nav-dropdown-menu">
+              {[
+                { id: 'overview', label: 'Overview', icon: '🏠' },
+                { id: 'questions', label: `Questions (${questions.length})`, icon: '❓' },
+                { id: 'members', label: `Members (${members.length})`, icon: '👥' },
+                { id: 'settings', label: 'Settings', icon: '⚙️' },
+                { id: 'analytics', label: 'Analytics', icon: '📊' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  className={`nav-dropdown-item ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => { setActiveTab(tab.id); setNavOpen(false); }}
+                >
+                  <span className="nav-item-icon">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="tab-content">
 
