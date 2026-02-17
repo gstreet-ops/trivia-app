@@ -743,11 +743,15 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   // Analytics Functions
   const fetchAnalytics = async () => {
     try {
+      console.log('🔍 Fetching analytics for community:', communityId);
+
       // Fetch games for this community
       const { data: gamesData, error: gamesError } = await supabase
         .from('games')
         .select('id')
         .eq('community_id', communityId);
+
+      console.log('📊 Games found:', gamesData?.length || 0, gamesData);
 
       if (gamesError) {
         console.error('Error fetching games:', gamesError);
@@ -756,17 +760,22 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       }
 
       if (!gamesData || gamesData.length === 0) {
+        console.log('⚠️ No games found for this community');
         setAnalytics(null);
         return;
       }
 
       const gameIds = gamesData.map(g => g.id);
+      console.log('🎮 Game IDs:', gameIds);
 
       // Fetch game_answers for these games
       const { data: answersData, error: answersError } = await supabase
         .from('game_answers')
         .select('*')
         .in('game_id', gameIds);
+
+      console.log('📝 Answers found:', answersData?.length || 0);
+      console.log('📝 Sample answers:', answersData?.slice(0, 3));
 
       if (answersError) {
         console.error('Error fetching game answers:', answersError);
@@ -834,7 +843,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .sort((a, b) => b.correctRate - a.correctRate)
         .slice(0, 5);
 
-      setAnalytics({
+      const analyticsData = {
         totalGamesPlayed: gamesData.length,
         totalAnswers: answersData ? answersData.length : 0,
         questionUsage,
@@ -845,7 +854,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         mostUsedQuestions: sortedByUsage,
         hardestQuestions,
         easiestQuestions
-      });
+      };
+
+      console.log('✅ Analytics calculated:', analyticsData);
+      console.log('  - Total Games:', analyticsData.totalGamesPlayed);
+      console.log('  - Total Answers:', analyticsData.totalAnswers);
+      console.log('  - Most Used:', analyticsData.mostUsedQuestions.length);
+      console.log('  - Hardest:', analyticsData.hardestQuestions.length);
+      console.log('  - Easiest:', analyticsData.easiestQuestions.length);
+      console.log('  - Categories:', Object.keys(analyticsData.categoryDistribution));
+      console.log('  - Difficulty:', analyticsData.difficultyDistribution);
+
+      setAnalytics(analyticsData);
     } catch (error) {
       console.error('Error fetching analytics:', error);
       setAnalytics(null);
