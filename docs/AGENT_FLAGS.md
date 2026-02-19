@@ -20,15 +20,13 @@ Status values: `PENDING` | `RESOLVED`
 | 7 | RESOLVED | CONTENT | CONTENT | HTML entities from the Trivia API (e.g. `&amp;` `&#039;` `&quot;`) were not decoded before display. The local `decodeHTML` function in `QuizScreen.js` existed but was never called. | Created `src/utils/decodeHtml.js`; applied at ingestion in `fetchQuestions` for question text, correct answer, and all incorrect answers. |
 | 8 | RESOLVED | CONTENT | CONTENT | Default question count was 3 (a testing value, not the intended user-facing default). | Changed `useState(3)` → `useState(10)` in `QuizSourceSelector.js`. |
 | 9 | RESOLVED | COMMUNITY | DATA | The `generate_invite_code` Postgres function in `docs/SUPABASE_SCRIPTS.md` did not include a `GRANT EXECUTE` statement. Without it, the `authenticated` role could not call the function via `supabase.rpc('generate_invite_code')`. | Added `GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;` to `docs/SUPABASE_SCRIPTS.md`. |
-| 10 | PENDING | CRUD | UI | `GameReview.js` line 29: `const percentage = ((game.score / game.total_questions) * 100).toFixed(1)` has no division-by-zero guard. If `game.total_questions === 0` this produces `NaN%`. UI agent business rule requires all score percentages to guard against division by zero. Fix: `game.total_questions > 0 ? ((game.score / game.total_questions) * 100).toFixed(1) : '0.0'`. | — |
+| 10 | RESOLVED | CRUD | UI | `GameReview.js` line 29: `const percentage = ((game.score / game.total_questions) * 100).toFixed(1)` had no division-by-zero guard. If `game.total_questions === 0` this produced `NaN%`. | Guarded with `game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0`. |
 
 ---
 
 ## Open Flags
 
-| # | Flag |
-|---|------|
-| 10 | Division by zero in `GameReview.js` percentage calculation — UI agent to fix. |
+No open flags at this time.
 
 ---
 

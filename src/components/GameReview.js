@@ -27,7 +27,7 @@ function GameReview({ gameId, onBack }) {
   if (loading) return <div className="game-review"><p>Loading...</p></div>;
   if (!game) return <div className="game-review"><p>Game not found</p></div>;
 
-  const percentage = ((game.score / game.total_questions) * 100).toFixed(1);
+  const percentage = game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0;
 
   return (
     <div className="game-review">
