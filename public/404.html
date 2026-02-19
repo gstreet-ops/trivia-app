@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Trivia Quiz App</title>
+    <script>
+      // Single Page Apps for GitHub Pages — spa-github-pages
+      // MIT License — https://github.com/rafgraph/spa-github-pages
+      //
+      // When GitHub Pages 404s on a path it doesn't know about, this page
+      // captures the current URL, encodes the path as a query parameter,
+      // and redirects to index.html so React can handle it.
+      //
+      // pathSegmentsToKeep = 1 because this is a Project Pages site
+      // hosted at /trivia-app (one path segment to preserve).
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
