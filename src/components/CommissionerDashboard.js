@@ -187,9 +187,17 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const validateAndPreviewCSV = (data) => {
+    const MAX_ROWS = 500;
     const errors = [];
     const validQuestions = [];
     const requiredColumns = ['question_text', 'correct_answer', 'incorrect_answer_1', 'incorrect_answer_2', 'incorrect_answer_3', 'category', 'difficulty'];
+
+    if (data.length > MAX_ROWS) {
+      setCsvErrors([`CSV exceeds the ${MAX_ROWS}-row limit. This file has ${data.length} rows. Split it into smaller files and upload in batches.`]);
+      setCsvData([]);
+      setCsvPreview([]);
+      return;
+    }
 
     if (data.length > 0) {
       const columns = Object.keys(data[0]);

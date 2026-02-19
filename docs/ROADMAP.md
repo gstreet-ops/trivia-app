@@ -109,6 +109,7 @@
 - [x] SVG favicon
 - [x] Supabase RLS
 - [x] Georgetown-themed color palette (navy `#041E42`, gray, light blue)
+- [x] In-app Help Center with User Guide, Commissioner Guide, FAQ, About tabs and keyword search
 
 ---
 
@@ -116,13 +117,13 @@
 
 | Issue | Notes |
 |-------|-------|
-| Achievement badge checks require exactly 10-question games | Badges like Perfect Score and Category Master only trigger if `total_questions === 10`. Games with 3, 5, 15, or 20 questions won't count toward these badges. |
-| Community leaderboard uses a separate `community_leaderboards` table | If this view/table isn't auto-updated, the community leaderboard may be stale. |
+| ~~Achievement badge checks require exactly 10-question games~~ | **Fixed** — badges now trigger for any question count (`total_questions > 0`). |
+| Community leaderboard uses a separate `community_leaderboards` table | If this view/table isn't auto-updated, the community leaderboard may be stale. SQL fix in `docs/SUPABASE_SCRIPTS.md` converts it to a live Postgres view. |
 | CSS delivery via GitHub Pages CDN caching | CSS changes may not appear until users hard-refresh. Critical layout styles should use React inline styles. |
 | No email confirmation on signup | Supabase email confirmation may be disabled in project settings; users log in immediately after signup. |
-| No invite code regeneration | Commissioners cannot reset/change their invite code through the UI. |
+| No invite code regeneration | Commissioners cannot reset/change their invite code through the UI. Server-side generation script in `docs/SUPABASE_SCRIPTS.md`. |
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
-| No pagination on question bank | Large question banks (500+) may slow the Questions tab. |
+| No pagination on question bank | Large question banks (500+) may slow the Questions tab. CSV uploads are now capped at 500 rows. |
 
 ---
 

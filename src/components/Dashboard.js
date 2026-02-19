@@ -45,9 +45,9 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       const totalGames = games.length;
       const totalScore = games.reduce((sum, g) => sum + g.score, 0);
       const totalQuestions = games.reduce((sum, g) => sum + g.total_questions, 0);
-      const avgScore = ((totalScore / totalQuestions) * 100).toFixed(1);
+      const avgScore = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : '0.0';
       const bestGame = games.reduce((best, g) => {
-        const percentage = (g.score / g.total_questions) * 100;
+        const percentage = g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0;
         return percentage > best ? percentage : best;
       }, 0);
       setStats({ totalGames, avgScore, bestScore: bestGame.toFixed(1) });
@@ -65,7 +65,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
         userScores[game.user_id].totalQuestions += game.total_questions;
         userScores[game.user_id].games += 1;
       });
-      const leaderboardArray = Object.values(userScores).map(u => ({ ...u, avgPercentage: ((u.totalScore / u.totalQuestions) * 100).toFixed(1) })).sort((a, b) => b.avgPercentage - a.avgPercentage).slice(0, 10);
+      const leaderboardArray = Object.values(userScores).map(u => ({ ...u, avgPercentage: u.totalQuestions > 0 ? ((u.totalScore / u.totalQuestions) * 100).toFixed(1) : '0.0' })).sort((a, b) => b.avgPercentage - a.avgPercentage).slice(0, 10);
       setLeaderboard(leaderboardArray);
     }
   };

@@ -33,27 +33,35 @@ function QuizScreen({ config, onEnd }) {
   const fetchQuestions = async () => {
     try {
       const apiCategory = categoryMap[category] || 'general_knowledge';
-      const url = `https://the-trivia-api.com/v2/questions?limit=${count || 10}&categories=${apiCategory}&difficulties=${difficulty}`;
+      const requested = count || 10;
+      const url = `https://the-trivia-api.com/v2/questions?limit=${requested}&categories=${apiCategory}&difficulties=${difficulty}`;
       const response = await fetch(url);
+      if (!response.ok) throw new Error(`API error ${response.status}`);
       const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const formattedQuestions = data.map((q) => ({
-          question: q.question.text,
-          correctAnswer: q.correctAnswer,
-          allAnswers: shuffleArray([
-            q.correctAnswer,
-            ...q.incorrectAnswers
-          ])
-        }));
-        setQuestions(formattedQuestions);
+
+      if (!data || data.length === 0) {
+        setError('No questions found for this category and difficulty combination. Try different settings.');
         setLoading(false);
-      } else {
-        setError('Failed to load questions. Please try again.');
-        setLoading(false);
+        return;
       }
+      if (data.length < requested) {
+        setError(`Only ${data.length} question${data.length === 1 ? '' : 's'} available for this category/difficulty combination. Try a different setting.`);
+        setLoading(false);
+        return;
+      }
+
+      const formattedQuestions = data.map((q) => ({
+        question: q.question.text,
+        correctAnswer: q.correctAnswer,
+        allAnswers: shuffleArray([
+          q.correctAnswer,
+          ...q.incorrectAnswers
+        ])
+      }));
+      setQuestions(formattedQuestions);
+      setLoading(false);
     } catch (err) {
-      setError('Network error. Please check your connection.');
+      setError('Failed to load questions. Check your connection and try again.');
       setLoading(false);
     }
   };
@@ -121,7 +129,15 @@ function QuizScreen({ config, onEnd }) {
   }
 
   if (error) {
-    return <div className="quiz-screen error">{error}</div>;
+    return (
+      <div className="quiz-screen error">
+        <p>{error}</p>
+        <div style={{display:'flex', gap:'10px', marginTop:'16px', justifyContent:'center'}}>
+          <button onClick={fetchQuestions} style={{padding:'8px 16px', background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}>Retry</button>
+          <button onClick={() => onEnd(0, 0, [])} style={{padding:'8px 16px', background:'#fff', color:'#041E42', border:'1px solid #041E42', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}>Back to Dashboard</button>
+        </div>
+      </div>
+    );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
