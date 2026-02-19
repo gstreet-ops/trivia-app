@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './GameReview.css';
+import decodeHtml from '../utils/decodeHtml';
 
 function GameReview({ gameId, onBack }) {
   const [game, setGame] = useState(null);
@@ -47,15 +48,15 @@ function GameReview({ gameId, onBack }) {
         {answers.map((answer, index) => (
           <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')}>
             <div className="question-number">Question {index + 1}</div>
-            <div className="question-text">{answer.question_text}</div>
+            <div className="question-text">{decodeHtml(answer.question_text)}</div>
             <div className="answer-options">
               <div className="your-answer">
-                <strong>Your answer:</strong> {answer.user_answer}
+                <strong>Your answer:</strong> {decodeHtml(answer.user_answer)}
                 {answer.is_correct ? ' ✓' : ' ✗'}
               </div>
               {!answer.is_correct && (
                 <div className="correct-answer">
-                  <strong>Correct answer:</strong> {answer.correct_answer}
+                  <strong>Correct answer:</strong> {decodeHtml(answer.correct_answer)}
                 </div>
               )}
             </div>
