@@ -88,6 +88,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       <div style={{textAlign:'center', marginBottom:'10px'}}>
         <button onClick={onStartQuiz} style={{display:'inline-block', padding:'12px 20px', fontSize:'0.72rem', fontWeight:600, background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer'}}>Start New Quiz</button>
       </div>
+
       <Achievements earnedBadges={earnedBadges} />
       <PerformanceCharts games={allGames} />
       <div className="leaderboard">
