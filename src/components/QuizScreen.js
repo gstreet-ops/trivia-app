@@ -161,24 +161,36 @@ function QuizScreen({ config, onEnd }) {
             if (showResult && isCorrect) className += ' correct';
             if (isSelected && !showResult) className += ' selected';
             
+            const ariaLabel = !showResult
+              ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer}`
+              : isCorrect
+                ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer} — Correct`
+                : isSelected
+                  ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer} — Incorrect`
+                  : `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer}`;
+
             return (
               <button
                 key={index}
                 className={className}
                 onClick={() => handleAnswerClick(answer)}
                 disabled={showResult || isHidden}
+                aria-label={ariaLabel}
               >
                 {answer}
+                {showResult && isCorrect && <span aria-hidden="true"> ✓</span>}
+                {showResult && isSelected && !isCorrect && <span aria-hidden="true"> ✗</span>}
               </button>
             );
           })}
         </div>
 
         <div className="quiz-actions">
-          <button 
-            className="hint-btn" 
+          <button
+            className="hint-btn"
             onClick={handleHint}
             disabled={hintUsed || showResult}
+            aria-label={hintUsed ? 'Hint already used' : 'Remove two incorrect answers (50/50 hint)'}
           >
             {hintUsed ? 'Hint Used' : 'Use Hint (50/50)'}
           </button>
