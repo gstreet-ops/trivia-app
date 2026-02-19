@@ -147,16 +147,22 @@ function App() {
               )}
             </div>
             <div className="app-nav-dropdown">
-              <button className="app-nav-btn" onClick={() => setNavOpen(p => !p)}>
-                Menu <span className={`app-nav-chevron${navOpen ? ' open' : ''}`}>▾</span>
+              <button
+                className="app-nav-btn"
+                onClick={() => setNavOpen(p => !p)}
+                aria-expanded={navOpen}
+                aria-haspopup="menu"
+                aria-label="Navigation menu"
+              >
+                Menu <span className={`app-nav-chevron${navOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
               </button>
               {navOpen && (
                 <>
-                  <div className="app-nav-backdrop" onClick={() => setNavOpen(false)} />
-                  <div className="app-nav-menu">
+                  <div className="app-nav-backdrop" onClick={() => setNavOpen(false)} aria-hidden="true" />
+                  <div className="app-nav-menu" role="menu">
                     {navItems.map(item => (
-                      <button key={item.label} className="app-nav-item" onClick={() => { item.action(); setNavOpen(false); }}>
-                        <span className="app-nav-icon">{item.icon}</span>{item.label}
+                      <button key={item.label} className="app-nav-item" role="menuitem" onClick={() => { item.action(); setNavOpen(false); }}>
+                        <span className="app-nav-icon" aria-hidden="true">{item.icon}</span>{item.label}
                       </button>
                     ))}
                   </div>

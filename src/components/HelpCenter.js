@@ -549,6 +549,7 @@ function HelpCenter({ onBack }) {
           placeholder="Search help topics... (e.g. quiz, leaderboard, invite code)"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
+          aria-label="Search help topics"
         />
         {searchQuery && (
           <button className="help-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search">✕</button>
@@ -556,11 +557,15 @@ function HelpCenter({ onBack }) {
       </div>
 
       {!searchQuery && (
-        <div className="help-tabs">
+        <div className="help-tabs" role="tablist" aria-label="Help topics">
           {TABS.map(tab => (
             <button
               key={tab.key}
+              id={`help-tab-${tab.key}`}
               className={`help-tab${activeTab === tab.key ? ' active' : ''}`}
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              aria-controls={`help-panel-${tab.key}`}
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.label}
@@ -577,7 +582,14 @@ function HelpCenter({ onBack }) {
         </p>
       )}
 
-      <div className="help-content">
+      <div
+        className="help-content"
+        {...(!searchQuery ? {
+          role: 'tabpanel',
+          id: `help-panel-${activeTab}`,
+          'aria-labelledby': `help-tab-${activeTab}`
+        } : {})}
+      >
         {displaySections.length === 0 && searchQuery && (
           <div className="help-no-results">
             <p>No results found for <strong>"{searchQuery}"</strong>.</p>

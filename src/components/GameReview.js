@@ -46,7 +46,7 @@ function GameReview({ gameId, onBack }) {
       </div>
       <div className="answers-list">
         {answers.map((answer, index) => (
-          <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')}>
+          <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')} aria-label={`Question ${index + 1}: ${answer.is_correct ? 'Correct' : 'Incorrect'}`}>
             <div className="question-number">Question {index + 1}</div>
             <div className="question-text">{decodeHtml(answer.question_text)}</div>
             <div className="answer-options">

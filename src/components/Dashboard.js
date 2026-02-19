@@ -92,7 +92,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       <PerformanceCharts games={allGames} />
       <div className="leaderboard">
         <h3>🏆 Community Leaderboard</h3>
-        <table>
+        <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (
             <tr key={index}>
@@ -114,7 +114,15 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
         <div className="recent-games">
           <h3>Recent Games</h3>
           {recentGames.map(game => (
-            <div key={game.id} className="game-card" onClick={() => onReviewGame(game.id)}>
+            <div
+              key={game.id}
+              className="game-card"
+              onClick={() => onReviewGame(game.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onReviewGame(game.id)}
+              aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
+            >
               <div className="game-info">
                 <span className="game-category">{game.category}</span>
                 <span className="game-difficulty">{game.difficulty}</span>
