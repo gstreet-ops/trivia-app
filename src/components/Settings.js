@@ -38,12 +38,12 @@ function Settings({ user, onBack }) {
     <div className="settings">
       <button className="back-btn" onClick={onBack}>Back to Dashboard</button>
       <h1>Settings</h1>
-      {message && <div className={message.includes('Error') ? 'error-message' : 'success-message'}>{message}</div>}
+      {message && <div role="alert" className={message.includes('Error') ? 'error-message' : 'success-message'}>{message}</div>}
       <div className="settings-section">
         <h2>Profile</h2>
         <div className="form-group">
-          <label>Username</label>
-          <input type="text" value={profile.username || ''} onChange={(e) => setProfile({ ...profile, username: e.target.value })} />
+          <label htmlFor="settings-username">Username</label>
+          <input id="settings-username" type="text" value={profile.username || ''} onChange={(e) => setProfile({ ...profile, username: e.target.value })} />
         </div>
       </div>
       <div className="settings-section">

@@ -22,16 +22,14 @@ Status values: `PENDING` | `RESOLVED`
 | 9 | RESOLVED | COMMUNITY | DATA | The `generate_invite_code` Postgres function in `docs/SUPABASE_SCRIPTS.md` did not include a `GRANT EXECUTE` statement. Without it, the `authenticated` role could not call the function via `supabase.rpc('generate_invite_code')`. | Added `GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;` to `docs/SUPABASE_SCRIPTS.md`. |
 | 10 | RESOLVED | CRUD | UI | `GameReview.js` line 29: `const percentage = ((game.score / game.total_questions) * 100).toFixed(1)` had no division-by-zero guard. If `game.total_questions === 0` this produced `NaN%`. | Guarded with `game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0`. |
 | 11 | RESOLVED | UI | CONTENT | `QuizScreen.js` answer option buttons have no `aria-label` — screen readers announce only the answer text with no context (e.g. "option 2 of 4"). Color is the sole indicator of correct/incorrect feedback (green/red) with no text announcement. The 50/50 hint button has no `aria-label` describing its effect. All three items are in `QuizScreen.js` (CONTENT-owned). | Added `aria-label` with position ("Option N of M: {text}") and result state ("— Correct" / "— Incorrect") to each answer button. Added `<span aria-hidden="true"> ✓</span>` / `<span aria-hidden="true"> ✗</span>` inside buttons for visual non-color feedback. Added `aria-label="Remove two incorrect answers (50/50 hint)"` to hint button. |
-| 12 | PENDING | UI | AUTH | `Settings.js` — the Username `<label>` element has no `htmlFor` attribute and the corresponding `<input>` has no `id`, so they are not programmatically associated. Screen readers may not announce the label when the input is focused. | — |
+| 12 | RESOLVED | UI | AUTH | `Settings.js` — the Username `<label>` element has no `htmlFor` attribute and the corresponding `<input>` has no `id`, so they are not programmatically associated. Screen readers may not announce the label when the input is focused. | Added `htmlFor="settings-username"` to label and `id="settings-username"` to input. Added `role="alert"` to the save/error message div so screen readers announce it on appearance. Also added `role="button"`, `tabIndex={0}`, `onKeyDown`, and `aria-label` to `UserProfile.js` game cards (keyboard-inaccessible clickable divs). |
 | 13 | RESOLVED | UI | CONTENT | `QuestionCreator.js` — all `<label>` elements (Category, Difficulty, Question, Correct Answer, Incorrect Answer 1–3) lack `htmlFor` attributes and their matching inputs/selects/textarea have no `id` attributes. Labels are not programmatically associated with controls. | Added `htmlFor` to all 7 labels and matching `id` attributes (qc-category, qc-difficulty, qc-question, qc-correct-answer, qc-incorrect1/2/3) to all controls. Added `aria-hidden` to decorative ✓ in "Correct Answer" label. |
 
 ---
 
 ## Open Flags
 
-| # | Target Agent | Summary |
-|---|-------------|---------|
-| 12 | AUTH | `Settings.js`: username label/input not programmatically associated (missing htmlFor/id) |
+No open flags at this time.
 
 ---
 

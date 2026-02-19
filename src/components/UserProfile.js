@@ -55,7 +55,15 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
       <h3>Recent Games</h3>
       <div className="profile-games-grid">
         {games.map(game => (
-          <div key={game.id} className="profile-game-card" onClick={() => onViewGame(game.id)}>
+          <div
+            key={game.id}
+            className="profile-game-card"
+            onClick={() => onViewGame(game.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onViewGame(game.id)}
+            aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
+          >
             <div className="game-info">
               <span className="game-category">{game.category}</span>
               <span className="game-difficulty">{game.difficulty}</span>
