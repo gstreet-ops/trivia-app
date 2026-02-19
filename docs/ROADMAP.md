@@ -46,6 +46,7 @@
 - [x] Category Master badge (10/10 in same category 3+ times)
 - [x] Speed Demon badge (5 games in one day)
 - [x] Triple Perfect badge (10/10 three or more times total)
+- [x] Achievement badges trigger for any question count (not just 10-question games)
 
 ### Communities / Leagues
 - [x] Create community with auto-generated invite code
@@ -79,6 +80,8 @@
 - [x] Remove community member
 - [x] Edit community name, season dates, max members
 - [x] Analytics tab (category/difficulty performance, hardest/easiest/most-used questions)
+- [x] Invite code regeneration — commissioner can reset/change the invite code from the Settings tab
+- [x] Pagination on question bank — Questions tab uses pagination for large question banks
 
 ### Admin Dashboard
 - [x] Platform-wide stats (users, games, public games, avg games/user, popular category)
@@ -110,6 +113,7 @@
 - [x] Supabase RLS
 - [x] Georgetown-themed color palette (navy `#041E42`, gray, light blue)
 - [x] In-app Help Center with User Guide, Commissioner Guide, FAQ, About tabs and keyword search
+- [x] Sentry error monitoring (ErrorBoundary in index.js, `REACT_APP_SENTRY_DSN` env var)
 
 ---
 
@@ -117,13 +121,11 @@
 
 | Issue | Notes |
 |-------|-------|
-| ~~Achievement badge checks require exactly 10-question games~~ | **Fixed** — badges now trigger for any question count (`total_questions > 0`). |
 | Community leaderboard uses a separate `community_leaderboards` table | If this view/table isn't auto-updated, the community leaderboard may be stale. SQL fix in `docs/SUPABASE_SCRIPTS.md` converts it to a live Postgres view. |
 | CSS delivery via GitHub Pages CDN caching | CSS changes may not appear until users hard-refresh. Critical layout styles should use React inline styles. |
 | No email confirmation on signup | Supabase email confirmation may be disabled in project settings; users log in immediately after signup. |
-| No invite code regeneration | Commissioners cannot reset/change their invite code through the UI. Server-side generation script in `docs/SUPABASE_SCRIPTS.md`. |
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
-| No pagination on question bank | Large question banks (500+) may slow the Questions tab. CSV uploads are now capped at 500 rows. |
+| Sentry test event confirmation pending | Sentry SDK integrated and DSN configured; awaiting confirmation that production errors are captured and visible in the Sentry dashboard. |
 
 ---
 
@@ -134,10 +136,7 @@
 - [ ] **Timer per question** — countdown with auto-submit on expiry
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
-- [ ] **Question count in achievement** — extend Perfect Score badge to any question count (not just 10)
-- [ ] **Invite code regeneration** — commissioner can reset the invite code
 - [ ] **Email notifications** — notify submitter when their question is approved/rejected
-- [ ] **Pagination on question bank** — handle 500+ questions efficiently
 
 ### Medium-term
 
