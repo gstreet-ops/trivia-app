@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './QuizScreen.css';
+import decodeHtml from '../utils/decodeHtml';
 
 function QuizScreen({ config, onEnd }) {
   const { category, difficulty, count } = config;
@@ -50,26 +51,20 @@ function QuizScreen({ config, onEnd }) {
         return;
       }
 
-      const formattedQuestions = data.map((q) => ({
-        question: q.question.text,
-        correctAnswer: q.correctAnswer,
-        allAnswers: shuffleArray([
-          q.correctAnswer,
-          ...q.incorrectAnswers
-        ])
-      }));
+      const formattedQuestions = data.map((q) => {
+        const correct = decodeHtml(q.correctAnswer);
+        return {
+          question: decodeHtml(q.question.text),
+          correctAnswer: correct,
+          allAnswers: shuffleArray([correct, ...q.incorrectAnswers.map(decodeHtml)])
+        };
+      });
       setQuestions(formattedQuestions);
       setLoading(false);
     } catch (err) {
       setError('Failed to load questions. Check your connection and try again.');
       setLoading(false);
     }
-  };
-
-  const decodeHTML = (html) => {
-    const txt = document.createElement('textarea');
-    txt.innerHTML = html;
-    return txt.value;
   };
 
   const shuffleArray = (array) => {
