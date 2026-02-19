@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "dependencies": {
+        "@sentry/react": "^10.39.0",
         "@supabase/supabase-js": "^2.95.3",
         "papaparse": "^5.5.3",
         "react": "^18.2.0",

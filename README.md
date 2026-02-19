@@ -150,9 +150,22 @@ The current setup uses hard-coded credentials. To use environment variables inst
    const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
    ```
 
-> Add `.env` to `.gitignore` to avoid committing credentials.
+> `.env` is listed in `.gitignore` and will not be committed.
 
-### 4. Run Locally
+### 4. Sentry Error Monitoring (Optional)
+
+The app is instrumented with [Sentry](https://sentry.io) for runtime error tracking. To enable it:
+
+1. Create a free account at [sentry.io](https://sentry.io) and create a new **React** project.
+2. Copy the **DSN** from **Settings → Projects → your project → Client Keys (DSN)**.
+3. Add it to your local `.env` file:
+   ```
+   REACT_APP_SENTRY_DSN=https://YOUR_KEY@oXXXXXX.ingest.sentry.io/XXXXXXX
+   ```
+
+The app builds and runs normally without the DSN set — Sentry is silently disabled when the variable is absent.
+
+### 5. Run Locally
 
 ```bash
 npm start
