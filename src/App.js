@@ -141,7 +141,7 @@ function App() {
                     className="app-user-bar-community"
                     onClick={() => { if (viewCommunityId) setScreen('communityDetail'); }}
                   >
-                    🏆 {appCommunityName}
+                    <span aria-hidden="true">🏆</span> {appCommunityName}
                   </button>
                 </>
               )}

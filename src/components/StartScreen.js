@@ -68,12 +68,13 @@ function StartScreen({ onStart, onBack }) {
           {resetMessage && <div className="success-message">{resetMessage}</div>}
           <form onSubmit={handlePasswordReset}>
             <div className="form-group">
-              <label>Email</label>
-              <input 
-                type="email" 
-                value={resetEmail} 
-                onChange={(e) => setResetEmail(e.target.value)} 
-                required 
+              <label htmlFor="reset-email">Email</label>
+              <input
+                id="reset-email"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
               />
             </div>
             <button type="submit" disabled={loading}>
@@ -100,17 +101,17 @@ function StartScreen({ onStart, onBack }) {
         <form onSubmit={handleAuth}>
           {!isLogin && (
             <div className="form-group">
-              <label>Username</label>
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <label htmlFor="auth-username">Username</label>
+              <input id="auth-username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
             </div>
           )}
           <div className="form-group">
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label htmlFor="auth-email">Email</label>
+            <input id="auth-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="form-group">
-            <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <label htmlFor="auth-password">Password</label>
+            <input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <button type="submit" disabled={loading}>
             {loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}

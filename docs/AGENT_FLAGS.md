@@ -22,6 +22,8 @@ Status values: `PENDING` | `RESOLVED`
 | 9 | RESOLVED | COMMUNITY | DATA | The `generate_invite_code` Postgres function in `docs/SUPABASE_SCRIPTS.md` did not include a `GRANT EXECUTE` statement. Without it, the `authenticated` role could not call the function via `supabase.rpc('generate_invite_code')`. | Added `GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;` to `docs/SUPABASE_SCRIPTS.md`. |
 | 10 | RESOLVED | CRUD | UI | `GameReview.js` line 29: `const percentage = ((game.score / game.total_questions) * 100).toFixed(1)` had no division-by-zero guard. If `game.total_questions === 0` this produced `NaN%`. | Guarded with `game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0`. |
 | 11 | PENDING | UI | CONTENT | `QuizScreen.js` answer option buttons have no `aria-label` — screen readers announce only the answer text with no context (e.g. "option 2 of 4"). Color is the sole indicator of correct/incorrect feedback (green/red) with no text announcement. The 50/50 hint button has no `aria-label` describing its effect. All three items are in `QuizScreen.js` (CONTENT-owned). | — |
+| 12 | PENDING | UI | AUTH | `Settings.js` — the Username `<label>` element has no `htmlFor` attribute and the corresponding `<input>` has no `id`, so they are not programmatically associated. Screen readers may not announce the label when the input is focused. | — |
+| 13 | PENDING | UI | CONTENT | `QuestionCreator.js` — all `<label>` elements (Category, Difficulty, Question, Correct Answer, Incorrect Answer 1–3) lack `htmlFor` attributes and their matching inputs/selects/textarea have no `id` attributes. Labels are not programmatically associated with controls. | — |
 
 ---
 
@@ -30,6 +32,8 @@ Status values: `PENDING` | `RESOLVED`
 | # | Target Agent | Summary |
 |---|-------------|---------|
 | 11 | CONTENT | `QuizScreen.js`: answer button aria-labels, color-only feedback, 50/50 hint aria-label |
+| 12 | AUTH | `Settings.js`: username label/input not programmatically associated (missing htmlFor/id) |
+| 13 | CONTENT | `QuestionCreator.js`: all labels missing htmlFor; all inputs/selects/textarea missing id |
 
 ---
 

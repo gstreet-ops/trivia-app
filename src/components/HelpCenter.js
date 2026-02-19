@@ -537,12 +537,12 @@ function HelpCenter({ onBack }) {
           rel="noopener noreferrer"
           className="help-github-link"
         >
-          View Full Docs on GitHub ↗
+          View Full Docs on GitHub <span aria-hidden="true">↗</span>
         </a>
       </div>
 
       <div className="help-search-bar">
-        <span className="help-search-icon">🔍</span>
+        <span className="help-search-icon" aria-hidden="true">🔍</span>
         <input
           type="search"
           className="help-search-input"

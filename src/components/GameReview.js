@@ -40,9 +40,9 @@ function GameReview({ gameId, onBack }) {
         </div>
       </div>
       <div className="game-meta">
-        <span className="meta-item">📁 {game.category}</span>
-        <span className="meta-item">⚡ {game.difficulty}</span>
-        <span className="meta-item">📅 {new Date(game.created_at).toLocaleDateString()}</span>
+        <span className="meta-item"><span aria-hidden="true">📁</span> {game.category}</span>
+        <span className="meta-item"><span aria-hidden="true">⚡</span> {game.difficulty}</span>
+        <span className="meta-item"><span aria-hidden="true">📅</span> {new Date(game.created_at).toLocaleDateString()}</span>
       </div>
       <div className="answers-list">
         {answers.map((answer, index) => (

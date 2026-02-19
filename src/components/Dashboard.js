@@ -91,7 +91,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       <Achievements earnedBadges={earnedBadges} />
       <PerformanceCharts games={allGames} />
       <div className="leaderboard">
-        <h3>🏆 Community Leaderboard</h3>
+        <h3><span aria-hidden="true">🏆</span> Community Leaderboard</h3>
         <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (
