@@ -36,6 +36,9 @@ BEGIN
   RETURN code;
 END;
 $$;
+
+-- Allow authenticated users to call this function via supabase.rpc()
+GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;
 ```
 
 **Usage in app code** (call the function instead of `Math.random()`):
