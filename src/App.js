@@ -14,6 +14,7 @@ import QuestionCreator from './components/QuestionCreator';
 import CommunitiesList from './components/CommunitiesList';
 import CommunityDetail from './components/CommunityDetail';
 import CommissionerDashboard from './components/CommissionerDashboard';
+import HelpCenter from './components/HelpCenter';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -124,6 +125,7 @@ function App() {
           { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
           { label: 'Community Feed', icon: '👥', action: () => setScreen('community') },
           { label: 'Create Question', icon: '✍️', action: () => setScreen('createQuestion') },
+          { label: 'Help', icon: '❓', action: () => setScreen('help') },
           { label: 'Settings', icon: '⚙️', action: () => setScreen('settings') },
           ...(appIsAdmin ? [{ label: 'Admin Panel', icon: '🛡️', action: () => setScreen('admin') }] : []),
         ];
@@ -243,6 +245,7 @@ function App() {
         />
       )}
       {screen === 'settings' && <Settings user={session.user} onBack={() => setScreen('dashboard')} />}
+      {screen === 'help' && <HelpCenter onBack={() => setScreen('dashboard')} />}
     </div>
   );
 }
