@@ -28,7 +28,7 @@ BEGIN
   LOOP
     code := '';
     FOR i IN 1..8 LOOP
-      code := code || substr(chars, (get_byte(gen_random_bytes(1))::int % length(chars)) + 1, 1);
+      code := code || substr(chars, (get_byte(gen_random_bytes(1), 0) % length(chars)) + 1, 1);
     END LOOP;
     -- Ensure uniqueness
     EXIT WHEN NOT EXISTS (SELECT 1 FROM communities WHERE invite_code = code);
