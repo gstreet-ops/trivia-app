@@ -19,12 +19,15 @@ Status values: `PENDING` | `RESOLVED`
 | 6 | RESOLVED | UI | DATA | Invite codes generated client-side with `Math.random()` (not cryptographically secure, collision-prone). Community leaderboard uses a static table that may go stale. No per-user limit on pending question submissions. | SQL scripts provided in `docs/SUPABASE_SCRIPTS.md`. Must be applied manually in Supabase SQL Editor. |
 | 7 | RESOLVED | CONTENT | CONTENT | HTML entities from the Trivia API (e.g. `&amp;` `&#039;` `&quot;`) were not decoded before display. The local `decodeHTML` function in `QuizScreen.js` existed but was never called. | Created `src/utils/decodeHtml.js`; applied at ingestion in `fetchQuestions` for question text, correct answer, and all incorrect answers. |
 | 8 | RESOLVED | CONTENT | CONTENT | Default question count was 3 (a testing value, not the intended user-facing default). | Changed `useState(3)` → `useState(10)` in `QuizSourceSelector.js`. |
+| 9 | PENDING | COMMUNITY | DATA | The `generate_invite_code` Postgres function in `docs/SUPABASE_SCRIPTS.md` does not include a `GRANT EXECUTE` statement. Without it, the `authenticated` role cannot call the function via `supabase.rpc('generate_invite_code')` and the invite code regeneration button will fail with a permissions error. Add `GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;` to the script and run it in Supabase SQL Editor. | — |
 
 ---
 
 ## Open Flags
 
-No open flags at this time.
+| # | Flag |
+|---|------|
+| 9 | `GRANT EXECUTE ON FUNCTION generate_invite_code() TO authenticated;` missing from SUPABASE_SCRIPTS.md — must be run before invite code regeneration works. |
 
 ---
 

@@ -28,6 +28,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [showVersionHistory, setShowVersionHistory] = useState(null);
   const [versionHistory, setVersionHistory] = useState([]);
@@ -130,6 +131,24 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       console.error('Error saving settings:', error);
       alert('Failed to update settings');
     }
+  };
+
+  const handleRegenerateInviteCode = async () => {
+    if (!window.confirm('Generate a new invite code? The current code will stop working immediately.')) return;
+    setRegenerating(true);
+    try {
+      const { data: newCode, error: rpcError } = await supabase.rpc('generate_invite_code');
+      if (rpcError) throw rpcError;
+      const { error: updateError } = await supabase
+        .from('communities')
+        .update({ invite_code: newCode })
+        .eq('id', communityId);
+      if (updateError) throw updateError;
+      await fetchCommissionerData();
+    } catch (err) {
+      alert('Failed to regenerate invite code: ' + err.message);
+    }
+    setRegenerating(false);
   };
 
   const handleRemoveMember = async (userId, username) => {
@@ -1130,7 +1149,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                   </div>
                   <div className="setting-item">
                     <span className="setting-label">Invite Code</span>
-                    <span className="setting-value code">{community.invite_code}</span>
+                    <span style={{display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap'}}>
+                      <span className="setting-value code">{community.invite_code}</span>
+                      <button
+                        onClick={handleRegenerateInviteCode}
+                        disabled={regenerating}
+                        style={{padding:'4px 10px', fontSize:'0.75rem', fontWeight:600, background:'#fff', color:'#041E42', border:'1px solid #041E42', borderRadius:'4px', cursor:regenerating ? 'not-allowed' : 'pointer', opacity:regenerating ? 0.6 : 1}}
+                      >
+                        {regenerating ? 'Regenerating…' : 'Regenerate'}
+                      </button>
+                    </span>
                   </div>
                 </div>
               )}
