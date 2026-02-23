@@ -46,9 +46,34 @@
   to { transform: rotate(360deg); }
 }
 
+.marketplace-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
 .marketplace-search {
   position: relative;
-  margin-bottom: 24px;
+  flex: 1;
+}
+
+.marketplace-sort {
+  padding: 0 14px;
+  border: 2px solid #DEE2E6;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #041E42;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 150px;
+  font-family: inherit;
+}
+
+.marketplace-sort:focus {
+  outline: none;
+  border-color: #041E42;
 }
 
 .marketplace-search-input {
@@ -77,6 +102,42 @@
   color: #54585A;
   cursor: pointer;
   padding: 4px 8px;
+}
+
+.marketplace-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.marketplace-chip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #DEE2E6;
+  background: #E8ECF0;
+  color: #54585A;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.marketplace-chip:hover {
+  background: #d0d5db;
+}
+
+.marketplace-chip.active {
+  background: #041E42;
+  color: white;
+  border-color: #041E42;
+}
+
+.marketplace-result-count {
+  font-size: 0.85rem;
+  color: #54585A;
+  margin-bottom: 16px;
 }
 
 .marketplace-empty {
@@ -109,18 +170,40 @@
 }
 
 .marketplace-card-header {
-  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .marketplace-card-header h3 {
   color: #041E42;
   font-size: 1.25rem;
-  margin: 0 0 4px 0;
+  margin: 0;
 }
+
+.marketplace-category-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.marketplace-category-badge.cat-education { background: #E3F2FD; color: #1565C0; }
+.marketplace-category-badge.cat-workplace { background: #FFF3E0; color: #E65100; }
+.marketplace-category-badge.cat-music { background: #F3E5F5; color: #7B1FA2; }
+.marketplace-category-badge.cat-sports { background: #E8F5E9; color: #2E7D32; }
+.marketplace-category-badge.cat-general { background: #E8ECF0; color: #54585A; }
 
 .marketplace-commissioner {
   color: #54585A;
   font-size: 0.85rem;
+  margin-bottom: 12px;
+  display: block;
 }
 
 .marketplace-description {

@@ -1,6 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityMarketplace.css';
+
+const CATEGORY_MAP = {
+  'grade-school-trivia': 'Education',
+  'middle-school-brain-bowl': 'Education',
+  'barber-shop-talk': 'Workplace',
+  'fast-food-challenge': 'Workplace',
+  'cashier-champions': 'Workplace',
+  'food-server-academy': 'Workplace',
+  'music-masters': 'Music',
+  'hip-hop-heads': 'Music',
+  'baseball-nation': 'Sports',
+  'ncaa-madness': 'Sports',
+  'soccer-world': 'Sports',
+  'nfl-fanatics': 'Sports',
+  'nba-court-vision': 'Sports',
+  'adult-trivia-night': 'General'
+};
+
+const CATEGORIES = ['All', 'Education', 'Workplace', 'Music', 'Sports', 'General'];
+
+const SORT_OPTIONS = [
+  { value: 'members', label: 'Most Members' },
+  { value: 'questions', label: 'Most Questions' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'az', label: 'A-Z' }
+];
+
+function getCategory(slug) {
+  return CATEGORY_MAP[slug] || 'General';
+}
 
 function CommunityMarketplace({ user, onBack }) {
   const [communities, setCommunities] = useState([]);
@@ -8,6 +38,8 @@ function CommunityMarketplace({ user, onBack }) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [joiningId, setJoiningId] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('members');
 
   useEffect(() => {
     fetchMarketplace();
@@ -18,7 +50,7 @@ function CommunityMarketplace({ user, onBack }) {
       // Fetch public communities
       const { data: publicCommunities } = await supabase
         .from('communities')
-        .select('id, name, description, season_start, season_end, commissioner_id, profiles!communities_commissioner_id_fkey(username)')
+        .select('id, name, slug, description, season_start, season_end, created_at, commissioner_id, profiles!communities_commissioner_id_fkey(username)')
         .eq('visibility', 'public')
         .order('name');
 
@@ -43,11 +75,12 @@ function CommunityMarketplace({ user, onBack }) {
         questionCountMap[q.community_id] = (questionCountMap[q.community_id] || 0) + 1;
       });
 
-      // Enrich communities with counts
+      // Enrich communities with counts and category
       const enriched = (publicCommunities || []).map(c => ({
         ...c,
         memberCount: memberCountMap[c.id] || 0,
-        questionCount: questionCountMap[c.id] || 0
+        questionCount: questionCountMap[c.id] || 0,
+        category: getCategory(c.slug)
       }));
 
       setCommunities(enriched);
@@ -92,9 +125,22 @@ function CommunityMarketplace({ user, onBack }) {
     setJoiningId(null);
   };
 
-  const filtered = communities.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    let result = communities.filter(c =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (activeCategory !== 'All') {
+      result = result.filter(c => c.category === activeCategory);
+    }
+    switch (sortBy) {
+      case 'members': result.sort((a, b) => b.memberCount - a.memberCount); break;
+      case 'questions': result.sort((a, b) => b.questionCount - a.questionCount); break;
+      case 'newest': result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
+      case 'az': result.sort((a, b) => a.name.localeCompare(b.name)); break;
+      default: break;
+    }
+    return result;
+  }, [communities, searchQuery, activeCategory, sortBy]);
 
   if (loading) {
     return (
@@ -117,23 +163,50 @@ function CommunityMarketplace({ user, onBack }) {
         <p className="marketplace-subtitle">Discover and join public trivia communities</p>
       </div>
 
-      <div className="marketplace-search">
-        <input
-          type="text"
-          placeholder="Search communities..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="marketplace-search-input"
-        />
-        {searchQuery && (
-          <button className="marketplace-search-clear" onClick={() => setSearchQuery('')}>×</button>
-        )}
+      <div className="marketplace-toolbar">
+        <div className="marketplace-search">
+          <input
+            type="text"
+            placeholder="Search communities..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="marketplace-search-input"
+          />
+          {searchQuery && (
+            <button className="marketplace-search-clear" onClick={() => setSearchQuery('')}>×</button>
+          )}
+        </div>
+        <select
+          className="marketplace-sort"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          {SORT_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="marketplace-chips">
+        {CATEGORIES.map(cat => (
+          <button
+            key={cat}
+            className={`marketplace-chip ${activeCategory === cat ? 'active' : ''}`}
+            onClick={() => setActiveCategory(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="marketplace-result-count">
+        Showing {filtered.length} of {communities.length} {communities.length === 1 ? 'community' : 'communities'}
       </div>
 
       {filtered.length === 0 ? (
         <div className="marketplace-empty">
-          {searchQuery
-            ? <p>No communities match "{searchQuery}"</p>
+          {searchQuery || activeCategory !== 'All'
+            ? <p>No communities match your filters</p>
             : <p>No public communities available yet</p>
           }
         </div>
@@ -143,10 +216,13 @@ function CommunityMarketplace({ user, onBack }) {
             <div key={community.id} className="marketplace-card">
               <div className="marketplace-card-header">
                 <h3>{community.name}</h3>
-                <span className="marketplace-commissioner">
-                  by {community.profiles?.username || 'Unknown'}
+                <span className={`marketplace-category-badge cat-${community.category.toLowerCase()}`}>
+                  {community.category}
                 </span>
               </div>
+              <span className="marketplace-commissioner">
+                by {community.profiles?.username || 'Unknown'}
+              </span>
 
               <p className="marketplace-description">
                 {community.description || 'No description'}
