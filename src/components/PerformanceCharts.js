@@ -15,7 +15,7 @@ function PerformanceCharts({ games }) {
       <h3>Performance Over Time</h3>
       <div className="chart-container">
         <h4>Score Trend</h4>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart data={scoreData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="game" label={{ value: 'Game #', position: 'insideBottom', offset: -5 }} />
@@ -28,7 +28,7 @@ function PerformanceCharts({ games }) {
       </div>
       <div className="chart-container">
         <h4>Performance by Category</h4>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={220}>
           <BarChart data={categoryData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="category" angle={-45} textAnchor="end" height={100} />
