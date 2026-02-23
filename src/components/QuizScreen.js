@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './QuizScreen.css';
 import decodeHtml from '../utils/decodeHtml';
 
 function QuizScreen({ config, onEnd }) {
-  const { category, difficulty, count } = config;
+  const { category, difficulty, count, timerSettings } = config;
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -14,11 +14,87 @@ function QuizScreen({ config, onEnd }) {
   const [hintUsed, setHintUsed] = useState(false);
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
   const [answersLog, setAnswersLog] = useState([]);
+  const [timedOutCount, setTimedOutCount] = useState(0);
+
+  // Timer state
+  const timerEnabled = timerSettings?.enabled === true;
+  const timerDuration = timerSettings?.seconds || 30;
+  const [timeRemaining, setTimeRemaining] = useState(timerDuration);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const bonusTimeRef = useRef(0);
 
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Timer logic
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const handleTimeout = useCallback(() => {
+    stopTimer();
+    if (showResult || !questions.length) return;
+
+    const q = questions[currentQuestionIndex];
+    if (!q) return;
+
+    setSelectedAnswer(null);
+    setShowResult(true);
+    setTimedOutCount(prev => prev + 1);
+    setAnswersLog(prev => [...prev, {
+      question_text: q.question,
+      correct_answer: q.correctAnswer,
+      user_answer: '(timed out)',
+      is_correct: false
+    }]);
+  }, [stopTimer, showResult, questions, currentQuestionIndex]);
+
+  const startTimer = useCallback(() => {
+    if (!timerEnabled) return;
+    stopTimer();
+    bonusTimeRef.current = 0;
+    startTimeRef.current = Date.now();
+    setTimeRemaining(timerDuration);
+
+    timerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const remaining = timerDuration + bonusTimeRef.current - elapsed;
+      if (remaining <= 0) {
+        setTimeRemaining(0);
+        // We'll handle timeout via the effect below
+      } else {
+        setTimeRemaining(remaining);
+      }
+    }, 100);
+  }, [timerEnabled, timerDuration, stopTimer]);
+
+  // Watch for timeRemaining hitting 0
+  useEffect(() => {
+    if (timerEnabled && timeRemaining <= 0 && !showResult && questions.length > 0) {
+      handleTimeout();
+    }
+  }, [timeRemaining, timerEnabled, showResult, questions.length, handleTimeout]);
+
+  // Start timer when question changes
+  useEffect(() => {
+    if (timerEnabled && questions.length > 0 && !showResult) {
+      startTimer();
+    }
+    return () => stopTimer();
+  }, [currentQuestionIndex, questions.length, timerEnabled, showResult, startTimer, stopTimer]);
+
+  // Stop timer when answer is shown
+  useEffect(() => {
+    if (showResult) {
+      stopTimer();
+    }
+  }, [showResult, stopTimer]);
 
   // Map our category IDs to The Trivia API categories
   const categoryMap = {
@@ -80,6 +156,7 @@ function QuizScreen({ config, onEnd }) {
   const handleAnswerClick = (answer) => {
     if (showResult) return;
 
+    stopTimer();
     setSelectedAnswer(answer);
     setShowResult(true);
 
@@ -104,7 +181,7 @@ function QuizScreen({ config, onEnd }) {
     } else {
       // Compute final score from answersLog to avoid stale state
       const finalScore = answersLog.filter(a => a.is_correct).length;
-      onEnd(finalScore, questions.length, answersLog);
+      onEnd(finalScore, questions.length, answersLog, timedOutCount);
     }
   };
 
@@ -120,6 +197,11 @@ function QuizScreen({ config, onEnd }) {
     const answersToHide = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 2);
     setHiddenAnswers(answersToHide);
     setHintUsed(true);
+
+    // Add 3 bonus seconds when hint is used
+    if (timerEnabled && timerRef.current) {
+      bonusTimeRef.current += 3;
+    }
   };
 
   if (loading) {
@@ -132,13 +214,15 @@ function QuizScreen({ config, onEnd }) {
         <p>{error}</p>
         <div style={{display:'flex', gap:'10px', marginTop:'16px', justifyContent:'center'}}>
           <button onClick={fetchQuestions} style={{padding:'8px 16px', background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}>Retry</button>
-          <button onClick={() => onEnd(0, 0, [])} style={{padding:'8px 16px', background:'#fff', color:'#041E42', border:'1px solid #041E42', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}>Back to Dashboard</button>
+          <button onClick={() => onEnd(0, 0, [], 0)} style={{padding:'8px 16px', background:'#fff', color:'#041E42', border:'1px solid #041E42', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}>Back to Dashboard</button>
         </div>
       </div>
     );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
+  const timerFraction = timerEnabled ? timeRemaining / (timerDuration + bonusTimeRef.current) : 1;
+  const isWarning = timerEnabled && timeRemaining <= 5 && timeRemaining > 0 && !showResult;
 
   return (
     <div className="quiz-screen">
@@ -149,6 +233,20 @@ function QuizScreen({ config, onEnd }) {
         <div className="score">Score: {score}/{questions.length}</div>
       </div>
 
+      {timerEnabled && (
+        <div className="quiz-timer-container">
+          <div className="quiz-timer-bar-bg">
+            <div
+              className={`quiz-timer-bar-fill ${isWarning ? 'warning' : ''} ${showResult ? 'paused' : ''}`}
+              style={{ width: `${Math.max(0, timerFraction * 100)}%` }}
+            />
+          </div>
+          <span className={`quiz-timer-seconds ${isWarning ? 'warning' : ''}`}>
+            {Math.ceil(Math.max(0, timeRemaining))}s
+          </span>
+        </div>
+      )}
+
       <div className="question-container">
         <h2 className="question">{currentQuestion.question}</h2>
 
@@ -157,12 +255,14 @@ function QuizScreen({ config, onEnd }) {
             const isHidden = hiddenAnswers.includes(answer);
             const isSelected = selectedAnswer === answer;
             const isCorrect = answer === currentQuestion.correctAnswer;
+            const isTimedOut = showResult && selectedAnswer === null;
 
             let className = 'answer-btn';
             if (isHidden) className += ' hidden';
             if (showResult && isSelected && !isCorrect) className += ' wrong';
             if (showResult && isCorrect) className += ' correct';
             if (isSelected && !showResult) className += ' selected';
+            if (isTimedOut && isCorrect) className += ' correct';
 
             const ariaLabel = !showResult
               ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer}`
@@ -187,6 +287,10 @@ function QuizScreen({ config, onEnd }) {
             );
           })}
         </div>
+
+        {showResult && selectedAnswer === null && (
+          <div className="timeout-message">Time's up! The correct answer is highlighted above.</div>
+        )}
 
         <div className="quiz-actions">
           <button

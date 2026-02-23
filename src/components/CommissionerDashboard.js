@@ -17,7 +17,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     season_end: '',
     max_members: 50,
     visibility: 'private',
-    description: ''
+    description: '',
+    timer_enabled: false,
+    timer_seconds: 30
   });
   const [csvData, setCsvData] = useState([]);
   const [csvPreview, setCsvPreview] = useState([]);
@@ -76,7 +78,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         season_end: communityData.season_end?.split('T')[0] || '',
         max_members: communityData.settings?.max_members || 50,
         visibility: communityData.visibility || 'private',
-        description: communityData.description || ''
+        description: communityData.description || '',
+        timer_enabled: communityData.settings?.timer_enabled || false,
+        timer_seconds: communityData.settings?.timer_seconds || 30
       });
 
       const { data: membersData } = await supabase
@@ -120,7 +124,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           name: editForm.name,
           season_start: editForm.season_start,
           season_end: editForm.season_end,
-          settings: { max_members: editForm.max_members },
+          settings: {
+            ...community.settings,
+            max_members: editForm.max_members,
+            timer_enabled: editForm.timer_enabled,
+            timer_seconds: editForm.timer_seconds
+          },
           visibility: editForm.visibility,
           description: editForm.description || null
         })
@@ -1164,6 +1173,40 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       {editForm.description.length}/300
                     </span>
                   </div>
+                  <div className="form-group">
+                    <label style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                      Enable Timer
+                      <span
+                        className={`visibility-toggle ${editForm.timer_enabled ? 'on' : ''}`}
+                        onClick={() => setEditForm({ ...editForm, timer_enabled: !editForm.timer_enabled })}
+                        role="switch"
+                        aria-checked={editForm.timer_enabled}
+                        tabIndex={0}
+                        onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, timer_enabled: !editForm.timer_enabled }); }}
+                      >
+                        <span className="visibility-toggle-knob" />
+                      </span>
+                      <span style={{fontSize:'0.85rem', color:'#54585A', fontWeight:400}}>
+                        {editForm.timer_enabled ? 'On — countdown per question' : 'Off — no time limit'}
+                      </span>
+                    </label>
+                  </div>
+                  {editForm.timer_enabled && (
+                    <div className="form-group">
+                      <label>Timer Duration</label>
+                      <select
+                        value={editForm.timer_seconds}
+                        onChange={(e) => setEditForm({ ...editForm, timer_seconds: parseInt(e.target.value) })}
+                      >
+                        <option value={15}>15 seconds</option>
+                        <option value={30}>30 seconds</option>
+                        <option value={45}>45 seconds</option>
+                        <option value={60}>60 seconds</option>
+                        <option value={90}>90 seconds</option>
+                        <option value={120}>120 seconds</option>
+                      </select>
+                    </div>
+                  )}
                   <div className="form-actions">
                     <button className="btn-primary" onClick={handleSaveSettings}>Save Changes</button>
                     <button className="btn-secondary" onClick={() => setEditMode(false)}>Cancel</button>
@@ -1210,6 +1253,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       <span className="setting-value">{community.description}</span>
                     </div>
                   )}
+                  <div className="setting-item">
+                    <span className="setting-label">Question Timer</span>
+                    <span className="setting-value">
+                      {community.settings?.timer_enabled
+                        ? `Enabled — ${community.settings.timer_seconds || 30}s per question`
+                        : 'Disabled'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

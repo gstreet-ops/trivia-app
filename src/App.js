@@ -147,7 +147,7 @@ function App() {
     navigateTo('quiz', { quizConfig: config });
   };
 
-  const endQuiz = async (score, totalQuestions, answers = []) => {
+  const endQuiz = async (score, totalQuestions, answers = [], timedOutCount = 0) => {
     try {
       // Validate score doesn't exceed total questions
       const validatedScore = Math.min(score, totalQuestions);

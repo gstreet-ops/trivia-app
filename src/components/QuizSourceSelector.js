@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import './QuizSourceSelector.css';
 
 function QuizSourceSelector({ onStart, userRole, communityId }) {
@@ -6,25 +7,52 @@ function QuizSourceSelector({ onStart, userRole, communityId }) {
   const [difficulty, setDifficulty] = useState('medium');
   const [questionSource, setQuestionSource] = useState('trivia_api');
   const [questionCount, setQuestionCount] = useState(10);
+  const [timerSettings, setTimerSettings] = useState(null);
 
   const isAdmin = userRole === 'super_admin';
 
   const categories = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature'];
 
+  useEffect(() => {
+    if (communityId) {
+      fetchTimerSettings();
+    }
+  }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchTimerSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('communities')
+        .select('settings')
+        .eq('id', communityId)
+        .single();
+      if (data?.settings?.timer_enabled) {
+        setTimerSettings({
+          enabled: true,
+          seconds: data.settings.timer_seconds || 30
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching timer settings:', err);
+    }
+  };
+
   const handleStart = () => {
+    const usesCommunity = questionSource === 'community' || questionSource === 'mixed';
     onStart({
       category,
       difficulty,
       source: questionSource,
       count: questionCount,
-      communityId: communityId
+      communityId: communityId,
+      timerSettings: usesCommunity && timerSettings ? timerSettings : null
     });
   };
 
   return (
     <div className='quiz-source-selector'>
       <h2>Configure Quiz</h2>
-      
+
       <div className='form-group'>
         <label>Question Source</label>
         <select value={questionSource} onChange={(e) => setQuestionSource(e.target.value)}>
@@ -61,6 +89,13 @@ function QuizSourceSelector({ onStart, userRole, communityId }) {
           <option value={20}>20</option>
         </select>
       </div>
+
+      {timerSettings && (questionSource === 'community' || questionSource === 'mixed') && (
+        <div className="timer-notice">
+          <span className="timer-notice-icon">⏱</span>
+          This community has a {timerSettings.seconds}s timer per question
+        </div>
+      )}
 
       <button className='start-quiz-btn' onClick={handleStart}>Start Quiz</button>
     </div>

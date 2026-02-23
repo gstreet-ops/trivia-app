@@ -23,6 +23,7 @@
 - [x] Immediate per-answer feedback (correct/wrong highlighting)
 - [x] Score saved to Supabase on game completion
 - [x] Per-answer log saved to `game_answers` for review
+- [x] Per-question countdown timer — commissioner-configurable per community (15s–120s), visual bar with warning state, auto-submit on timeout, 50/50 hint adds 3 bonus seconds
 
 ### Dashboard
 - [x] Total games, average score %, best score % stats (capped at 100%)
@@ -141,7 +142,7 @@
 
 - [x] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
 - [x] **Simplified role model (Phase 1)** — three roles: User, Commissioner (per-community), Super Admin (platform-wide). Removed redundant `admin` role.
-- [ ] **Timer per question** — countdown with auto-submit on expiry
+- [x] **Timer per question** — commissioner-configurable countdown with auto-submit on expiry, visual bar, warning state
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
 - [ ] **Email notifications** — notify submitter when their question is approved/rejected
