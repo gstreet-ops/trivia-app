@@ -102,7 +102,9 @@ function QuizScreen({ config, onEnd }) {
       setHintUsed(false);
       setHiddenAnswers([]);
     } else {
-      onEnd(score, questions.length, answersLog);
+      // Compute final score from answersLog to avoid stale state
+      const finalScore = answersLog.filter(a => a.is_correct).length;
+      onEnd(finalScore, questions.length, answersLog);
     }
   };
 

@@ -79,11 +79,13 @@ function App() {
 
   const endQuiz = async (score, totalQuestions, answers = []) => {
     try {
+      // Validate score doesn't exceed total questions
+      const validatedScore = Math.min(score, totalQuestions);
       const { data, error } = await supabase.from('games').insert([{
         user_id: session.user.id,
         category: quizConfig.category,
         difficulty: quizConfig.difficulty,
-        score: score,
+        score: validatedScore,
         total_questions: totalQuestions,
         community_id: quizConfig.communityId || null
       }]).select().single();

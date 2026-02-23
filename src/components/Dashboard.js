@@ -11,13 +11,20 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [allGames, setAllGames] = useState([]);
+  const [username, setUsername] = useState('');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchStats();
     loadAchievements();
     fetchAllGames();
+    checkAdminStatus();
   }, [user]);
+
+  const checkAdminStatus = async () => {
+    const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
+    setUsername(data?.username || 'User');
+  };
 
   const fetchAllGames = async () => {
     const { data, error } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -39,10 +46,10 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       const totalQuestions = games.reduce((sum, g) => sum + g.total_questions, 0);
       const avgScore = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : '0.0';
       const bestGame = games.reduce((best, g) => {
-        const percentage = g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0;
+        const percentage = g.total_questions > 0 ? Math.min((g.score / g.total_questions) * 100, 100) : 0;
         return percentage > best ? percentage : best;
       }, 0);
-      setStats({ totalGames, avgScore, bestScore: bestGame.toFixed(1) });
+      setStats({ totalGames, avgScore: Math.min(avgScore, 100), bestScore: Math.min(bestGame, 100).toFixed(1) });
       setRecentGames(games.slice(0, 5));
     }
     const { data: leaderboardData } = await supabase.from('games').select('user_id, score, total_questions, profiles(username, leaderboard_visibility)').eq('visibility', 'public').order('created_at', { ascending: false }).limit(100);
@@ -64,27 +71,43 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
 
   return (
     <div className="dashboard">
-      <h1 className="dashboard-title">Dashboard</h1>
-      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'10px', width:'100%'}}>
-        {[
-          {num: stats.totalGames, label: 'Games'},
-          {num: stats.avgScore + '%', label: 'Avg Score'},
-          {num: stats.bestScore + '%', label: 'Best'},
-        ].map(({num, label}) => (
-          <div key={label} style={{background:'#fff', border:'1px solid #DEE2E6', borderTop:'2px solid #041E42', borderRadius:'6px', padding:'10px 3px', textAlign:'center'}}>
-            <div style={{fontSize:'0.75rem', fontWeight:700, color:'#041E42', lineHeight:1.2}}>{num}</div>
-            <div style={{fontSize:'0.5rem', color:'#54585A', marginTop:'1px', textTransform:'uppercase', letterSpacing:'0.02em'}}>{label}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{textAlign:'center', marginBottom:'10px'}}>
-        <button onClick={onStartQuiz} style={{display:'inline-block', padding:'12px 20px', fontSize:'0.72rem', fontWeight:600, background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer'}}>Start New Quiz</button>
+      <h2 className="dashboard-welcome">Welcome back, {username}!</h2>
+      <div className="dashboard-cta">
+        <button onClick={onStartQuiz} className="start-quiz-btn">Start New Quiz</button>
       </div>
 
-      <Achievements earnedBadges={earnedBadges} />
-      <PerformanceCharts games={allGames} />
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">🎮</div>
+          <div className="stat-number">{stats.totalGames}</div>
+          <div className="stat-label">Games</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">📊</div>
+          <div className="stat-number">{stats.avgScore}%</div>
+          <div className="stat-label">Avg Score</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🏆</div>
+          <div className="stat-number">{stats.bestScore}%</div>
+          <div className="stat-label">Best</div>
+        </div>
+      </div>
+
+      {/* Achievements */}
+      <div className="dashboard-section">
+        <Achievements earnedBadges={earnedBadges} />
+      </div>
+
+      {/* Performance Charts */}
+      <div className="dashboard-section">
+        <PerformanceCharts games={allGames} />
+      </div>
+
+      {/* Leaderboard */}
       <div className="leaderboard">
-        <h3><span aria-hidden="true">🏆</span> Community Leaderboard</h3>
+        <h3>🏆 Community Leaderboard</h3>
         <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (
@@ -103,27 +126,35 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
           ))}</tbody>
         </table>
       </div>
+
+      {/* Recent Games */}
       {recentGames.length > 0 && (
         <div className="recent-games">
           <h3>Recent Games</h3>
-          {recentGames.map(game => (
-            <div
-              key={game.id}
-              className="game-card"
-              onClick={() => onReviewGame(game.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onReviewGame(game.id)}
-              aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
-            >
-              <div className="game-info">
-                <span className="game-category">{game.category}</span>
-                <span className="game-difficulty">{game.difficulty}</span>
+          {recentGames.map(game => {
+            const pct = game.total_questions > 0 ? Math.min(Math.round((game.score / game.total_questions) * 100), 100) : 0;
+            return (
+              <div
+                key={game.id}
+                className="game-card"
+                onClick={() => onReviewGame(game.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onReviewGame(game.id)}
+                aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
+              >
+                <div className="game-left">
+                  <span className="game-category">{game.category}</span>
+                  <span className={`game-difficulty diff-${game.difficulty}`}>{game.difficulty}</span>
+                </div>
+                <div className="game-center">
+                  <span className="game-score">{game.score}/{game.total_questions}</span>
+                  <span className="game-pct">{pct}%</span>
+                </div>
+                <div className="game-date">{new Date(game.created_at).toLocaleDateString()}</div>
               </div>
-              <div className="game-score">{game.score}/{game.total_questions}</div>
-              <div className="game-date">{new Date(game.created_at).toLocaleDateString()}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

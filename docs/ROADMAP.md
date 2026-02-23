@@ -126,6 +126,7 @@
 | No email confirmation on signup | Supabase email confirmation may be disabled in project settings; users log in immediately after signup. |
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
 | Sentry test event confirmation pending | Sentry SDK integrated and DSN configured; awaiting confirmation that production errors are captured and visible in the Sentry dashboard. |
+| ~~BEST score could exceed 100%~~ | **Fixed** — Score display capped at 100%; validation added on game save; stale React state bug fixed in QuizScreen `handleNext`. |
 
 ---
 
