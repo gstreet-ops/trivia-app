@@ -14,13 +14,15 @@ import QuestionCreator from './components/QuestionCreator';
 import CommunitiesList from './components/CommunitiesList';
 import CommunityDetail from './components/CommunityDetail';
 import CommissionerDashboard from './components/CommissionerDashboard';
+import CommunityMarketplace from './components/CommunityMarketplace';
 import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
   'community', 'createQuestion', 'quizConfig', 'quiz',
-  'review', 'communityDetail', 'commissionerDashboard', 'userProfile'
+  'review', 'communityDetail', 'commissionerDashboard', 'userProfile',
+  'marketplace'
 ]);
 
 function parseHash(hash) {
@@ -286,6 +288,13 @@ function App() {
             navigateTo('communityDetail', { communityId, communityName });
           }}
           onBack={() => navigateTo('dashboard')}
+          onBrowseMarketplace={() => navigateTo('marketplace')}
+        />
+      )}
+      {screen === 'marketplace' && (
+        <CommunityMarketplace
+          user={session.user}
+          onBack={() => navigateTo('communities')}
         />
       )}
       {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} />}

@@ -54,6 +54,7 @@
 - [x] Quiz from community questions
 - [x] Active community shown in persistent top bar
 - [x] Community name clickable in top bar → community detail
+- [x] Community Marketplace — browse public communities, join directly, commissioner visibility toggle and description
 
 ### Commissioner Dashboard
 - [x] Tabbed navigation (Overview, Questions, Members, Settings, Analytics)
@@ -147,11 +148,7 @@
 
 ### Medium-term
 
-- [ ] **Community Marketplace** — full community discovery and governance system:
-  - Community creation requests with super admin approval (replaces open Create Community)
-  - Commissioner toggle: public (discoverable) vs private (invite-only)
-  - Join request flow for public communities with commissioner approve/reject
-  - Marketplace browser page listing public communities with stats
+- [x] **Community Marketplace** — community discovery with public/private visibility toggle, marketplace browser page listing public communities with stats, direct join
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
 - [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
 - [ ] **Admin delete user** — remove a user account from the platform

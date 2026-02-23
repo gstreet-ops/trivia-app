@@ -15,7 +15,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     name: '',
     season_start: '',
     season_end: '',
-    max_members: 50
+    max_members: 50,
+    visibility: 'private',
+    description: ''
   });
   const [csvData, setCsvData] = useState([]);
   const [csvPreview, setCsvPreview] = useState([]);
@@ -72,7 +74,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         name: communityData.name,
         season_start: communityData.season_start?.split('T')[0] || '',
         season_end: communityData.season_end?.split('T')[0] || '',
-        max_members: communityData.settings?.max_members || 50
+        max_members: communityData.settings?.max_members || 50,
+        visibility: communityData.visibility || 'private',
+        description: communityData.description || ''
       });
 
       const { data: membersData } = await supabase
@@ -116,7 +120,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           name: editForm.name,
           season_start: editForm.season_start,
           season_end: editForm.season_end,
-          settings: { max_members: editForm.max_members }
+          settings: { max_members: editForm.max_members },
+          visibility: editForm.visibility,
+          description: editForm.description || null
         })
         .eq('id', communityId);
 
@@ -1126,6 +1132,38 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     <label>Max Members</label>
                     <input type="number" value={editForm.max_members} onChange={(e) => setEditForm({ ...editForm, max_members: parseInt(e.target.value) })} min="1" max="200" />
                   </div>
+                  <div className="form-group">
+                    <label style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                      List in Marketplace
+                      <span
+                        className={`visibility-toggle ${editForm.visibility === 'public' ? 'on' : ''}`}
+                        onClick={() => setEditForm({ ...editForm, visibility: editForm.visibility === 'public' ? 'private' : 'public' })}
+                        role="switch"
+                        aria-checked={editForm.visibility === 'public'}
+                        tabIndex={0}
+                        onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, visibility: editForm.visibility === 'public' ? 'private' : 'public' }); }}
+                      >
+                        <span className="visibility-toggle-knob" />
+                      </span>
+                      <span style={{fontSize:'0.85rem', color:'#54585A', fontWeight:400}}>
+                        {editForm.visibility === 'public' ? 'Public — discoverable in marketplace' : 'Private — invite only'}
+                      </span>
+                    </label>
+                  </div>
+                  <div className="form-group">
+                    <label>Community Description</label>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => { if (e.target.value.length <= 300) setEditForm({ ...editForm, description: e.target.value }); }}
+                      placeholder="Describe your community for the marketplace..."
+                      rows={3}
+                      maxLength={300}
+                      style={{width:'100%', padding:'10px 12px', border:'2px solid #DEE2E6', borderRadius:'6px', fontSize:'0.95rem', resize:'vertical', fontFamily:'inherit'}}
+                    />
+                    <span style={{fontSize:'0.8rem', color:'#54585A', textAlign:'right', display:'block', marginTop:'4px'}}>
+                      {editForm.description.length}/300
+                    </span>
+                  </div>
                   <div className="form-actions">
                     <button className="btn-primary" onClick={handleSaveSettings}>Save Changes</button>
                     <button className="btn-secondary" onClick={() => setEditMode(false)}>Cancel</button>
@@ -1160,6 +1198,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       </button>
                     </span>
                   </div>
+                  <div className="setting-item">
+                    <span className="setting-label">Marketplace Listing</span>
+                    <span className="setting-value">
+                      {community.visibility === 'public' ? 'Public — listed in marketplace' : 'Private — invite only'}
+                    </span>
+                  </div>
+                  {community.description && (
+                    <div className="setting-item">
+                      <span className="setting-label">Description</span>
+                      <span className="setting-value">{community.description}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

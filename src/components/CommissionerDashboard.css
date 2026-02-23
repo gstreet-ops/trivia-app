@@ -1272,3 +1272,37 @@
   .analytics-charts { grid-template-columns: 1fr; }
   .analytics-performance { grid-template-columns: 1fr; }
 }
+
+/* Visibility Toggle Switch */
+.visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  background: #DEE2E6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.visibility-toggle.on {
+  background: #2D6A4F;
+}
+
+.visibility-toggle-knob {
+  display: block;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  left: 3px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.visibility-toggle.on .visibility-toggle-knob {
+  left: 23px;
+}

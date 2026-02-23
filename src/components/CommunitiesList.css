@@ -19,7 +19,7 @@
   margin-bottom: 30px;
 }
 
-.create-btn, .join-btn {
+.create-btn, .join-btn, .browse-btn {
   flex: 1;
   padding: 15px;
   border: none;
@@ -37,6 +37,11 @@
 
 .join-btn {
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+}
+
+.browse-btn {
+  background: linear-gradient(135deg, #041E42 0%, #0a2d5e 100%);
   color: white;
 }
 
