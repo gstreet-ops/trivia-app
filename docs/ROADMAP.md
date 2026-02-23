@@ -117,6 +117,7 @@
 - [x] Georgetown-themed color palette (navy `#041E42`, gray, light blue)
 - [x] In-app Help Center with User Guide, Commissioner Guide, FAQ, About tabs and keyword search
 - [x] Sentry error monitoring (ErrorBoundary in index.js, `REACT_APP_SENTRY_DSN` env var)
+- [x] Hash-based routing — URL hash (`#dashboard`, `#review/{id}`, etc.) persists screen state across refresh and enables browser back/forward navigation
 
 ---
 
@@ -137,7 +138,7 @@
 
 ### Near-term
 
-- [ ] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
+- [x] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
 - [x] **Simplified role model (Phase 1)** — three roles: User, Commissioner (per-community), Super Admin (platform-wide). Removed redundant `admin` role.
 - [ ] **Timer per question** — countdown with auto-submit on expiry
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge

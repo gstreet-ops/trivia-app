@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import './App.css';
 import StartScreen from './components/StartScreen';
@@ -17,6 +17,22 @@ import CommissionerDashboard from './components/CommissionerDashboard';
 import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 
+const KNOWN_SCREENS = new Set([
+  'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
+  'community', 'createQuestion', 'quizConfig', 'quiz',
+  'review', 'communityDetail', 'commissionerDashboard', 'userProfile'
+]);
+
+function parseHash(hash) {
+  const stripped = hash.replace(/^#\/?/, '');
+  if (!stripped) return { screen: 'dashboard', param: null };
+  const parts = stripped.split('/');
+  const screen = parts[0];
+  const param = parts[1] || null;
+  if (!KNOWN_SCREENS.has(screen)) return { screen: 'dashboard', param: null };
+  return { screen, param };
+}
+
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,12 +49,54 @@ function App() {
   const [appIsAdmin, setAppIsAdmin] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
 
+  const navigateTo = useCallback((screenName, params = {}) => {
+    if (params.gameId != null) setViewGameId(params.gameId);
+    if (params.communityId != null) setViewCommunityId(params.communityId);
+    if (params.communityName != null) setAppCommunityName(params.communityName);
+    if (params.userId != null) setViewUserId(params.userId);
+    if (params.username != null) setViewUsername(params.username);
+    if (params.returnScreen != null) setUserProfileReturn(params.returnScreen);
+    if (params.quizConfig != null) setQuizConfig(params.quizConfig);
+
+    // Build hash: screen + optional ID param
+    let hash = screenName;
+    if (screenName === 'review' && (params.gameId != null)) hash = `review/${params.gameId}`;
+    else if (screenName === 'communityDetail' && (params.communityId != null)) hash = `communityDetail/${params.communityId}`;
+    else if (screenName === 'commissionerDashboard' && (params.communityId != null)) hash = `commissionerDashboard/${params.communityId}`;
+    else if (screenName === 'userProfile' && (params.userId != null)) hash = `userProfile/${params.userId}`;
+
+    window.location.hash = hash;
+    setScreen(screenName);
+  }, []);
+
+  const syncFromHash = useCallback(() => {
+    const { screen: hashScreen, param } = parseHash(window.location.hash);
+
+    // Quiz config can't be restored on refresh — redirect to dashboard
+    if (hashScreen === 'quiz') {
+      window.location.hash = 'dashboard';
+      setScreen('dashboard');
+      return;
+    }
+
+    if (hashScreen === 'review' && param) setViewGameId(param);
+    if (hashScreen === 'communityDetail' && param) setViewCommunityId(param);
+    if (hashScreen === 'commissionerDashboard' && param) setViewCommunityId(param);
+    if (hashScreen === 'userProfile' && param) setViewUserId(param);
+
+    setScreen(hashScreen);
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
       if (session) {
-        setScreen('dashboard');
+        if (window.location.hash && window.location.hash !== '#') {
+          syncFromHash();
+        } else {
+          navigateTo('dashboard');
+        }
         fetchUserRole(session.user.id);
       }
     });
@@ -46,13 +104,24 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        setScreen('dashboard');
+        if (window.location.hash && window.location.hash !== '#') {
+          syncFromHash();
+        } else {
+          navigateTo('dashboard');
+        }
         fetchUserRole(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigateTo, syncFromHash]);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const onPopState = () => { syncFromHash(); };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [syncFromHash]);
 
   const fetchUserRole = async (userId) => {
     const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', userId).single();
@@ -73,8 +142,7 @@ function App() {
   };
 
   const startQuizConfig = (config) => {
-    setQuizConfig(config);
-    setScreen('quiz');
+    navigateTo('quiz', { quizConfig: config });
   };
 
   const endQuiz = async (score, totalQuestions, answers = []) => {
@@ -95,23 +163,19 @@ function App() {
           answers.map(a => ({ ...a, game_id: data.id, user_id: session.user.id }))
         );
       }
-      setScreen('dashboard');
+      navigateTo('dashboard');
     } catch (error) {
       console.error('Error saving game:', error);
-      setScreen('dashboard');
+      navigateTo('dashboard');
     }
   };
 
   const viewGame = (gameId) => {
-    setViewGameId(gameId);
-    setScreen('review');
+    navigateTo('review', { gameId });
   };
 
   const viewUserGames = (userId, username, returnScreen = 'community') => {
-    setViewUserId(userId);
-    setViewUsername(username);
-    setUserProfileReturn(returnScreen);
-    setScreen('userProfile');
+    navigateTo('userProfile', { userId, username, returnScreen });
   };
 
   if (loading) {
@@ -124,11 +188,11 @@ function App() {
     <div className="App">
       {appUsername && (() => {
         const navItems = [
-          { label: 'My Stats', icon: '📊', action: () => setScreen('myStats') },
-          { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
-          { label: 'Help', icon: '❓', action: () => setScreen('help') },
-          { label: 'Settings', icon: '⚙️', action: () => setScreen('settings') },
-          ...(appIsAdmin ? [{ label: 'Super Admin', icon: '🛡️', action: () => setScreen('admin') }] : []),
+          { label: 'My Stats', icon: '📊', action: () => navigateTo('myStats') },
+          { label: 'My Leagues', icon: '🏆', action: () => navigateTo('communities') },
+          { label: 'Help', icon: '❓', action: () => navigateTo('help') },
+          { label: 'Settings', icon: '⚙️', action: () => navigateTo('settings') },
+          ...(appIsAdmin ? [{ label: 'Super Admin', icon: '🛡️', action: () => navigateTo('admin') }] : []),
         ];
         return (
           <div className="app-user-bar">
@@ -140,7 +204,7 @@ function App() {
                   <span className="app-user-bar-divider">|</span>
                   <button
                     className="app-user-bar-community"
-                    onClick={() => { if (viewCommunityId) setScreen('communityDetail'); }}
+                    onClick={() => { if (viewCommunityId) navigateTo('communityDetail', { communityId: viewCommunityId }); }}
                   >
                     <span aria-hidden="true">🏆</span> {appCommunityName}
                   </button>
@@ -176,31 +240,31 @@ function App() {
       {screen === 'dashboard' && (
         <Dashboard
           user={session.user}
-          onStartQuiz={() => setScreen('quizConfig')}
+          onStartQuiz={() => navigateTo('quizConfig')}
           onReviewGame={viewGame}
-          onSettings={() => setScreen('settings')}
-          onCommunity={() => setScreen('community')}
-          onAdmin={() => setScreen('admin')}
-          onCreateQuestion={() => setScreen('createQuestion')}
-          onCommunities={() => setScreen('communities')}
+          onSettings={() => navigateTo('settings')}
+          onCommunity={() => navigateTo('community')}
+          onAdmin={() => navigateTo('admin')}
+          onCreateQuestion={() => navigateTo('createQuestion')}
+          onCommunities={() => navigateTo('communities')}
           onViewUserProfile={(userId, username) => viewUserGames(userId, username, 'dashboard')}
         />
       )}
-      {screen === 'myStats' && <MyStats user={session.user} onBack={() => setScreen('dashboard')} />}
+      {screen === 'myStats' && <MyStats user={session.user} onBack={() => navigateTo('dashboard')} />}
       {screen === 'quizConfig' && (
         <QuizSourceSelector
           onStart={startQuizConfig}
           userRole={userRole}
           communityId={viewCommunityId}
-          onBack={() => setScreen('dashboard')}
+          onBack={() => navigateTo('dashboard')}
         />
       )}
       {screen === 'quiz' && <QuizScreen config={quizConfig} onEnd={endQuiz} />}
-      {screen === 'review' && <GameReview gameId={viewGameId} onBack={() => setScreen('dashboard')} />}
+      {screen === 'review' && <GameReview gameId={viewGameId} onBack={() => navigateTo('dashboard')} />}
       {screen === 'community' && (
         <CommunityFeed
           currentUserId={session.user.id}
-          onBack={() => setScreen('dashboard')}
+          onBack={() => navigateTo('dashboard')}
           onViewGame={viewGame}
           onViewUserProfile={viewUserGames}
         />
@@ -210,7 +274,7 @@ function App() {
           userId={viewUserId}
           username={viewUsername}
           currentUserId={session.user.id}
-          onBack={() => setScreen(userProfileReturn)}
+          onBack={() => navigateTo(userProfileReturn)}
           onViewGame={viewGame}
         />
       )}
@@ -219,21 +283,19 @@ function App() {
           user={session.user}
           userRole={userRole}
           onViewCommunity={(communityId, communityName) => {
-            setViewCommunityId(communityId);
-            setAppCommunityName(communityName || '');
-            setScreen('communityDetail');
+            navigateTo('communityDetail', { communityId, communityName });
           }}
-          onBack={() => setScreen('dashboard')}
+          onBack={() => navigateTo('dashboard')}
         />
       )}
-      {screen === 'admin' && <AdminDashboard onBack={() => setScreen('dashboard')} />}
+      {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} />}
       {screen === 'createQuestion' && (
         <QuestionCreator
           user={session.user}
-          onBack={() => setScreen('dashboard')}
+          onBack={() => navigateTo('dashboard')}
           onSuccess={() => {
             alert('Question submitted for review!');
-            setScreen('dashboard');
+            navigateTo('dashboard');
           }}
         />
       )}
@@ -241,20 +303,20 @@ function App() {
         <CommunityDetail
           communityId={viewCommunityId}
           currentUserId={session.user.id}
-          onBack={() => setScreen('communities')}
-          onStartQuiz={(commId) => { setViewCommunityId(commId); setScreen('quizConfig'); }}
-          onManageCommunity={(commId) => { setViewCommunityId(commId); setScreen('commissionerDashboard'); }}
+          onBack={() => navigateTo('communities')}
+          onStartQuiz={(commId) => navigateTo('quizConfig', { communityId: commId })}
+          onManageCommunity={(commId) => navigateTo('commissionerDashboard', { communityId: commId })}
         />
       )}
       {screen === 'commissionerDashboard' && (
         <CommissionerDashboard
           communityId={viewCommunityId}
           currentUserId={session.user.id}
-          onBack={() => setScreen('communityDetail')}
+          onBack={() => navigateTo('communityDetail')}
         />
       )}
-      {screen === 'settings' && <Settings user={session.user} onBack={() => setScreen('dashboard')} />}
-      {screen === 'help' && <HelpCenter onBack={() => setScreen('dashboard')} />}
+      {screen === 'settings' && <Settings user={session.user} onBack={() => navigateTo('dashboard')} />}
+      {screen === 'help' && <HelpCenter onBack={() => navigateTo('dashboard')} />}
     </div>
   );
 }
