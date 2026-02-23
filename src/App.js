@@ -127,8 +127,6 @@ function App() {
         const navItems = [
           { label: 'My Stats', icon: '📊', action: () => setScreen('myStats') },
           { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
-          { label: 'Community Feed', icon: '👥', action: () => setScreen('community') },
-          { label: 'Create Question', icon: '✍️', action: () => setScreen('createQuestion') },
           { label: 'Help', icon: '❓', action: () => setScreen('help') },
           { label: 'Settings', icon: '⚙️', action: () => setScreen('settings') },
           ...(appIsAdmin ? [{ label: 'Admin Panel', icon: '🛡️', action: () => setScreen('admin') }] : []),

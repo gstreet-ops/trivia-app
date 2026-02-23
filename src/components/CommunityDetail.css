@@ -211,3 +211,88 @@
       grid-template-columns: 1fr;
     }
   }
+
+/* ===== Recent Activity Feed ===== */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activity-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.activity-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.activity-user {
+  font-weight: 700;
+  color: #041E42;
+  font-size: 0.88rem;
+}
+
+.activity-date {
+  font-size: 0.72rem;
+  color: #8B9DC3;
+}
+
+.activity-details {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.activity-category {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #54585A;
+  background: #E8ECF0;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.activity-difficulty {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: capitalize;
+}
+.activity-difficulty.diff-easy {
+  background: #d4edda;
+  color: #155724;
+}
+.activity-difficulty.diff-medium {
+  background: #fff3cd;
+  color: #856404;
+}
+.activity-difficulty.diff-hard {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.activity-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.activity-score-num {
+  font-weight: 800;
+  color: #041E42;
+  font-size: 1rem;
+}
+
+.activity-pct {
+  font-size: 0.75rem;
+  color: #54585A;
+  font-weight: 600;
+}

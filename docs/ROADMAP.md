@@ -137,6 +137,7 @@
 
 ### Near-term
 
+- [ ] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
 - [ ] **Timer per question** — countdown with auto-submit on expiry
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
@@ -144,6 +145,7 @@
 
 ### Medium-term
 
+- [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
 - [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
 - [ ] **Admin delete user** — remove a user account from the platform
 - [ ] **Community announcements** — commissioner can post messages visible to all members

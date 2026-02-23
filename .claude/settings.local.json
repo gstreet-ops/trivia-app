@@ -8,7 +8,8 @@
       "Bash(npm run deploy:*)",
       "Bash(npm run build:*)",
       "Bash(cd:*)",
-      "Bash(echo No patch file found:*)"
+      "Bash(echo No patch file found:*)",
+      "Bash(cd /c/Users/brian/projects/trivia-app && git apply ~/Downloads/game-card-labels-fix.patch 2>)"
     ]
   }
 }

@@ -7,6 +7,7 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
   const [members, setMembers] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +44,19 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
         .select('*')
         .eq('community_id', communityId);
       setQuestions(questionsData || []);
+
+      // Fetch recent community member activity
+      const memberIds = (membersData || []).map(m => m.user_id);
+      if (memberIds.length > 0) {
+        const { data: activityData } = await supabase
+          .from('games')
+          .select('id, user_id, category, difficulty, score, total_questions, created_at, profiles(username)')
+          .in('user_id', memberIds)
+          .eq('visibility', 'public')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        setRecentActivity(activityData || []);
+      }
     } catch (error) {
       console.error('Error fetching community:', error);
     }
@@ -137,6 +151,35 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="section">
+          <h2>📋 Recent Activity</h2>
+          {recentActivity.length === 0 ? (
+            <p className="empty-message">No recent games from members yet</p>
+          ) : (
+            <div className="activity-list">
+              {recentActivity.map(game => {
+                const pct = game.total_questions > 0 ? Math.min(Math.round((game.score / game.total_questions) * 100), 100) : 0;
+                return (
+                  <div key={game.id} className="activity-card">
+                    <div className="activity-top">
+                      <span className="activity-user">{game.profiles?.username}</span>
+                      <span className="activity-date">{new Date(game.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="activity-details">
+                      <span className="activity-category">{game.category}</span>
+                      <span className={`activity-difficulty diff-${game.difficulty}`}>{game.difficulty}</span>
+                    </div>
+                    <div className="activity-score">
+                      <span className="activity-score-num">{game.score}/{game.total_questions}</span>
+                      <span className="activity-pct">{pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
