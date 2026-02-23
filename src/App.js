@@ -15,7 +15,6 @@ import CommunitiesList from './components/CommunitiesList';
 import CommunityDetail from './components/CommunityDetail';
 import CommissionerDashboard from './components/CommissionerDashboard';
 import HelpCenter from './components/HelpCenter';
-import MyStats from './components/MyStats';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -123,7 +122,6 @@ function App() {
     <div className="App">
       {appUsername && (() => {
         const navItems = [
-          { label: 'My Stats', icon: '📊', action: () => setScreen('myStats') },
           { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
           { label: 'Community Feed', icon: '👥', action: () => setScreen('community') },
           { label: 'Create Question', icon: '✍️', action: () => setScreen('createQuestion') },
@@ -143,22 +141,28 @@ function App() {
                     className="app-user-bar-community"
                     onClick={() => { if (viewCommunityId) setScreen('communityDetail'); }}
                   >
-                    🏆 {appCommunityName}
+                    <span aria-hidden="true">🏆</span> {appCommunityName}
                   </button>
                 </>
               )}
             </div>
             <div className="app-nav-dropdown">
-              <button className="app-nav-btn" onClick={() => setNavOpen(p => !p)}>
-                Menu <span className={`app-nav-chevron${navOpen ? ' open' : ''}`}>▾</span>
+              <button
+                className="app-nav-btn"
+                onClick={() => setNavOpen(p => !p)}
+                aria-expanded={navOpen}
+                aria-haspopup="menu"
+                aria-label="Navigation menu"
+              >
+                Menu <span className={`app-nav-chevron${navOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
               </button>
               {navOpen && (
                 <>
-                  <div className="app-nav-backdrop" onClick={() => setNavOpen(false)} />
-                  <div className="app-nav-menu">
+                  <div className="app-nav-backdrop" onClick={() => setNavOpen(false)} aria-hidden="true" />
+                  <div className="app-nav-menu" role="menu">
                     {navItems.map(item => (
-                      <button key={item.label} className="app-nav-item" onClick={() => { item.action(); setNavOpen(false); }}>
-                        <span className="app-nav-icon">{item.icon}</span>{item.label}
+                      <button key={item.label} className="app-nav-item" role="menuitem" onClick={() => { item.action(); setNavOpen(false); }}>
+                        <span className="app-nav-icon" aria-hidden="true">{item.icon}</span>{item.label}
                       </button>
                     ))}
                   </div>
@@ -181,7 +185,6 @@ function App() {
           onViewUserProfile={(userId, username) => viewUserGames(userId, username, 'dashboard')}
         />
       )}
-      {screen === 'myStats' && <MyStats user={session.user} onBack={() => setScreen('dashboard')} />}
       {screen === 'quizConfig' && (
         <QuizSourceSelector
           onStart={startQuizConfig}

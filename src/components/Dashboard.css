@@ -1,25 +1,8 @@
-﻿/* Standardized section headers */
-.dashboard h3,
-.dashboard .achievements-section h3,
-.dashboard .performance-charts h3 {
+/* Dashboard title */
+.dashboard-title {
+  font-size: 20px;
   color: #041E42;
-  font-weight: 700;
-  font-size: 0.95rem;
-  border-left: 3px solid #041E42;
-  padding-left: 10px;
-  margin: 0 0 10px 0;
-}
-
-/* Override child component backgrounds (outer panel provides them) */
-.dashboard .performance-charts {
-  margin-top: 0;
-  padding: 0;
-  background: transparent;
-  border-radius: 0;
-}
-.dashboard .achievements-section {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0 0 16px 0;
 }
 
 /* User avatar in dashboard header */
@@ -107,7 +90,7 @@
 
 /* Dashboard container */
 .dashboard {
-  background: #f5f6f8;
+  background: #F8F9FA;
   min-height: 100vh;
   padding: 20px;
   max-width: 800px;
@@ -176,8 +159,6 @@
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  border-left: 3px solid #041E42;
-  padding-left: 10px;
 }
 .leaderboard table {
   width: 100%;
@@ -204,7 +185,7 @@
 
 /* Recent games */
 .recent-games { margin-top: 14px; }
-.recent-games h3 { color: #041E42; font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; border-left: 3px solid #041E42; padding-left: 10px; }
+.recent-games h3 { color: #041E42; font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
 .game-card {
   background: #fff;
   border: 1px solid #DEE2E6;

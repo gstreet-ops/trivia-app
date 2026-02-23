@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Achievements from './Achievements';
+import PerformanceCharts from './PerformanceCharts';
 import { checkAchievements } from '../utils/achievementChecker';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
@@ -9,12 +10,14 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [recentGames, setRecentGames] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
+  const [allGames, setAllGames] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState('');
 
   useEffect(() => {
     fetchStats();
     loadAchievements();
+    fetchAllGames();
     checkAdminStatus();
   }, [user]);
 
@@ -22,6 +25,12 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
     const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
     setIsAdmin(data?.role === 'admin' || data?.super_admin === true);
     setUsername(data?.username || 'User');
+  };
+
+  const fetchAllGames = async () => {
+    const { data, error } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (error) console.error('fetchAllGames error:', error);
+    setAllGames(data || []);
   };
 
   const loadAchievements = async () => {
@@ -63,29 +72,28 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
 
   return (
     <div className="dashboard">
-      <h2 style={{color:'#041E42', fontSize:'1.15rem', fontWeight:700, margin:'0 0 4px 0'}}>Welcome back, {username}!</h2>
-      <div style={{textAlign:'center', margin:'10px 0 14px'}}>
-        <button onClick={onStartQuiz} style={{display:'inline-block', padding:'14px 32px', fontSize:'0.85rem', fontWeight:700, background:'#041E42', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', letterSpacing:'0.02em', boxShadow:'0 2px 8px rgba(4,30,66,0.25)'}}>Start New Quiz</button>
-      </div>
-      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'14px', width:'100%'}}>
+      <h1 className="dashboard-title">Dashboard</h1>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'10px', width:'100%'}}>
         {[
-          {num: stats.totalGames, label: 'Games', icon: '\u{1F3AE}'},
-          {num: stats.avgScore + '%', label: 'Avg Score', icon: '\u{1F4CA}'},
-          {num: stats.bestScore + '%', label: 'Best', icon: '\u{1F3C6}'},
-        ].map(({num, label, icon}) => (
-          <div key={label} style={{background:'#fff', border:'1px solid #DEE2E6', borderTop:'2px solid #041E42', borderRadius:'6px', padding:'6px 3px', textAlign:'center'}}>
-            <div style={{fontSize:'1rem', lineHeight:1, marginBottom:'2px'}}>{icon}</div>
+          {num: stats.totalGames, label: 'Games'},
+          {num: stats.avgScore + '%', label: 'Avg Score'},
+          {num: stats.bestScore + '%', label: 'Best'},
+        ].map(({num, label}) => (
+          <div key={label} style={{background:'#fff', border:'1px solid #DEE2E6', borderTop:'2px solid #041E42', borderRadius:'6px', padding:'10px 3px', textAlign:'center'}}>
             <div style={{fontSize:'0.75rem', fontWeight:700, color:'#041E42', lineHeight:1.2}}>{num}</div>
             <div style={{fontSize:'0.5rem', color:'#54585A', marginTop:'1px', textTransform:'uppercase', letterSpacing:'0.02em'}}>{label}</div>
           </div>
         ))}
       </div>
-      <div style={{background:'#fff', borderRadius:'10px', boxShadow:'0 2px 12px rgba(4,30,66,0.08)', padding:'14px 16px', marginBottom:'14px'}}>
-        <Achievements earnedBadges={earnedBadges} />
+      <div style={{textAlign:'center', marginBottom:'10px'}}>
+        <button onClick={onStartQuiz} style={{display:'inline-block', padding:'12px 20px', fontSize:'0.72rem', fontWeight:600, background:'#041E42', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer'}}>Start New Quiz</button>
       </div>
+
+      <Achievements earnedBadges={earnedBadges} />
+      <PerformanceCharts games={allGames} />
       <div className="leaderboard">
-        <h3>🏆 Community Leaderboard</h3>
-        <table>
+        <h3><span aria-hidden="true">🏆</span> Community Leaderboard</h3>
+        <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (
             <tr key={index}>
@@ -107,7 +115,15 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
         <div className="recent-games">
           <h3>Recent Games</h3>
           {recentGames.map(game => (
-            <div key={game.id} className="game-card" onClick={() => onReviewGame(game.id)}>
+            <div
+              key={game.id}
+              className="game-card"
+              onClick={() => onReviewGame(game.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onReviewGame(game.id)}
+              aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
+            >
               <div className="game-info">
                 <span className="game-category">{game.category}</span>
                 <span className="game-difficulty">{game.difficulty}</span>

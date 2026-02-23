@@ -107,12 +107,12 @@ function QuizScreen({ config, onEnd }) {
 
   const handleHint = () => {
     if (hintUsed || showResult) return;
-    
+
     const currentQuestion = questions[currentQuestionIndex];
     const wrongAnswers = currentQuestion.allAnswers.filter(
       answer => answer !== currentQuestion.correctAnswer
     );
-    
+
     // Randomly select 2 wrong answers to hide
     const answersToHide = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 2);
     setHiddenAnswers(answersToHide);
@@ -148,41 +148,53 @@ function QuizScreen({ config, onEnd }) {
 
       <div className="question-container">
         <h2 className="question">{currentQuestion.question}</h2>
-        
+
         <div className="answers-grid">
           {currentQuestion.allAnswers.map((answer, index) => {
             const isHidden = hiddenAnswers.includes(answer);
             const isSelected = selectedAnswer === answer;
             const isCorrect = answer === currentQuestion.correctAnswer;
-            
+
             let className = 'answer-btn';
             if (isHidden) className += ' hidden';
             if (showResult && isSelected && !isCorrect) className += ' wrong';
             if (showResult && isCorrect) className += ' correct';
             if (isSelected && !showResult) className += ' selected';
-            
+
+            const ariaLabel = !showResult
+              ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer}`
+              : isCorrect
+                ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer} — Correct`
+                : isSelected
+                  ? `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer} — Incorrect`
+                  : `Option ${index + 1} of ${currentQuestion.allAnswers.length}: ${answer}`;
+
             return (
               <button
                 key={index}
                 className={className}
                 onClick={() => handleAnswerClick(answer)}
                 disabled={showResult || isHidden}
+                aria-label={ariaLabel}
               >
                 {answer}
+                {showResult && isCorrect && <span aria-hidden="true"> ✓</span>}
+                {showResult && isSelected && !isCorrect && <span aria-hidden="true"> ✗</span>}
               </button>
             );
           })}
         </div>
 
         <div className="quiz-actions">
-          <button 
-            className="hint-btn" 
+          <button
+            className="hint-btn"
             onClick={handleHint}
             disabled={hintUsed || showResult}
+            aria-label={hintUsed ? 'Hint already used' : 'Remove two incorrect answers (50/50 hint)'}
           >
             {hintUsed ? 'Hint Used' : 'Use Hint (50/50)'}
           </button>
-          
+
           {showResult && (
             <button className="next-btn" onClick={handleNext}>
               {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
