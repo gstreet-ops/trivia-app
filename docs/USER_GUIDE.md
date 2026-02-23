@@ -41,7 +41,6 @@ After logging in you land on your personal Dashboard. It shows:
 - **Stats bar** — Total Games, Average Score %, Best Score %
 - **Start New Quiz** button
 - **Achievement Badges** — badges you have earned
-- **Performance Charts** — score trend over time and average % by category
 - **Community Leaderboard** — top 10 players on the platform (public games only)
 - **Recent Games** — your last 5 games, click any to review answers
 
@@ -51,9 +50,11 @@ The persistent top bar (visible on every screen) contains:
 - **Your avatar and username** (left side)
 - **Your active community** (if you belong to one) — click it to jump directly to that community
 - **Menu button** (right side) — opens a dropdown with:
+  - My Stats
   - My Leagues
   - Community Feed
   - Create Question
+  - Help
   - Settings
   - Admin Panel (admins only)
 
@@ -117,12 +118,14 @@ Achievements are badges earned for hitting milestones. They appear on your Dashb
 
 ---
 
-## Performance Charts
+## My Stats
 
-The **Performance Charts** section on your Dashboard shows two charts (requires at least 1 game):
+Access **My Stats** from the **Menu** dropdown. This dedicated page shows your performance charts (requires at least 1 game):
 
 - **Score Trend** — line chart of your score % over every game you've played, oldest to newest
 - **Performance by Category** — bar chart of your average % per category across all games
+
+Click **Back to Dashboard** to return.
 
 ---
 

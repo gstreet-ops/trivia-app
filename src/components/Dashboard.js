@@ -2,7 +2,6 @@
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Achievements from './Achievements';
-import PerformanceCharts from './PerformanceCharts';
 import { checkAchievements } from '../utils/achievementChecker';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
@@ -10,14 +9,12 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [recentGames, setRecentGames] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
-  const [allGames, setAllGames] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState('');
 
   useEffect(() => {
     fetchStats();
     loadAchievements();
-    fetchAllGames();
     checkAdminStatus();
   }, [user]);
 
@@ -25,12 +22,6 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
     const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
     setIsAdmin(data?.role === 'admin' || data?.super_admin === true);
     setUsername(data?.username || 'User');
-  };
-
-  const fetchAllGames = async () => {
-    const { data, error } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    if (error) console.error('fetchAllGames error:', error);
-    setAllGames(data || []);
   };
 
   const loadAchievements = async () => {
@@ -91,9 +82,6 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       </div>
       <div style={{background:'#fff', borderRadius:'10px', boxShadow:'0 2px 12px rgba(4,30,66,0.08)', padding:'14px 16px', marginBottom:'14px'}}>
         <Achievements earnedBadges={earnedBadges} />
-      </div>
-      <div style={{background:'#fff', borderRadius:'10px', boxShadow:'0 2px 12px rgba(4,30,66,0.08)', padding:'14px 16px', marginBottom:'14px'}}>
-        <PerformanceCharts games={allGames} />
       </div>
       <div className="leaderboard">
         <h3>🏆 Community Leaderboard</h3>

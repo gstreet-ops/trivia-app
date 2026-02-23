@@ -28,8 +28,7 @@
 - [x] Total games, average score %, best score % stats
 - [x] Start New Quiz button
 - [x] Achievement badge display
-- [x] Score trend line chart (Recharts)
-- [x] Performance by category bar chart (Recharts)
+- [x] Dedicated My Stats page (score trend + category charts, moved from Dashboard)
 - [x] Community leaderboard (top 10 public players)
 - [x] Clickable leaderboard player names → user profile
 - [x] Recent games list (last 5, click to review)

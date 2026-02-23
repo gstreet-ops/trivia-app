@@ -15,6 +15,7 @@ import CommunitiesList from './components/CommunitiesList';
 import CommunityDetail from './components/CommunityDetail';
 import CommissionerDashboard from './components/CommissionerDashboard';
 import HelpCenter from './components/HelpCenter';
+import MyStats from './components/MyStats';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -122,6 +123,7 @@ function App() {
     <div className="App">
       {appUsername && (() => {
         const navItems = [
+          { label: 'My Stats', icon: '📊', action: () => setScreen('myStats') },
           { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
           { label: 'Community Feed', icon: '👥', action: () => setScreen('community') },
           { label: 'Create Question', icon: '✍️', action: () => setScreen('createQuestion') },
@@ -179,6 +181,7 @@ function App() {
           onViewUserProfile={(userId, username) => viewUserGames(userId, username, 'dashboard')}
         />
       )}
+      {screen === 'myStats' && <MyStats user={session.user} onBack={() => setScreen('dashboard')} />}
       {screen === 'quizConfig' && (
         <QuizSourceSelector
           onStart={startQuizConfig}
