@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Achievements from './Achievements';
-import PerformanceCharts from './PerformanceCharts';
 import { checkAchievements } from '../utils/achievementChecker';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
@@ -10,26 +9,18 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [recentGames, setRecentGames] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
-  const [allGames, setAllGames] = useState([]);
   const [username, setUsername] = useState('');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchStats();
     loadAchievements();
-    fetchAllGames();
     checkAdminStatus();
   }, [user]);
 
   const checkAdminStatus = async () => {
     const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
     setUsername(data?.username || 'User');
-  };
-
-  const fetchAllGames = async () => {
-    const { data, error } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    if (error) console.error('fetchAllGames error:', error);
-    setAllGames(data || []);
   };
 
   const loadAchievements = async () => {
@@ -98,11 +89,6 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       {/* Achievements */}
       <div className="dashboard-section">
         <Achievements earnedBadges={earnedBadges} />
-      </div>
-
-      {/* Performance Charts */}
-      <div className="dashboard-section">
-        <PerformanceCharts games={allGames} />
       </div>
 
       {/* Leaderboard */}
