@@ -1,0 +1,43 @@
+.my-stats {
+  background: #f5f6f8;
+  min-height: 100vh;
+  padding: 16px 16px 32px;
+  max-width: 800px;
+  width: 100%;
+}
+
+.my-stats-title {
+  color: #041E42;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+.my-stats-loading {
+  color: #54585A;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.my-stats-section {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #DEE2E6;
+  padding: 16px;
+}
+
+.my-stats .back-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 6px;
+  color: #041E42;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.1s;
+}
+.my-stats .back-btn:hover {
+  background: #E8ECF0;
+}
