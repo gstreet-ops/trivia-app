@@ -138,6 +138,7 @@
 ### Near-term
 
 - [ ] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
+- [x] **Simplified role model (Phase 1)** — three roles: User, Commissioner (per-community), Super Admin (platform-wide). Removed redundant `admin` role.
 - [ ] **Timer per question** — countdown with auto-submit on expiry
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
@@ -153,6 +154,7 @@
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
 - [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
 - [ ] **Admin delete user** — remove a user account from the platform
+- [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
 - [ ] **Community announcements** — commissioner can post messages visible to all members
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
 - [ ] **Season reset** — archive season data and start fresh rankings
@@ -160,6 +162,7 @@
 
 ### Longer-term
 
+- [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
 - [ ] **Real-time multiplayer quiz** — synchronous head-to-head trivia via WebSockets or Supabase Realtime
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Image questions** — support attaching an image to a question

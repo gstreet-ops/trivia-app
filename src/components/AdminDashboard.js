@@ -14,7 +14,7 @@ function AdminDashboard({ onBack }) {
   const fetchAdminData = async () => {
     try {
       const { data: allGames } = await supabase.from('games').select('*');
-      const { data: allUsers } = await supabase.from('profiles').select('id, username, created_at, role');
+      const { data: allUsers } = await supabase.from('profiles').select('id, username, created_at, role, super_admin');
       const { data: publicGames } = await supabase.from('games').select('*').eq('visibility', 'public');
       const categoryCount = {};
       allGames?.forEach(game => { categoryCount[game.category] = (categoryCount[game.category] || 0) + 1; });
@@ -51,12 +51,12 @@ function AdminDashboard({ onBack }) {
     }
   };
 
-  if (loading) return (<div className="admin-dashboard"><button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button><h1 className="admin-title">🛡️ Admin Dashboard</h1><p className="admin-empty">Loading...</p></div>);
+  if (loading) return (<div className="admin-dashboard"><button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button><h1 className="admin-title">🛡️ Super Admin</h1><p className="admin-empty">Loading...</p></div>);
 
   return (
     <div className="admin-dashboard">
       <button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button>
-      <h1 className="admin-title">🛡️ Admin Dashboard</h1>
+      <h1 className="admin-title">🛡️ Super Admin</h1>
 
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
@@ -132,7 +132,7 @@ function AdminDashboard({ onBack }) {
               {users.map(user => (
                 <tr key={user.id}>
                   <td>{user.username}</td>
-                  <td><span className={`role-badge role-${user.role || 'user'}`}>{user.role || 'user'}</span></td>
+                  <td><span className={`role-badge role-${user.super_admin ? 'admin' : 'user'}`}>{user.super_admin ? 'super admin' : 'user'}</span></td>
                   <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}

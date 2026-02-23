@@ -57,9 +57,8 @@ function App() {
   const fetchUserRole = async (userId) => {
     const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', userId).single();
     if (data?.super_admin) setUserRole('super_admin');
-    else if (data?.role === 'admin') setUserRole('admin');
     else setUserRole('user');
-    setAppIsAdmin(data?.super_admin === true || data?.role === 'admin');
+    setAppIsAdmin(data?.super_admin === true);
     setAppUsername(data?.username || '');
 
     // Pre-load community name if user belongs to exactly one community
@@ -129,7 +128,7 @@ function App() {
           { label: 'My Leagues', icon: '🏆', action: () => setScreen('communities') },
           { label: 'Help', icon: '❓', action: () => setScreen('help') },
           { label: 'Settings', icon: '⚙️', action: () => setScreen('settings') },
-          ...(appIsAdmin ? [{ label: 'Admin Panel', icon: '🛡️', action: () => setScreen('admin') }] : []),
+          ...(appIsAdmin ? [{ label: 'Super Admin', icon: '🛡️', action: () => setScreen('admin') }] : []),
         ];
         return (
           <div className="app-user-bar">
