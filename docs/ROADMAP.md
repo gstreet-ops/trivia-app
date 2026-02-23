@@ -145,6 +145,11 @@
 
 ### Medium-term
 
+- [ ] **Community Marketplace** — full community discovery and governance system:
+  - Community creation requests with super admin approval (replaces open Create Community)
+  - Commissioner toggle: public (discoverable) vs private (invite-only)
+  - Join request flow for public communities with commissioner approve/reject
+  - Marketplace browser page listing public communities with stats
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
 - [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
 - [ ] **Admin delete user** — remove a user account from the platform

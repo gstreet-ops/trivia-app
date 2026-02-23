@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunitiesList.css';
 
-function CommunitiesList({ user, onViewCommunity, onBack }) {
+function CommunitiesList({ user, userRole, onViewCommunity, onBack }) {
   const [myCommunities, setMyCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -55,7 +55,7 @@ function CommunitiesList({ user, onViewCommunity, onBack }) {
     <div className="communities-list">
       <button className="back-btn" onClick={onBack}>Back to Dashboard</button>
       <h1>My Communities</h1>
-      <div className="action-buttons"><button className="create-btn" onClick={() => setShowCreateModal(true)}>Create Community</button><button className="join-btn" onClick={() => setShowJoinModal(true)}>Join Community</button></div>
+      <div className="action-buttons">{userRole === 'super_admin' && <button className="create-btn" onClick={() => setShowCreateModal(true)}>Create Community</button>}<button className="join-btn" onClick={() => setShowJoinModal(true)}>Join Community</button></div>
       {myCommunities.length === 0 ? <div className="empty-state"><p>You haven't joined any communities yet.</p><p>Create your own or join with an invite code!</p></div> : (
         <div className="communities-grid">
           {myCommunities.map(community => (

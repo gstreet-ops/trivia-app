@@ -218,6 +218,7 @@ function App() {
       {screen === 'communities' && (
         <CommunitiesList
           user={session.user}
+          userRole={userRole}
           onViewCommunity={(communityId, communityName) => {
             setViewCommunityId(communityId);
             setAppCommunityName(communityName || '');
