@@ -1,47 +1,340 @@
-﻿.admin-dashboard { background: white; border-radius: 20px; padding: 40px; max-width: 1400px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-.admin-dashboard h1 { color: #e74c3c; font-size: 2.5rem; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
-.admin-dashboard h1::before { content: "🔐"; }
-.admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
-.admin-stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; text-align: center; color: white; }
-.stat-icon { font-size: 3rem; margin-bottom: 10px; }
-.stat-number { font-size: 3rem; font-weight: 700; margin-bottom: 5px; }
-.stat-label { font-size: 1rem; opacity: 0.9; }
-.admin-section { margin-bottom: 40px; }
-.admin-section h2 { color: #333; font-size: 1.8rem; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
-.popular-category { padding: 20px; background: #f8f9ff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
-.category-name { font-size: 1.5rem; font-weight: 600; color: #667eea; }
-.category-count { color: #888; font-size: 1.1rem; }
-.pending-questions { display: grid; gap: 20px; }
-.pending-question-card { background: #f8f9ff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; }
-.question-header { display: flex; gap: 10px; margin-bottom: 15px; }
-.category-badge { padding: 4px 12px; background: #667eea; color: white; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
-.question-text { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 15px; }
-.answers-list { margin-bottom: 15px; }
-.answer { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; font-size: 0.95rem; }
-.answer.correct { background: #d4edda; color: #155724; }
-.answer.incorrect { background: #f8d7da; color: #721c24; }
-.question-footer { display: flex; justify-content: space-between; align-items: center; }
-.creator { color: #888; font-size: 0.9rem; }
-.review-actions { display: flex; gap: 10px; }
-.approve-btn, .reject-btn { padding: 8px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.approve-btn { background: #27ae60; color: white; }
-.approve-btn:hover { background: #229954; }
-.reject-btn { background: #e74c3c; color: white; }
-.reject-btn:hover { background: #c0392b; }
-.admin-table { overflow-x: auto; }
-.admin-table table { width: 100%; border-collapse: collapse; }
-.admin-table th { background: #667eea; color: white; padding: 15px; text-align: left; font-weight: 600; }
-.admin-table td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-.admin-table tr:hover { background: #f8f9ff; }
-.role-badge, .difficulty-badge, .visibility-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; text-transform: capitalize; }
-.role-badge.admin { background: #e74c3c; color: white; }
-.role-badge.user { background: #95a5a6; color: white; }
-.difficulty-badge.easy { background: #27ae60; color: white; }
-.difficulty-badge.medium { background: #f39c12; color: white; }
-.difficulty-badge.hard { background: #e74c3c; color: white; }
-.visibility-badge.public { background: #27ae60; color: white; }
-.visibility-badge.private { background: #95a5a6; color: white; }
-.back-btn { padding: 10px 20px; background: #f0f0f0; border: none; border-radius: 8px; color: #666; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
-.back-btn:hover { background: #e0e0e0; color: #333; }
-.loading { text-align: center; padding: 40px; color: #999; font-style: italic; }
-@media (max-width: 768px) { .admin-dashboard { padding: 20px; } .admin-dashboard h1 { font-size: 1.8rem; } .admin-stats-grid { grid-template-columns: 1fr 1fr; gap: 15px; } .admin-table { font-size: 0.9rem; } .admin-table th, .admin-table td { padding: 10px; } }
+/* ===== Admin Dashboard Container ===== */
+.admin-dashboard {
+  background: #f5f6f8;
+  min-height: 100vh;
+  padding: 16px 16px 32px;
+  max-width: 800px;
+  width: 100%;
+}
+
+/* ===== Back Button ===== */
+.admin-back-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 6px;
+  color: #041E42;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.1s;
+}
+.admin-back-btn:hover {
+  background: #E8ECF0;
+}
+
+/* ===== Title ===== */
+.admin-title {
+  color: #041E42;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+/* ===== Stats Grid ===== */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-stat-card {
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 10px;
+  padding: 16px 12px 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #041E42;
+  border-radius: 10px 10px 0 0;
+}
+
+.admin-stat-icon {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.admin-stat-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #041E42;
+  line-height: 1.2;
+}
+
+.admin-stat-label {
+  font-size: 0.7rem;
+  color: #54585A;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* ===== Sections ===== */
+.admin-section {
+  margin-bottom: 20px;
+}
+
+.admin-section h2 {
+  color: #041E42;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  border-left: 3px solid #041E42;
+  padding-left: 10px;
+}
+
+/* ===== Popular Category ===== */
+.popular-category {
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #041E42;
+}
+
+.category-count {
+  color: #54585A;
+  font-size: 0.8rem;
+}
+
+/* ===== Empty State ===== */
+.admin-empty {
+  text-align: center;
+  color: #54585A;
+  padding: 20px;
+  font-size: 0.85rem;
+}
+
+/* ===== Pending Questions ===== */
+.pending-questions {
+  display: grid;
+  gap: 10px;
+}
+
+.pending-question-card {
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.question-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-category-badge {
+  padding: 2px 10px;
+  background: #041E42;
+  color: white;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.admin-difficulty-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.admin-difficulty-badge.diff-easy {
+  background: #d4edda;
+  color: #155724;
+}
+.admin-difficulty-badge.diff-medium {
+  background: #fff3cd;
+  color: #856404;
+}
+.admin-difficulty-badge.diff-hard {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.question-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #041E42;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.answers-list {
+  margin-bottom: 10px;
+}
+
+.answer {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+.answer.correct {
+  background: #d4edda;
+  color: #155724;
+}
+.answer.incorrect {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.question-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.creator {
+  color: #54585A;
+  font-size: 0.78rem;
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.approve-btn,
+.reject-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.approve-btn {
+  background: #2D6A4F;
+  color: white;
+}
+.approve-btn:hover {
+  background: #236B43;
+}
+.reject-btn {
+  background: #DC3545;
+  color: white;
+}
+.reject-btn:hover {
+  background: #BB2D3B;
+}
+
+/* ===== Tables ===== */
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.admin-table thead tr {
+  background: #041E42;
+  color: #fff;
+}
+
+.admin-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #F0F0F0;
+  color: #54585A;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background: #F8F9FA;
+}
+
+.admin-score {
+  font-weight: 700;
+  color: #041E42;
+}
+
+/* ===== Badges in Tables ===== */
+.role-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.role-admin {
+  background: #041E42;
+  color: white;
+}
+.role-user {
+  background: #E8ECF0;
+  color: #54585A;
+}
+
+.vis-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.vis-public {
+  background: #d4edda;
+  color: #155724;
+}
+.vis-private {
+  background: #E8ECF0;
+  color: #54585A;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 400px) {
+  .admin-stats-grid {
+    gap: 8px;
+  }
+  .admin-stat-card {
+    padding: 12px 8px 10px;
+  }
+  .admin-stat-number {
+    font-size: 1.2rem;
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+}

@@ -51,22 +51,118 @@ function AdminDashboard({ onBack }) {
     }
   };
 
-  if (loading) return (<div className="admin-dashboard"><button className="back-btn" onClick={onBack}>Back to Dashboard</button><h1>Admin Dashboard</h1><p className="loading">Loading...</p></div>);
+  if (loading) return (<div className="admin-dashboard"><button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button><h1 className="admin-title">🛡️ Admin Dashboard</h1><p className="admin-empty">Loading...</p></div>);
 
   return (
     <div className="admin-dashboard">
-      <button className="back-btn" onClick={onBack}>Back to Dashboard</button>
-      <h1>Admin Dashboard</h1>
+      <button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button>
+      <h1 className="admin-title">🛡️ Admin Dashboard</h1>
+
       <div className="admin-stats-grid">
-        <div className="admin-stat-card"><div className="stat-icon">??</div><div className="stat-number">{stats.totalUsers}</div><div className="stat-label">Total Users</div></div>
-        <div className="admin-stat-card"><div className="stat-icon">??</div><div className="stat-number">{stats.totalGames}</div><div className="stat-label">Total Games</div></div>
-        <div className="admin-stat-card"><div className="stat-icon">??</div><div className="stat-number">{stats.publicGames}</div><div className="stat-label">Public Games</div></div>
-        <div className="admin-stat-card"><div className="stat-icon">??</div><div className="stat-number">{stats.avgGamesPerUser}</div><div className="stat-label">Avg Games/User</div></div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon">👥</div>
+          <div className="admin-stat-number">{stats.totalUsers}</div>
+          <div className="admin-stat-label">Total Users</div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon">🎮</div>
+          <div className="admin-stat-number">{stats.totalGames}</div>
+          <div className="admin-stat-label">Total Games</div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon">🌐</div>
+          <div className="admin-stat-number">{stats.publicGames}</div>
+          <div className="admin-stat-label">Public Games</div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon">📊</div>
+          <div className="admin-stat-number">{stats.avgGamesPerUser}</div>
+          <div className="admin-stat-label">Avg Games/User</div>
+        </div>
       </div>
-      <div className="admin-section"><h2>Most Popular Category</h2><div className="popular-category"><span className="category-name">{stats.mostPopularCategory}</span><span className="category-count">{stats.categoryPlayCount} games played</span></div></div>
-      <div className="admin-section"><h2>Pending Questions ({pendingQuestions.length})</h2>{pendingQuestions.length === 0 ? <p style={{textAlign:"center",color:"#999"}}>No pending questions</p> : <div className="pending-questions">{pendingQuestions.map(q => <div key={q.id} className="pending-question-card"><div className="question-header"><span className="category-badge">{q.category}</span><span className="difficulty-badge">{q.difficulty}</span></div><div className="question-text">{q.question_text}</div><div className="answers-list"><div className="answer correct">? {q.correct_answer}</div>{q.incorrect_answers.map((ans, i) => <div key={i} className="answer incorrect">? {ans}</div>)}</div><div className="question-footer"><span className="creator">By: {q.profiles?.username}</span><div className="review-actions"><button className="approve-btn" onClick={() => handleApprove(q.id)}>Approve</button><button className="reject-btn" onClick={() => handleReject(q.id)}>Reject</button></div></div></div>)}</div>}</div>
-      <div className="admin-section"><h2>Recent Users</h2><div className="admin-table"><table><thead><tr><th>Username</th><th>Role</th><th>Joined</th></tr></thead><tbody>{users.map(user => <tr key={user.id}><td>{user.username}</td><td><span className={`role-badge ${user.role}`}>{user.role || 'user'}</span></td><td>{new Date(user.created_at).toLocaleDateString()}</td></tr>)}</tbody></table></div></div>
-      <div className="admin-section"><h2>Recent Games</h2><div className="admin-table"><table><thead><tr><th>User</th><th>Category</th><th>Score</th><th>Difficulty</th><th>Visibility</th><th>Date</th></tr></thead><tbody>{recentGames.map(game => <tr key={game.id}><td>{game.profiles?.username || 'Unknown'}</td><td>{game.category}</td><td>{game.score}/{game.total_questions}</td><td><span className={`difficulty-badge ${game.difficulty}`}>{game.difficulty}</span></td><td><span className={`visibility-badge ${game.visibility}`}>{game.visibility}</span></td><td>{new Date(game.created_at).toLocaleDateString()}</td></tr>)}</tbody></table></div></div>
+
+      <div className="admin-section">
+        <h2>Most Popular Category</h2>
+        <div className="popular-category">
+          <span className="category-name">{stats.mostPopularCategory}</span>
+          <span className="category-count">{stats.categoryPlayCount} games played</span>
+        </div>
+      </div>
+
+      <div className="admin-section">
+        <h2>Pending Questions ({pendingQuestions.length})</h2>
+        {pendingQuestions.length === 0 ? (
+          <p className="admin-empty">No pending questions</p>
+        ) : (
+          <div className="pending-questions">
+            {pendingQuestions.map(q => (
+              <div key={q.id} className="pending-question-card">
+                <div className="question-header">
+                  <span className="admin-category-badge">{q.category}</span>
+                  <span className={`admin-difficulty-badge diff-${q.difficulty}`}>{q.difficulty}</span>
+                </div>
+                <div className="question-text">{q.question_text}</div>
+                <div className="answers-list">
+                  <div className="answer correct">✓ {q.correct_answer}</div>
+                  {q.incorrect_answers.map((ans, i) => (
+                    <div key={i} className="answer incorrect">✗ {ans}</div>
+                  ))}
+                </div>
+                <div className="question-footer">
+                  <span className="creator">By: {q.profiles?.username}</span>
+                  <div className="review-actions">
+                    <button className="approve-btn" onClick={() => handleApprove(q.id)}>✓ Approve</button>
+                    <button className="reject-btn" onClick={() => handleReject(q.id)}>✗ Reject</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="admin-section">
+        <h2>Recent Users</h2>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr><th>Username</th><th>Role</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user.id}>
+                  <td>{user.username}</td>
+                  <td><span className={`role-badge role-${user.role || 'user'}`}>{user.role || 'user'}</span></td>
+                  <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="admin-section">
+        <h2>Recent Games</h2>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr><th>User</th><th>Category</th><th>Score</th><th>Diff</th><th>Vis</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              {recentGames.map(game => (
+                <tr key={game.id}>
+                  <td>{game.profiles?.username || 'Unknown'}</td>
+                  <td>{game.category}</td>
+                  <td className="admin-score">{game.score}/{game.total_questions}</td>
+                  <td><span className={`admin-difficulty-badge diff-${game.difficulty}`}>{game.difficulty}</span></td>
+                  <td><span className={`vis-badge vis-${game.visibility}`}>{game.visibility}</span></td>
+                  <td>{new Date(game.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
