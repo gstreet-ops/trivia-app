@@ -25,11 +25,9 @@
 - [x] Per-answer log saved to `game_answers` for review
 
 ### Dashboard
-- [x] Total games, average score %, best score % stats
+- [x] Total games, average score %, best score % stats (capped at 100%)
 - [x] Start New Quiz button
 - [x] Achievement badge display
-- [x] Score trend line chart (Recharts)
-- [x] Performance by category bar chart (Recharts)
 - [x] Community leaderboard (top 10 public players)
 - [x] Clickable leaderboard player names → user profile
 - [x] Recent games list (last 5, click to review)
@@ -103,6 +101,11 @@
 
 ### Community Feed
 - [x] Public game activity feed
+
+### My Stats
+- [x] Dedicated My Stats page (accessible from nav menu)
+- [x] Score trend line chart (Recharts)
+- [x] Performance by category bar chart (Recharts)
 
 ### User Profiles
 - [x] View another user's public profile and game history
