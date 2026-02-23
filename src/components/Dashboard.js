@@ -73,7 +73,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
     <div className="dashboard">
       <h2 className="dashboard-welcome">Welcome back, {username}!</h2>
       <div className="dashboard-cta">
-        <button onClick={onStartQuiz} className="start-quiz-btn">Start New Quiz</button>
+        <button onClick={onStartQuiz} className="dashboard-start-btn">Start New Quiz</button>
       </div>
 
       {/* Stats Cards */}

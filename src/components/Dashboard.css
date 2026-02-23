@@ -20,7 +20,7 @@
   margin-bottom: 16px;
 }
 
-.start-quiz-btn {
+.dashboard-start-btn {
   display: inline-block;
   padding: 14px 36px;
   background: #041E42;
@@ -34,10 +34,10 @@
   box-shadow: 0 2px 8px rgba(4, 30, 66, 0.25);
   transition: background 0.15s, transform 0.1s;
 }
-.start-quiz-btn:hover {
+.dashboard-start-btn:hover {
   background: #0a2d5e;
 }
-.start-quiz-btn:active {
+.dashboard-start-btn:active {
   transform: scale(0.98);
 }
 
@@ -76,10 +76,11 @@
 }
 
 .stat-number {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #041E42;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .stat-label {
