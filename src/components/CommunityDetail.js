@@ -9,9 +9,9 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchCommunityData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId]);
 
   const fetchCommunityData = async () => {

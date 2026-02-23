@@ -8,9 +8,9 @@ function GameReview({ gameId, onBack }) {
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchGameDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
   const fetchGameDetails = async () => {

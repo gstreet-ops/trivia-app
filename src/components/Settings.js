@@ -7,9 +7,9 @@ function Settings({ user, onBack }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchProfile = async () => {

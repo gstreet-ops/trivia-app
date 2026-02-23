@@ -15,9 +15,9 @@ function QuizScreen({ config, onEnd }) {
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
   const [answersLog, setAnswersLog] = useState([]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchQuestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Map our category IDs to The Trivia API categories

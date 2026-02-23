@@ -11,12 +11,11 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [username, setUsername] = useState('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchStats();
     loadAchievements();
     checkAdminStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const checkAdminStatus = async () => {
