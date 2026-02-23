@@ -9,6 +9,7 @@ function CommunityFeed({ currentUserId, onBack, onViewGame, onViewUserProfile })
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPublicGames();
   }, [categoryFilter, difficultyFilter, sortBy]);

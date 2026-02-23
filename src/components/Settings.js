@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './Settings.css';
 
@@ -7,6 +7,7 @@ function Settings({ user, onBack }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchProfile();
   }, [user]);

@@ -11,6 +11,7 @@ function CommunitiesList({ user, onViewCommunity, onBack }) {
   const [newCommunityName, setNewCommunityName] = useState('');
   const [error, setError] = useState(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchMyCommunities(); }, [user]);
 
   const fetchMyCommunities = async () => {

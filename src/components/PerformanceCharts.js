@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './PerformanceCharts.css';
 

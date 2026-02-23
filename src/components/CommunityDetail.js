@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
 
@@ -9,6 +9,7 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchCommunityData();
   }, [communityId]);

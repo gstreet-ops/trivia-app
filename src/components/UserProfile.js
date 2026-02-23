@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './UserProfile.css';
 import Achievements from './Achievements';
@@ -10,6 +10,7 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUserData();
   }, [userId]);

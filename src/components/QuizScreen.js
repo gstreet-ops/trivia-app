@@ -15,6 +15,7 @@ function QuizScreen({ config, onEnd }) {
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
   const [answersLog, setAnswersLog] = useState([]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchQuestions();
   }, []);
