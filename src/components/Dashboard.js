@@ -83,7 +83,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
           {num: stats.bestScore + '%', label: 'Best', icon: '\u{1F3C6}'},
         ].map(({num, label, icon}) => (
           <div key={label} style={{background:'#fff', border:'1px solid #DEE2E6', borderTop:'2px solid #041E42', borderRadius:'6px', padding:'6px 3px', textAlign:'center'}}>
-            <div style={{fontSize:'0.65rem', marginBottom:'1px'}}>{icon}</div>
+            <div style={{fontSize:'1rem', lineHeight:1, marginBottom:'2px'}}>{icon}</div>
             <div style={{fontSize:'0.75rem', fontWeight:700, color:'#041E42', lineHeight:1.2}}>{num}</div>
             <div style={{fontSize:'0.5rem', color:'#54585A', marginTop:'1px', textTransform:'uppercase', letterSpacing:'0.02em'}}>{label}</div>
           </div>

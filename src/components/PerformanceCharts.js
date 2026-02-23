@@ -19,7 +19,7 @@ function PerformanceCharts({ games }) {
           <LineChart data={scoreData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="game" label={{ value: 'Game #', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} domain={[0, 100]} />
+            <YAxis label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} domain={[0, 100]} allowDataOverflow={true} />
             <Tooltip formatter={(value) => `${value}%`} />
             <Legend />
             <Line type="monotone" dataKey="score" stroke="#667eea" strokeWidth={3} dot={{ fill: '#667eea', r: 5 }} name="Score %" />
@@ -32,7 +32,7 @@ function PerformanceCharts({ games }) {
           <BarChart data={categoryData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="category" angle={-45} textAnchor="end" height={100} />
-            <YAxis domain={[0, 100]} label={{ value: 'Average %', angle: -90, position: 'insideLeft' }} />
+            <YAxis domain={[0, 100]} allowDataOverflow={true} label={{ value: 'Average %', angle: -90, position: 'insideLeft' }} />
             <Tooltip formatter={(value) => `${value}%`} />
             <Legend />
             <Bar dataKey="percentage" fill="#764ba2" name="Average %" />
