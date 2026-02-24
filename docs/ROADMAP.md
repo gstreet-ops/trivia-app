@@ -83,6 +83,8 @@
 - [x] Analytics tab (category/difficulty performance, hardest/easiest/most-used questions)
 - [x] Invite code regeneration — commissioner can reset/change the invite code from the Settings tab
 - [x] Pagination on question bank — Questions tab uses pagination for large question banks
+- [x] Season reset — archive current season leaderboard, start new season, season history with frozen leaderboards
+- [x] Season-filtered leaderboard — community leaderboard only counts games from current season
 
 ### Admin Dashboard
 - [x] Platform-wide stats (users, games, public games, avg games/user, popular category)
@@ -217,7 +219,7 @@
 - [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
 - [x] **Community announcements** — commissioner can post, edit, delete, pin/unpin announcements; members see them on community detail page with "New" badges
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
-- [ ] **Season reset** — archive season data and start fresh rankings
+- [x] **Season reset** — commissioner can archive current season leaderboard and start fresh rankings; season history with frozen leaderboards viewable by all members; leaderboard filtered to current season
 - [ ] **Multiple communities per user** — currently the top bar only shows one community; support multi-league users
 
 ### Longer-term

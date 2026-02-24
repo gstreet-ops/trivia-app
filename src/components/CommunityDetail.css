@@ -399,3 +399,69 @@
   background: #041E42;
   color: white;
 }
+
+/* Season Badge */
+.cd-season-badge {
+  display: inline-block;
+  background: #041E42;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Past Seasons Archive */
+.cd-archive-card {
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.cd-archive-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s;
+}
+.cd-archive-header:hover {
+  background: #EFF2F7;
+}
+.cd-archive-name {
+  font-weight: 700;
+  color: #041E42;
+  font-size: 0.9rem;
+}
+.cd-archive-dates {
+  font-size: 0.8rem;
+  color: #54585A;
+  flex: 1;
+}
+.cd-archive-games {
+  font-size: 0.8rem;
+  color: #54585A;
+  font-weight: 600;
+}
+.cd-archive-chevron {
+  font-size: 0.82rem;
+  color: #54585A;
+}
+.cd-archive-body {
+  padding: 12px 14px;
+  border-top: 1px solid #E8ECF0;
+}
+.cd-archive-mvp {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #041E42;
+  margin-bottom: 10px;
+}

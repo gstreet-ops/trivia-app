@@ -60,6 +60,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [editingMediaId, setEditingMediaId] = useState(null);
   const [mediaUploading, setMediaUploading] = useState(false);
 
+  // Season management state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmed, setResetConfirmed] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [seasonArchives, setSeasonArchives] = useState([]);
+  const [expandedArchive, setExpandedArchive] = useState(null);
+  const [seasonStats, setSeasonStats] = useState({ gamesThisSeason: 0, activePlayers: 0, topPlayer: null });
+
   // Add Question form state
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '', explanation: '' });
@@ -74,6 +82,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchAnalytics();
     fetchAnnouncements();
     fetchGenRequests();
+    fetchSeasonData();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCommissionerData = async () => {
@@ -173,6 +182,141 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       console.error('Error saving settings:', error);
       alert('Failed to update settings');
     }
+  };
+
+  const fetchSeasonData = async () => {
+    try {
+      // Fetch season archives
+      const { data: archives } = await supabase
+        .from('season_archives')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('season_number', { ascending: false });
+      setSeasonArchives(archives || []);
+
+      // Fetch current season stats
+      const { data: communityData } = await supabase
+        .from('communities')
+        .select('season_start')
+        .eq('id', communityId)
+        .single();
+
+      if (communityData?.season_start) {
+        const { data: seasonGames } = await supabase
+          .from('games')
+          .select('user_id, score, total_questions')
+          .eq('community_id', communityId)
+          .gte('created_at', communityData.season_start);
+
+        const games = seasonGames || [];
+        const playerSet = new Set(games.map(g => g.user_id));
+
+        // Compute top player
+        const playerStats = {};
+        games.forEach(g => {
+          if (!playerStats[g.user_id]) playerStats[g.user_id] = { totalScore: 0, totalQ: 0, games: 0 };
+          playerStats[g.user_id].totalScore += g.score;
+          playerStats[g.user_id].totalQ += g.total_questions;
+          playerStats[g.user_id].games += 1;
+        });
+        let topId = null;
+        let topAvg = 0;
+        Object.entries(playerStats).forEach(([uid, s]) => {
+          const avg = s.totalQ > 0 ? (s.totalScore / s.totalQ) * 100 : 0;
+          if (avg > topAvg || (avg === topAvg && s.games > (playerStats[topId]?.games || 0))) {
+            topAvg = avg;
+            topId = uid;
+          }
+        });
+
+        let topPlayer = null;
+        if (topId) {
+          const { data: profile } = await supabase.from('profiles').select('username').eq('id', topId).single();
+          topPlayer = { id: topId, username: profile?.username || 'Unknown', avg: Math.round(topAvg), games: playerStats[topId].games };
+        }
+
+        setSeasonStats({ gamesThisSeason: games.length, activePlayers: playerSet.size, topPlayer });
+      }
+    } catch (err) {
+      console.error('Error fetching season data:', err);
+    }
+  };
+
+  const handleSeasonReset = async () => {
+    if (!resetConfirmed) return;
+    setResetting(true);
+    try {
+      const oldSeasonNumber = community.current_season || 1;
+
+      // 1. Build leaderboard snapshot from current season games
+      const { data: seasonGames } = await supabase
+        .from('games')
+        .select('user_id, score, total_questions, profiles(username)')
+        .eq('community_id', communityId)
+        .gte('created_at', community.season_start);
+
+      const games = seasonGames || [];
+      const playerMap = {};
+      games.forEach(g => {
+        const uid = g.user_id;
+        if (!playerMap[uid]) playerMap[uid] = { user_id: uid, username: g.profiles?.username || 'Unknown', totalScore: 0, totalQ: 0, games: 0 };
+        playerMap[uid].totalScore += g.score;
+        playerMap[uid].totalQ += g.total_questions;
+        playerMap[uid].games += 1;
+      });
+
+      const leaderboard = Object.values(playerMap)
+        .map(p => ({
+          user_id: p.user_id,
+          username: p.username,
+          avg_score: p.totalQ > 0 ? Math.round((p.totalScore / p.totalQ) * 100) : 0,
+          total_games: p.games,
+        }))
+        .sort((a, b) => b.avg_score - a.avg_score || b.total_games - a.total_games)
+        .map((p, i) => ({ ...p, rank: i + 1 }));
+
+      const totalQuestions = games.reduce((sum, g) => sum + g.total_questions, 0);
+      const topPlayer = leaderboard[0] || null;
+
+      // 2. Insert archive
+      const { error: archiveError } = await supabase.from('season_archives').insert([{
+        community_id: communityId,
+        season_number: oldSeasonNumber,
+        season_start: community.season_start,
+        season_end: community.season_end || new Date().toISOString(),
+        leaderboard_snapshot: leaderboard,
+        total_games: games.length,
+        total_questions_played: totalQuestions,
+        top_player_id: topPlayer?.user_id || null,
+        top_player_username: topPlayer?.username || null,
+        top_player_avg: topPlayer?.avg_score || null,
+        archived_by: currentUserId
+      }]);
+      if (archiveError) throw archiveError;
+
+      // 3. Update community: increment season, reset dates
+      const now = new Date();
+      const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const { error: updateError } = await supabase
+        .from('communities')
+        .update({
+          current_season: oldSeasonNumber + 1,
+          season_start: now.toISOString(),
+          season_end: thirtyDaysLater.toISOString()
+        })
+        .eq('id', communityId);
+      if (updateError) throw updateError;
+
+      alert(`Season ${oldSeasonNumber} archived! Season ${oldSeasonNumber + 1} has begun.`);
+      setShowResetModal(false);
+      setResetConfirmed(false);
+      fetchCommissionerData();
+      fetchSeasonData();
+    } catch (err) {
+      console.error('Error resetting season:', err);
+      alert('Failed to reset season: ' + err.message);
+    }
+    setResetting(false);
   };
 
   const handleRegenerateInviteCode = async () => {
@@ -1890,6 +2034,147 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         : 'Disabled'}
                     </span>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Season Management */}
+            <div className="commissioner-section" style={{marginTop: '24px'}}>
+              <h2>Season Management</h2>
+              <div className="season-info-grid">
+                <div className="season-info-card">
+                  <div className="season-info-label">Current Season</div>
+                  <div className="season-info-value">Season {community.current_season || 1}</div>
+                </div>
+                <div className="season-info-card">
+                  <div className="season-info-label">Season Dates</div>
+                  <div className="season-info-value">
+                    {community.season_start ? new Date(community.season_start).toLocaleDateString() : '—'} – {community.season_end ? new Date(community.season_end).toLocaleDateString() : '—'}
+                  </div>
+                </div>
+                <div className="season-info-card">
+                  <div className="season-info-label">Days Remaining</div>
+                  <div className="season-info-value">
+                    {community.season_end ? Math.max(0, Math.ceil((new Date(community.season_end) - new Date()) / (1000 * 60 * 60 * 24))) : '—'}
+                  </div>
+                </div>
+                <div className="season-info-card">
+                  <div className="season-info-label">Games This Season</div>
+                  <div className="season-info-value">{seasonStats.gamesThisSeason}</div>
+                </div>
+                <div className="season-info-card">
+                  <div className="season-info-label">Active Players</div>
+                  <div className="season-info-value">{seasonStats.activePlayers}</div>
+                </div>
+                {seasonStats.topPlayer && (
+                  <div className="season-info-card">
+                    <div className="season-info-label">Top Player</div>
+                    <div className="season-info-value">{seasonStats.topPlayer.username} ({seasonStats.topPlayer.avg}%)</div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                className="season-reset-btn"
+                onClick={() => { setShowResetModal(true); setResetConfirmed(false); }}
+              >
+                🔄 Reset Season & Start New
+              </button>
+
+              {/* Reset Confirmation Modal */}
+              {showResetModal && (
+                <div className="season-modal-backdrop" onClick={() => setShowResetModal(false)}>
+                  <div className="season-modal" onClick={e => e.stopPropagation()}>
+                    <h3 className="season-modal-title">Reset Season {community.current_season || 1}?</h3>
+                    <p className="season-modal-warning">
+                      This will archive the current season's leaderboard and start fresh rankings. Game history is preserved but the community leaderboard resets to zero.
+                    </p>
+                    <div className="season-modal-stats">
+                      <div className="season-modal-stat">
+                        <span className="season-modal-stat-label">Games played</span>
+                        <span className="season-modal-stat-value">{seasonStats.gamesThisSeason}</span>
+                      </div>
+                      <div className="season-modal-stat">
+                        <span className="season-modal-stat-label">Active players</span>
+                        <span className="season-modal-stat-value">{seasonStats.activePlayers}</span>
+                      </div>
+                      {seasonStats.topPlayer && (
+                        <div className="season-modal-stat">
+                          <span className="season-modal-stat-label">Top player</span>
+                          <span className="season-modal-stat-value">{seasonStats.topPlayer.username} ({seasonStats.topPlayer.avg}%)</span>
+                        </div>
+                      )}
+                    </div>
+                    <label className="season-modal-confirm-label">
+                      <input
+                        type="checkbox"
+                        checked={resetConfirmed}
+                        onChange={e => setResetConfirmed(e.target.checked)}
+                      />
+                      I understand this cannot be undone
+                    </label>
+                    <div className="season-modal-actions">
+                      <button className="btn-secondary" onClick={() => setShowResetModal(false)}>Cancel</button>
+                      <button
+                        className="season-reset-btn"
+                        disabled={!resetConfirmed || resetting}
+                        onClick={handleSeasonReset}
+                        style={{marginTop: 0}}
+                      >
+                        {resetting ? 'Resetting...' : 'Reset Season'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Season History */}
+              {seasonArchives.length > 0 && (
+                <div className="season-history">
+                  <h3 className="season-history-title">Past Seasons</h3>
+                  {seasonArchives.map(archive => (
+                    <div key={archive.id} className="season-archive-card">
+                      <button
+                        className="season-archive-header"
+                        onClick={() => setExpandedArchive(expandedArchive === archive.id ? null : archive.id)}
+                      >
+                        <span className="season-archive-name">Season {archive.season_number}</span>
+                        <span className="season-archive-dates">
+                          {new Date(archive.season_start).toLocaleDateString()} – {new Date(archive.season_end).toLocaleDateString()}
+                        </span>
+                        <span className="season-archive-chevron">{expandedArchive === archive.id ? '▾' : '▸'}</span>
+                      </button>
+                      {expandedArchive === archive.id && (
+                        <div className="season-archive-body">
+                          <div className="season-archive-summary">
+                            <span>{archive.total_games} games</span>
+                            {archive.top_player_username && (
+                              <span>MVP: {archive.top_player_username} ({archive.top_player_avg != null ? Math.round(archive.top_player_avg) : '—'}%)</span>
+                            )}
+                          </div>
+                          {archive.leaderboard_snapshot && archive.leaderboard_snapshot.length > 0 ? (
+                            <table className="season-archive-table">
+                              <thead>
+                                <tr><th>#</th><th>Player</th><th>Games</th><th>Avg</th></tr>
+                              </thead>
+                              <tbody>
+                                {archive.leaderboard_snapshot.slice(0, 10).map((p, i) => (
+                                  <tr key={i}>
+                                    <td>{p.rank || i + 1}</td>
+                                    <td>{p.username}</td>
+                                    <td>{p.total_games}</td>
+                                    <td>{p.avg_score}%</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p className="empty-message">No leaderboard data</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

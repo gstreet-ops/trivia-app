@@ -2040,3 +2040,218 @@
 .explanation-icon {
   margin-right: 4px;
 }
+
+/* === Season Management === */
+.season-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.season-info-card {
+  background: #F8FAFC;
+  border: 1px solid #E8ECF0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: center;
+}
+.season-info-label {
+  font-size: 0.75rem;
+  color: #54585A;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+.season-info-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #041E42;
+}
+.season-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: #041E42;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.season-reset-btn:hover:not(:disabled) {
+  background: #0A2E5C;
+}
+.season-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Season Reset Modal */
+.season-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 30, 66, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.season-modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 32px;
+  max-width: 440px;
+  width: 90vw;
+  box-shadow: 0 12px 40px rgba(4, 30, 66, 0.25);
+}
+.season-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #041E42;
+  margin: 0 0 12px;
+}
+.season-modal-warning {
+  font-size: 0.9rem;
+  color: #54585A;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.season-modal-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #F8FAFC;
+  border-radius: 8px;
+}
+.season-modal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.season-modal-stat-label {
+  font-size: 0.72rem;
+  color: #54585A;
+  text-transform: uppercase;
+}
+.season-modal-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #041E42;
+}
+.season-modal-confirm-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #041E42;
+  font-weight: 600;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+.season-modal-confirm-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #041E42;
+}
+.season-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Season History */
+.season-history {
+  margin-top: 24px;
+}
+.season-history-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #041E42;
+  margin-bottom: 12px;
+}
+.season-archive-card {
+  border: 1px solid #E8ECF0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.season-archive-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: #F8FAFC;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s;
+}
+.season-archive-header:hover {
+  background: #EFF2F7;
+}
+.season-archive-name {
+  font-weight: 700;
+  color: #041E42;
+  font-size: 0.92rem;
+}
+.season-archive-dates {
+  font-size: 0.82rem;
+  color: #54585A;
+  flex: 1;
+}
+.season-archive-chevron {
+  font-size: 0.85rem;
+  color: #54585A;
+}
+.season-archive-body {
+  padding: 14px 16px;
+  border-top: 1px solid #E8ECF0;
+}
+.season-archive-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #54585A;
+  margin-bottom: 12px;
+}
+.season-archive-summary span {
+  font-weight: 600;
+}
+.season-archive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.season-archive-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: #041E42;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.season-archive-table th:first-child {
+  border-radius: 4px 0 0 0;
+}
+.season-archive-table th:last-child {
+  border-radius: 0 4px 0 0;
+}
+.season-archive-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #E8ECF0;
+  color: #333;
+}
+.season-archive-table tr:last-child td {
+  border-bottom: none;
+}

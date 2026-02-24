@@ -10,6 +10,8 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
   const [recentActivity, setRecentActivity] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
+  const [seasonArchives, setSeasonArchives] = useState([]);
+  const [expandedArchive, setExpandedArchive] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,13 +35,50 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
         .order('joined_at', { ascending: true });
       setMembers(membersData || []);
 
-      const { data: leaderboardData } = await supabase
-        .from('community_leaderboards')
+      // Fetch leaderboard — filter by season_start if available
+      if (communityData?.season_start) {
+        const { data: seasonGames } = await supabase
+          .from('games')
+          .select('user_id, score, total_questions, profiles(username)')
+          .eq('community_id', communityId)
+          .gte('created_at', communityData.season_start);
+
+        const playerMap = {};
+        (seasonGames || []).forEach(g => {
+          const uid = g.user_id;
+          if (!playerMap[uid]) playerMap[uid] = { user_id: uid, username: g.profiles?.username || 'Unknown', total_score: 0, totalQ: 0, games_played: 0 };
+          playerMap[uid].total_score += g.score;
+          playerMap[uid].totalQ += g.total_questions;
+          playerMap[uid].games_played += 1;
+        });
+
+        const lb = Object.values(playerMap)
+          .map(p => ({
+            ...p,
+            avg_percentage: p.totalQ > 0 ? Math.round((p.total_score / p.totalQ) * 100) : 0
+          }))
+          .sort((a, b) => b.avg_percentage - a.avg_percentage || b.games_played - a.games_played)
+          .slice(0, 10)
+          .map((p, i) => ({ ...p, rank: i + 1 }));
+
+        setLeaderboard(lb);
+      } else {
+        const { data: leaderboardData } = await supabase
+          .from('community_leaderboards')
+          .select('*')
+          .eq('community_id', communityId)
+          .order('rank', { ascending: true })
+          .limit(10);
+        setLeaderboard(leaderboardData || []);
+      }
+
+      // Fetch season archives
+      const { data: archives } = await supabase
+        .from('season_archives')
         .select('*')
         .eq('community_id', communityId)
-        .order('rank', { ascending: true })
-        .limit(10);
-      setLeaderboard(leaderboardData || []);
+        .order('season_number', { ascending: false });
+      setSeasonArchives(archives || []);
 
       const { data: questionsData } = await supabase
         .from('community_questions')
@@ -103,6 +142,7 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
       
       <div className="community-header">
         <h1>{community.name}</h1>
+        {community.current_season && <span className="cd-season-badge">Season {community.current_season}</span>}
         {isCommissioner && <span className="commissioner-badge">Commissioner</span>}
       </div>
 
@@ -112,8 +152,8 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
           <span className="value">{community.profiles?.username}</span>
         </div>
         <div className="info-item">
-          <span className="label">Season:</span>
-          <span className="value">{new Date(community.season_start).toLocaleDateString()} - {new Date(community.season_end).toLocaleDateString()}</span>
+          <span className="label">Season {community.current_season || ''} Dates:</span>
+          <span className="value">{new Date(community.season_start).toLocaleDateString()} – {new Date(community.season_end).toLocaleDateString()}</span>
         </div>
         <div className="info-item">
           <span className="label">Invite Code:</span>
@@ -167,7 +207,7 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
 
       <div className="community-sections">
         <div className="section">
-          <h2>🏆 Leaderboard</h2>
+          <h2>🏆 {community.current_season ? `Season ${community.current_season} ` : ''}Leaderboard</h2>
           {leaderboard.length === 0 ? (
             <p className="empty-message">No games played yet</p>
           ) : (
@@ -207,6 +247,55 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
             ))}
           </div>
         </div>
+
+        {seasonArchives.length > 0 && (
+          <div className="section">
+            <h2>📜 Past Seasons</h2>
+            {seasonArchives.map(archive => (
+              <div key={archive.id} className="cd-archive-card">
+                <button
+                  className="cd-archive-header"
+                  onClick={() => setExpandedArchive(expandedArchive === archive.id ? null : archive.id)}
+                >
+                  <span className="cd-archive-name">Season {archive.season_number}</span>
+                  <span className="cd-archive-dates">
+                    {new Date(archive.season_start).toLocaleDateString()} – {new Date(archive.season_end).toLocaleDateString()}
+                  </span>
+                  <span className="cd-archive-games">{archive.total_games} games</span>
+                  <span className="cd-archive-chevron">{expandedArchive === archive.id ? '▾' : '▸'}</span>
+                </button>
+                {expandedArchive === archive.id && (
+                  <div className="cd-archive-body">
+                    {archive.top_player_username && (
+                      <div className="cd-archive-mvp">
+                        🏅 MVP: {archive.top_player_username} ({archive.top_player_avg != null ? Math.round(archive.top_player_avg) : '—'}%)
+                      </div>
+                    )}
+                    {archive.leaderboard_snapshot && archive.leaderboard_snapshot.length > 0 ? (
+                      <table className="leaderboard-table">
+                        <thead>
+                          <tr><th>Rank</th><th>Player</th><th>Games</th><th>Avg %</th></tr>
+                        </thead>
+                        <tbody>
+                          {archive.leaderboard_snapshot.slice(0, 10).map((p, i) => (
+                            <tr key={i}>
+                              <td>{p.rank || i + 1}</td>
+                              <td>{p.username}</td>
+                              <td>{p.total_games}</td>
+                              <td>{p.avg_score}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="empty-message">No leaderboard data</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="section">
           <h2>📋 Recent Activity</h2>
