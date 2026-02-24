@@ -1,10 +1,10 @@
 ﻿.settings {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
   max-width: 800px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-strong);
 }
 
 .settings h1 {
@@ -16,12 +16,12 @@
 .settings-section {
   margin-bottom: 30px;
   padding: 20px;
-  background: #f8f9ff;
+  background: var(--section-bg);
   border-radius: 12px;
 }
 
 .settings-section h2 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
   margin-bottom: 20px;
 }
@@ -33,14 +33,14 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .form-group input {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--input-border);
   border-radius: 8px;
   font-size: 1rem;
 }
@@ -69,7 +69,7 @@
 
 .checkbox-group span {
   font-size: 1rem;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .save-btn {
@@ -100,7 +100,7 @@
 .danger-zone {
   margin-top: 40px;
   padding: 20px;
-  background: #ffe6e6;
+  background: var(--danger-bg);
   border-radius: 12px;
   border-left: 4px solid #e74c3c;
 }
@@ -127,8 +127,8 @@
 }
 
 .success-message {
-  background: #d4edda;
-  color: #155724;
+  background: var(--correct-bg);
+  color: var(--correct-text);
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
@@ -136,7 +136,7 @@
 }
 
 .error-message {
-  background: #ffe6e6;
+  background: var(--danger-bg);
   color: #e74c3c;
   padding: 15px;
   border-radius: 8px;
@@ -146,10 +146,10 @@
 
 .back-btn {
   padding: 10px 20px;
-  background: #f0f0f0;
+  background: var(--badge-bg);
   border: none;
   border-radius: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -157,8 +157,8 @@
 }
 
 .back-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {

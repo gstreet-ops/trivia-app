@@ -1,10 +1,10 @@
 ﻿.game-review {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
   max-width: 900px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-strong);
 }
 
 .review-header {
@@ -34,7 +34,7 @@
 
 .percentage {
   font-size: 1.5rem;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .game-meta {
@@ -45,11 +45,11 @@
 }
 
 .meta-item {
-  background: #f8f9ff;
+  background: var(--section-bg);
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .answers-list {
@@ -65,26 +65,26 @@
 }
 
 .answer-card.correct {
-  background: #d4edda;
+  background: var(--correct-bg);
   border-color: #28a745;
 }
 
 .answer-card.incorrect {
-  background: #f8d7da;
+  background: var(--incorrect-bg);
   border-color: #dc3545;
 }
 
 .question-number {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
 
 .question-text {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 15px;
 }
 
@@ -96,7 +96,7 @@
 
 .your-answer {
   font-size: 1rem;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .correct-answer {
@@ -106,10 +106,10 @@
 
 .back-btn {
   padding: 10px 20px;
-  background: #f0f0f0;
+  background: var(--badge-bg);
   border: none;
   border-radius: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -117,8 +117,8 @@
 }
 
 .back-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* Explanation */
@@ -137,7 +137,7 @@
   font-size: 1rem;
 }
 .review-explanation-text {
-  color: #444;
+  color: var(--text-primary);
   font-size: 0.95rem;
   line-height: 1.5;
 }

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { applyTheme, getSavedTheme } from '../utils/theme';
 import './Settings.css';
 
 function Settings({ user, onBack }) {
   const [profile, setProfile] = useState({ username: '', profile_visibility: true, leaderboard_visibility: true });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [darkMode, setDarkMode] = useState(getSavedTheme() === 'dark');
 
   useEffect(() => {
     fetchProfile();
@@ -28,6 +30,13 @@ function Settings({ user, onBack }) {
       setMessage('Error saving settings: ' + error.message);
     }
     setSaving(false);
+  };
+
+  const handleThemeToggle = async () => {
+    const newTheme = darkMode ? 'light' : 'dark';
+    setDarkMode(!darkMode);
+    applyTheme(newTheme);
+    await supabase.from('profiles').update({ theme: newTheme }).eq('id', user.id);
   };
 
   const handleLogout = async () => {
@@ -54,6 +63,15 @@ function Settings({ user, onBack }) {
         </div>
         <div className="checkbox-group">
           <label><input type="checkbox" checked={profile.leaderboard_visibility} onChange={(e) => setProfile({ ...profile, leaderboard_visibility: e.target.checked })} /><span>Show me on leaderboards</span></label>
+        </div>
+      </div>
+      <div className="settings-section">
+        <h2>Theme</h2>
+        <div className="checkbox-group">
+          <label>
+            <input type="checkbox" checked={darkMode} onChange={handleThemeToggle} />
+            <span>Dark Mode</span>
+          </label>
         </div>
       </div>
       <button className="save-btn" onClick={saveSettings} disabled={saving}>{saving ? 'Saving...' : 'Save Settings'}</button>

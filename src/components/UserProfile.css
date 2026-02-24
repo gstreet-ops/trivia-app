@@ -1,10 +1,10 @@
 ﻿.user-profile {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
   max-width: 1200px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-strong);
 }
 
 .user-profile h1 {
@@ -14,7 +14,7 @@
 }
 
 .user-profile h3 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
   margin: 30px 0 20px 0;
 }
@@ -52,8 +52,8 @@
 }
 
 .profile-game-card {
-  background: #f8f9ff;
-  border: 2px solid #e0e0e0;
+  background: var(--section-bg);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -99,16 +99,16 @@
 }
 
 .game-date {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .back-btn {
   padding: 10px 20px;
-  background: #f0f0f0;
+  background: var(--bg-hover);
   border: none;
   border-radius: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -116,8 +116,8 @@
 }
 
 .back-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--border-color);
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {

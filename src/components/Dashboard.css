@@ -1,6 +1,6 @@
 /* ===== Dashboard Container ===== */
 .dashboard {
-  background: #f5f6f8;
+  background: var(--bg-primary);
   min-height: 100vh;
   padding: 16px 16px 32px;
   max-width: 800px;
@@ -9,7 +9,7 @@
 
 /* ===== Welcome & CTA ===== */
 .dashboard-welcome {
-  color: #041E42;
+  color: var(--navy);
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0 0 12px 0;
@@ -23,7 +23,7 @@
 .dashboard-start-btn {
   display: inline-block;
   padding: 14px 36px;
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -50,8 +50,8 @@
 }
 
 .stat-card {
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 14px 8px 12px;
   text-align: center;
@@ -65,7 +65,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: #041E42;
+  background: var(--navy);
   border-radius: 10px 10px 0 0;
 }
 
@@ -78,14 +78,14 @@
 .stat-number {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #041E42;
+  color: var(--navy);
   line-height: 1.2;
   white-space: nowrap;
 }
 
 .stat-label {
   font-size: 0.65rem;
-  color: #54585A;
+  color: var(--text-secondary);
   margin-top: 2px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -95,19 +95,19 @@
 /* ===== Standardized section headers ===== */
 .dashboard h3,
 .dashboard .achievements-section h3 {
-  color: #041E42;
+  color: var(--navy);
   font-weight: 700;
   font-size: 0.95rem;
-  border-left: 3px solid #041E42;
+  border-left: 3px solid var(--navy);
   padding-left: 10px;
   margin: 0 0 10px 0;
 }
 
 /* ===== Dashboard Section (white card wrapper) ===== */
 .dashboard-section {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 10px;
-  border: 1px solid #DEE2E6;
+  border: 1px solid var(--border-color);
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -126,18 +126,18 @@
 
 /* ===== Leaderboard ===== */
 .leaderboard {
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 16px;
 }
 .leaderboard h3 {
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 12px;
-  border-left: 3px solid #041E42;
+  border-left: 3px solid var(--navy);
   padding-left: 10px;
 }
 .leaderboard table {
@@ -146,7 +146,7 @@
   font-size: 0.82rem;
 }
 .leaderboard thead tr {
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
 }
 .leaderboard th {
@@ -158,20 +158,20 @@
 }
 .leaderboard td {
   padding: 8px 10px;
-  border-bottom: 1px solid #F0F0F0;
-  color: #54585A;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 .leaderboard tbody tr:last-child td {
   border-bottom: none;
 }
 .leaderboard tbody tr:hover {
-  background: #F8F9FA;
+  background: var(--section-bg);
 }
 .leaderboard-player-link {
   background: none;
   border: none;
   padding: 0;
-  color: #041E42;
+  color: var(--navy);
   font-size: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -187,17 +187,17 @@
   margin-bottom: 16px;
 }
 .recent-games h3 {
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  border-left: 3px solid #041E42;
+  border-left: 3px solid var(--navy);
   padding-left: 10px;
 }
 
 .game-card {
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 8px;
@@ -209,8 +209,8 @@
   transition: background 0.1s, box-shadow 0.15s;
 }
 .game-card:hover {
-  background: #F0F4F8;
-  box-shadow: 0 1px 4px rgba(4, 30, 66, 0.08);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow);
 }
 
 .game-left {
@@ -224,7 +224,7 @@
 .game-category {
   font-weight: 600;
   color: #fff;
-  background: #041E42;
+  background: var(--navy);
   font-size: 0.72rem;
   padding: 3px 10px;
   border-radius: 6px;
@@ -243,16 +243,16 @@
   text-transform: capitalize;
 }
 .diff-easy {
-  background: #d4edda;
-  color: #155724;
+  background: var(--correct-bg);
+  color: var(--correct-text);
 }
 .diff-medium {
-  background: #fff3cd;
+  background: var(--warning-bg);
   color: #856404;
 }
 .diff-hard {
-  background: #f8d7da;
-  color: #721c24;
+  background: var(--incorrect-bg);
+  color: var(--incorrect-text);
 }
 
 .game-center {
@@ -265,14 +265,14 @@
 
 .game-score {
   font-weight: 800;
-  color: #041E42;
+  color: var(--navy);
   font-size: 1rem;
   line-height: 1.2;
 }
 
 .game-pct {
   font-size: 0.65rem;
-  color: #54585A;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -287,7 +287,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
   display: flex;
   align-items: center;
@@ -303,7 +303,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -329,10 +329,10 @@
   top: calc(100% + 6px);
   left: 0;
   min-width: 200px;
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(4, 30, 66, 0.15);
+  box-shadow: var(--shadow-strong);
   z-index: 100;
   overflow: hidden;
 }
@@ -346,20 +346,20 @@
   background: none;
   font-size: 16px;
   font-weight: 500;
-  color: #54585A;
+  color: var(--text-secondary);
   cursor: pointer;
   text-align: left;
   transition: background 0.1s, color 0.1s;
-  border-bottom: 1px solid #DEE2E6;
+  border-bottom: 1px solid var(--border-color);
 }
 .dash-nav-item:last-child { border-bottom: none; }
-.dash-nav-item:hover { background: #E8ECF0; color: #041E42; }
+.dash-nav-item:hover { background: var(--bg-hover); color: var(--navy); }
 .dash-nav-icon { font-size: 16px; width: 22px; text-align: center; }
 
 .username-display {
   margin: 3px 0 0 0;
   font-size: 0.9rem;
-  color: #54585A;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 

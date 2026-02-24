@@ -1,10 +1,10 @@
 ﻿.community-feed {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
   max-width: 1200px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-strong);
 }
 
 .community-feed h1 {
@@ -23,16 +23,18 @@
 .filter-group label {
   display: block;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .filter-group select {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .filter-group select:focus {
@@ -47,8 +49,8 @@
 }
 
 .game-card-feed {
-  background: #f8f9ff;
-  border: 2px solid #e0e0e0;
+  background: var(--section-bg);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s;
@@ -78,7 +80,7 @@
 }
 
 .game-date {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -113,13 +115,13 @@
 .game-score-large {
   font-size: 2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 15px;
 }
 
 .percentage {
   font-size: 1.2rem;
-  color: #888;
+  color: var(--text-muted);
   margin-left: 10px;
 }
 
@@ -142,16 +144,16 @@
 .no-games {
   text-align: center;
   padding: 40px;
-  color: #888;
+  color: var(--text-muted);
   font-size: 1.2rem;
 }
 
 .back-btn {
   padding: 10px 20px;
-  background: #f0f0f0;
+  background: var(--bg-hover);
   border: none;
   border-radius: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -159,8 +161,8 @@
 }
 
 .back-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--border-color);
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {

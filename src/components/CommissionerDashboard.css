@@ -4,22 +4,22 @@
    ============================================================ */
 
 :root {
-  --gt-navy:       #041E42;
+  --gt-navy:       var(--navy, #041E42);
   --gt-navy-light: #1a3a6e;
   --gt-navy-hover: #0a2d5e;
-  --gt-gray:       #54585A;
+  --gt-gray:       var(--text-secondary, #54585A);
   --gt-gray-light: #8B9DC3;
-  --gt-gray-pale:  #E8ECF0;
-  --gt-white:      #FFFFFF;
-  --gt-bg:         #F8F9FA;
-  --gt-border:     #DEE2E6;
+  --gt-gray-pale:  var(--bg-hover, #E8ECF0);
+  --gt-white:      var(--bg-secondary, #FFFFFF);
+  --gt-bg:         var(--section-bg, #F8F9FA);
+  --gt-border:     var(--border-color, #DEE2E6);
   --gt-red:        #C41E3A;
   --gt-red-hover:  #a01730;
   --gt-success:    #2D6A4F;
-  --gt-text:       #212529;
-  --gt-text-muted: #6C757D;
-  --gt-shadow:     0 1px 4px rgba(4, 30, 66, 0.10);
-  --gt-shadow-md:  0 2px 8px rgba(4, 30, 66, 0.14);
+  --gt-text:       var(--text-primary, #212529);
+  --gt-text-muted: var(--text-muted, #6C757D);
+  --gt-shadow:     var(--shadow, 0 1px 4px rgba(4, 30, 66, 0.10));
+  --gt-shadow-md:  var(--shadow-strong, 0 2px 8px rgba(4, 30, 66, 0.14));
   --radius:        6px;
 }
 
@@ -668,7 +668,7 @@
 .question-card:hover { box-shadow: var(--gt-shadow-md); }
 .question-card.selected {
   border-left-color: var(--gt-navy);
-  background: #f0f4ff;
+  background: var(--info-bg);
 }
 
 .question-checkbox {
@@ -1279,7 +1279,7 @@
   align-items: center;
   width: 44px;
   height: 24px;
-  background: #DEE2E6;
+  background: var(--border-color);
   border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s;
@@ -1295,7 +1295,7 @@
   display: block;
   width: 18px;
   height: 18px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 50%;
   position: absolute;
   left: 3px;
@@ -1383,7 +1383,7 @@
 
 .ann-card.pinned {
   border-left: 3px solid var(--gt-navy);
-  background: #F0F4F8;
+  background: var(--bg-hover);
 }
 
 .ann-card-header {
@@ -1411,7 +1411,7 @@
 .ann-pinned-badge {
   font-size: 0.7rem;
   font-weight: 600;
-  background: var(--gt-navy);
+  background: var(--navy);
   color: white;
   padding: 2px 8px;
   border-radius: 10px;
@@ -1453,8 +1453,8 @@
 
 /* ===== AI Generate Tab ===== */
 .gen-form {
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 16px;
   display: flex;
@@ -1470,35 +1470,36 @@
 
 .gen-form-group > label {
   font-size: 0.75rem;
-  color: #54585A;
+  color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .gen-required { color: #d9534f; }
-.gen-optional { color: #54585A; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.gen-optional { color: var(--text-secondary); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
 .gen-form-group input[type="text"],
 .gen-form-group textarea {
   padding: 10px 12px;
-  border: 1px solid #DEE2E6;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.88rem;
-  color: #041E42;
+  color: var(--navy);
   font-family: inherit;
   resize: vertical;
+  background: var(--bg-input);
 }
 
 .gen-form-group input:focus,
 .gen-form-group textarea:focus {
   outline: none;
-  border-color: #041E42;
+  border-color: var(--navy);
 }
 
 .gen-char-count {
   font-size: 0.68rem;
-  color: #54585A;
+  color: var(--text-secondary);
   text-align: right;
 }
 
@@ -1510,11 +1511,11 @@
 
 .gen-radio {
   padding: 6px 14px;
-  border: 1px solid #DEE2E6;
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #54585A;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1522,26 +1523,26 @@
 .gen-radio input[type="radio"] { display: none; }
 
 .gen-radio.active {
-  background: #041E42;
+  background: var(--navy);
   color: white;
-  border-color: #041E42;
+  border-color: var(--navy);
 }
 
 .gen-slider {
   width: 100%;
-  accent-color: #041E42;
+  accent-color: var(--navy);
 }
 
 .gen-slider-labels {
   display: flex;
   justify-content: space-between;
   font-size: 0.68rem;
-  color: #54585A;
+  color: var(--text-secondary);
 }
 
 .gen-submit-btn {
   padding: 12px 20px;
-  background: #041E42;
+  background: var(--navy);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1562,8 +1563,8 @@
 }
 
 .gen-request-card {
-  background: #fff;
-  border: 1px solid #DEE2E6;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 14px;
 }
@@ -1583,7 +1584,7 @@
 
 .gen-request-theme {
   font-weight: 700;
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.92rem;
 }
 
@@ -1596,29 +1597,29 @@
 
 .gen-tag {
   padding: 2px 8px;
-  background: #E8ECF0;
+  background: var(--badge-bg);
   border-radius: 10px;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #54585A;
+  color: var(--text-secondary);
   text-transform: capitalize;
 }
 
 .gen-request-date {
   font-size: 0.72rem;
-  color: #54585A;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
 .gen-request-instructions {
   font-size: 0.8rem;
-  color: #54585A;
+  color: var(--text-secondary);
   font-style: italic;
   margin: 4px 0 0;
 }
 
 .gen-admin-notes {
-  background: #f8d7da;
+  background: var(--incorrect-bg);
   color: #721c24;
   padding: 8px 12px;
   border-radius: 6px;
@@ -1652,7 +1653,7 @@
 .gen-review-btn {
   margin-top: 8px;
   padding: 6px 14px;
-  background: #041E42;
+  background: var(--navy);
   color: white;
   border: none;
   border-radius: 6px;
@@ -1672,8 +1673,8 @@
 }
 
 .gen-q-card {
-  background: #FAFBFC;
-  border: 1px solid #DEE2E6;
+  background: var(--section-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
 }
@@ -1684,7 +1685,7 @@
 
 .gen-q-text {
   font-weight: 600;
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.85rem;
   margin: 0 0 6px;
 }
@@ -1698,8 +1699,8 @@
 
 .gen-q-correct {
   padding: 2px 8px;
-  background: #d4edda;
-  color: #155724;
+  background: var(--correct-bg);
+  color: var(--correct-text);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -1707,7 +1708,7 @@
 
 .gen-q-wrong {
   padding: 2px 8px;
-  background: #f8d7da;
+  background: var(--incorrect-bg);
   color: #721c24;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -1740,8 +1741,8 @@
 
 .gen-discard-btn {
   padding: 4px 10px;
-  background: #E8ECF0;
-  color: #54585A;
+  background: var(--badge-bg);
+  color: var(--text-secondary);
   border: none;
   border-radius: 4px;
   font-size: 0.72rem;
@@ -1749,7 +1750,7 @@
   cursor: pointer;
 }
 
-.gen-discard-btn:hover { background: #DEE2E6; }
+.gen-discard-btn:hover { background: var(--border-color); }
 
 .gen-q-added-label {
   font-size: 0.72rem;
@@ -1777,7 +1778,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  background: #F0F2F5;
+  background: var(--border-light);
   border-radius: 6px;
   margin-bottom: 4px;
 }
@@ -1785,7 +1786,7 @@
 .gen-select-toggle {
   background: none;
   border: none;
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -1796,7 +1797,7 @@
 
 .gen-select-count {
   font-size: 0.75rem;
-  color: #54585A;
+  color: var(--text-secondary);
 }
 
 /* Gen Review: Checkbox row layout */
@@ -1812,7 +1813,7 @@
   height: 16px;
   cursor: pointer;
   flex-shrink: 0;
-  accent-color: #041E42;
+  accent-color: var(--navy);
 }
 
 .gen-q-content {
@@ -1863,7 +1864,7 @@
 
 /* Media edit panel */
 .media-edit-panel {
-  background: #F0F2F5;
+  background: var(--border-light);
   border-radius: 8px;
   padding: 12px;
   margin: 8px 0;
@@ -1930,16 +1931,16 @@
 /* Add Question Form */
 .add-q-toggle {
   padding: 8px 16px;
-  border: 2px solid #041E42;
+  border: 2px solid var(--navy);
   border-radius: 8px;
   background: transparent;
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }
-.add-q-toggle:hover { background: #041E42; color: white; }
+.add-q-toggle:hover { background: var(--navy); color: white; }
 
 .add-q-form {
   margin-top: 14px;
@@ -1948,7 +1949,7 @@
   gap: 12px;
 }
 .add-q-errors {
-  background: #f8d7da;
+  background: var(--incorrect-bg);
   border: 1px solid #f5c6cb;
   border-radius: 6px;
   padding: 8px 12px;
@@ -1968,7 +1969,7 @@
 .add-q-field label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #041E42;
+  color: var(--navy);
 }
 .add-q-field .required { color: #C41E3A; }
 .add-q-field input,
@@ -1985,7 +1986,7 @@
 .add-q-field textarea:focus,
 .add-q-field select:focus {
   outline: none;
-  border-color: #041E42;
+  border-color: var(--navy);
   box-shadow: 0 0 0 2px rgba(4, 30, 66, 0.1);
 }
 .add-q-row-3 {
@@ -2008,7 +2009,7 @@
 }
 .add-q-submit {
   padding: 10px 20px;
-  background: #041E42;
+  background: var(--navy);
   color: white;
   border: none;
   border-radius: 8px;
@@ -2030,11 +2031,11 @@
 .question-explanation-preview {
   margin-top: 8px;
   padding: 8px 12px;
-  background: #F0F4FF;
+  background: var(--info-bg);
   border-left: 3px solid #667eea;
   border-radius: 4px;
   font-size: 0.82rem;
-  color: #444;
+  color: var(--text-secondary);
   line-height: 1.45;
 }
 .explanation-icon {
@@ -2049,15 +2050,15 @@
   margin: 16px 0;
 }
 .season-info-card {
-  background: #F8FAFC;
-  border: 1px solid #E8ECF0;
+  background: var(--section-bg);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 12px 14px;
   text-align: center;
 }
 .season-info-label {
   font-size: 0.75rem;
-  color: #54585A;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   margin-bottom: 4px;
@@ -2065,7 +2066,7 @@
 .season-info-value {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #041E42;
+  color: var(--navy);
 }
 .season-reset-btn {
   display: inline-flex;
@@ -2073,7 +2074,7 @@
   gap: 6px;
   margin-top: 16px;
   padding: 12px 24px;
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -2101,7 +2102,7 @@
   z-index: 1000;
 }
 .season-modal {
-  background: #fff;
+  background: var(--bg-secondary);
   border-radius: 14px;
   padding: 28px 32px;
   max-width: 440px;
@@ -2111,12 +2112,12 @@
 .season-modal-title {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #041E42;
+  color: var(--navy);
   margin: 0 0 12px;
 }
 .season-modal-warning {
   font-size: 0.9rem;
-  color: #54585A;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
 }
@@ -2126,7 +2127,7 @@
   flex-wrap: wrap;
   margin-bottom: 20px;
   padding: 12px;
-  background: #F8FAFC;
+  background: var(--section-bg);
   border-radius: 8px;
 }
 .season-modal-stat {
@@ -2136,20 +2137,20 @@
 }
 .season-modal-stat-label {
   font-size: 0.72rem;
-  color: #54585A;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 .season-modal-stat-value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #041E42;
+  color: var(--navy);
 }
 .season-modal-confirm-label {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.88rem;
-  color: #041E42;
+  color: var(--navy);
   font-weight: 600;
   margin-bottom: 20px;
   cursor: pointer;
@@ -2157,7 +2158,7 @@
 .season-modal-confirm-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #041E42;
+  accent-color: var(--navy);
 }
 .season-modal-actions {
   display: flex;
@@ -2172,11 +2173,11 @@
 .season-history-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #041E42;
+  color: var(--navy);
   margin-bottom: 12px;
 }
 .season-archive-card {
-  border: 1px solid #E8ECF0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   margin-bottom: 8px;
   overflow: hidden;
@@ -2187,7 +2188,7 @@
   gap: 12px;
   width: 100%;
   padding: 12px 16px;
-  background: #F8FAFC;
+  background: var(--section-bg);
   border: none;
   cursor: pointer;
   font-family: inherit;
@@ -2195,32 +2196,32 @@
   transition: background 0.12s;
 }
 .season-archive-header:hover {
-  background: #EFF2F7;
+  background: var(--bg-hover);
 }
 .season-archive-name {
   font-weight: 700;
-  color: #041E42;
+  color: var(--navy);
   font-size: 0.92rem;
 }
 .season-archive-dates {
   font-size: 0.82rem;
-  color: #54585A;
+  color: var(--text-secondary);
   flex: 1;
 }
 .season-archive-chevron {
   font-size: 0.85rem;
-  color: #54585A;
+  color: var(--text-secondary);
 }
 .season-archive-body {
   padding: 14px 16px;
-  border-top: 1px solid #E8ECF0;
+  border-top: 1px solid var(--border-light);
 }
 .season-archive-summary {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   font-size: 0.85rem;
-  color: #54585A;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 .season-archive-summary span {
@@ -2234,7 +2235,7 @@
 .season-archive-table th {
   text-align: left;
   padding: 6px 10px;
-  background: #041E42;
+  background: var(--navy);
   color: #fff;
   font-weight: 600;
   font-size: 0.78rem;
@@ -2249,8 +2250,8 @@
 }
 .season-archive-table td {
   padding: 6px 10px;
-  border-bottom: 1px solid #E8ECF0;
-  color: #333;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
 }
 .season-archive-table tr:last-child td {
   border-bottom: none;

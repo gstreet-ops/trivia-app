@@ -16,12 +16,12 @@
 }
 
 .auth-container {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-strong);
 }
 
 .auth-tabs {
@@ -33,7 +33,7 @@
 .auth-tabs button {
   flex: 1;
   padding: 12px;
-  background: #f0f0f0;
+  background: var(--badge-bg);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -53,14 +53,14 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .form-group input {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--input-border);
   border-radius: 8px;
   font-size: 1rem;
 }
@@ -95,7 +95,7 @@
 }
 
 .error-message {
-  background: #ffe6e6;
+  background: var(--danger-bg);
   color: #e74c3c;
   padding: 12px;
   border-radius: 8px;
@@ -130,22 +130,22 @@
 .back-to-login-btn {
   width: 100%;
   padding: 12px;
-  background: #f0f0f0;
+  background: var(--badge-bg);
   border: none;
   border-radius: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
   margin-top: 15px;
 }
 
 .back-to-login-btn:hover {
-  background: #e0e0e0;
+  background: var(--bg-hover);
 }
 
 .success-message {
-  background: #d4edda;
-  color: #155724;
+  background: var(--correct-bg);
+  color: var(--correct-text);
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 20px;

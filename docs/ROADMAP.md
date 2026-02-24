@@ -182,6 +182,7 @@
 - [x] In-app Help Center with User Guide, Commissioner Guide, FAQ, About tabs and keyword search
 - [x] Sentry error monitoring (ErrorBoundary in index.js, `REACT_APP_SENTRY_DSN` env var)
 - [x] Hash-based routing — URL hash (`#dashboard`, `#review/{id}`, etc.) persists screen state across refresh and enables browser back/forward navigation
+- [x] Dark mode — CSS custom properties across all 23 CSS files, toggle in top bar and Settings, localStorage + Supabase profile persistence, smooth transitions
 
 ---
 
@@ -226,7 +227,7 @@
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install
-- [ ] **Dark mode**
+- [x] **Dark mode** — CSS custom properties for all colors, toggle in Settings and top bar, preference saved to localStorage and Supabase profile for cross-device persistence
 - [ ] **Mobile app** — React Native port
 - [ ] **Scheduled quizzes** — commissioner sets a quiz time; all members play the same questions simultaneously
 - [ ] **Streak tracking** — daily play streak with streak badges

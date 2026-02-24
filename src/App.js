@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import { applyTheme, getSavedTheme } from './utils/theme';
 import './App.css';
 import StartScreen from './components/StartScreen';
 import Dashboard from './components/Dashboard';
@@ -52,6 +53,22 @@ function App() {
   const [userProfileReturn, setUserProfileReturn] = useState('community');
   const [appIsAdmin, setAppIsAdmin] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState(getSavedTheme);
+
+  // Apply saved theme on mount
+  useEffect(() => {
+    applyTheme(getSavedTheme());
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setCurrentTheme(newTheme);
+    applyTheme(newTheme);
+    // Persist to profile if logged in
+    if (session?.user?.id) {
+      supabase.from('profiles').update({ theme: newTheme }).eq('id', session.user.id).then(() => {});
+    }
+  }, [currentTheme, session]);
 
   const navigateTo = useCallback((screenName, params = {}) => {
     if (params.gameId != null) setViewGameId(params.gameId);
@@ -128,11 +145,17 @@ function App() {
   }, [syncFromHash]);
 
   const fetchUserRole = async (userId) => {
-    const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', userId).single();
+    const { data } = await supabase.from('profiles').select('role, super_admin, username, theme').eq('id', userId).single();
     if (data?.super_admin) setUserRole('super_admin');
     else setUserRole('user');
     setAppIsAdmin(data?.super_admin === true);
     setAppUsername(data?.username || '');
+
+    // Apply theme from profile (cross-device persistence)
+    if (data?.theme) {
+      setCurrentTheme(data.theme);
+      applyTheme(data.theme);
+    }
 
     // Pre-load community name if user belongs to exactly one community
     const { data: memberships } = await supabase
@@ -216,6 +239,14 @@ function App() {
                 </>
               )}
               <NotificationBell userId={session.user.id} onNavigate={(screen) => navigateTo(screen)} />
+              <button
+                className="theme-toggle-btn"
+                onClick={toggleTheme}
+                aria-label={currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={currentTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+              >
+                {currentTheme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+              </button>
             </div>
             <div className="app-nav-dropdown">
               <button
