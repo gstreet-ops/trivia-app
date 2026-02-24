@@ -90,14 +90,25 @@ function AdminDashboard({ onBack, currentUserId }) {
   };
 
   const handleApproveAiRequest = async (requestId) => {
-    // TODO: Call Supabase Edge Function to generate questions via Claude API
     const { error } = await supabase.from('generation_requests').update({
       status: 'approved',
       reviewed_by: currentUserId,
       reviewed_at: new Date().toISOString()
     }).eq('id', requestId);
     if (error) { showToast('Failed to approve: ' + error.message, 'error'); return; }
-    showToast('Approved — generation will begin shortly.');
+    showToast('Approved — generating questions...');
+    fetchAiRequests();
+
+    // Call Edge Function to generate questions
+    const { error: fnError } = await supabase.functions.invoke('generate-questions', {
+      body: { request_id: requestId }
+    });
+    if (fnError) {
+      showToast('Generation failed: ' + fnError.message, 'error');
+      console.error('Edge Function error:', fnError);
+    } else {
+      showToast('Questions generated successfully!');
+    }
     fetchAiRequests();
   };
 
@@ -116,23 +127,6 @@ function AdminDashboard({ onBack, currentUserId }) {
     fetchAiRequests();
   };
 
-  const handleSimulateGeneration = async (request) => {
-    const sampleQs = Array.from({ length: request.question_count }, (_, i) => ({
-      question_text: `Sample question ${i + 1} about ${request.theme}?`,
-      correct_answer: 'Correct Answer',
-      incorrect_answers: ['Wrong 1', 'Wrong 2', 'Wrong 3'],
-      category: 'General Knowledge',
-      difficulty: request.difficulty === 'mixed' ? ['easy', 'medium', 'hard'][i % 3] : request.difficulty
-    }));
-    const { error } = await supabase.from('generation_requests').update({
-      status: 'completed',
-      generated_questions: sampleQs,
-      updated_at: new Date().toISOString()
-    }).eq('id', request.id);
-    if (error) { showToast('Simulation failed: ' + error.message, 'error'); return; }
-    showToast('Simulated generation complete.');
-    fetchAiRequests();
-  };
 
   const handleApprove = async (questionId) => {
     const { data, error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
@@ -596,9 +590,6 @@ function AdminDashboard({ onBack, currentUserId }) {
                         <td style={{ fontWeight: 600, color: '#041E42' }}>{req.theme}</td>
                         <td>
                           <span className={`ai-status-badge ai-status-${req.status}`}>{req.status}</span>
-                          {req.status === 'approved' && (
-                            <button className="ai-sim-btn" onClick={() => handleSimulateGeneration(req)} title="Simulate AI generation for testing">Simulate</button>
-                          )}
                         </td>
                         <td>{req.reviewer?.username || '—'}</td>
                         <td>{new Date(req.created_at).toLocaleDateString()}</td>
