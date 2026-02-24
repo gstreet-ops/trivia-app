@@ -133,31 +133,17 @@ function MultiplayerLobby({ user, username, onBack }) {
 
     const channel = supabase.channel(`room-${roomId}`)
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'multiplayer_participants',
         filter: `room_id=eq.${roomId}`
-      }, (payload) => {
-        setParticipants(prev => {
-          if (prev.some(p => p.id === payload.new.id)) return prev;
-          return [...prev, payload.new];
-        });
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'multiplayer_participants',
-        filter: `room_id=eq.${roomId}`
-      }, (payload) => {
-        setParticipants(prev => prev.filter(p => p.id !== payload.old.id));
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'multiplayer_participants',
-        filter: `room_id=eq.${roomId}`
-      }, (payload) => {
-        setParticipants(prev => prev.map(p => p.id === payload.new.id ? payload.new : p));
+      }, async () => {
+        // Re-fetch all participants on any change to ensure complete data (including usernames)
+        const { data } = await supabase
+          .from('multiplayer_participants')
+          .select('*')
+          .eq('room_id', roomId);
+        if (data) setParticipants(data);
       })
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -267,7 +253,7 @@ function MultiplayerLobby({ user, username, onBack }) {
       // Check if full
       const { data: existingParts } = await supabase
         .from('multiplayer_participants')
-        .select('id, user_id')
+        .select('*')
         .eq('room_id', foundRoom.id);
 
       if ((existingParts?.length || 0) >= foundRoom.max_players) {
@@ -327,7 +313,7 @@ function MultiplayerLobby({ user, username, onBack }) {
       // Check if full
       const { data: existingParts } = await supabase
         .from('multiplayer_participants')
-        .select('id, user_id')
+        .select('*')
         .eq('room_id', targetRoom.id);
 
       if ((existingParts?.length || 0) >= targetRoom.max_players) {
@@ -436,7 +422,7 @@ function MultiplayerLobby({ user, username, onBack }) {
         const shuffled = data.sort(() => Math.random() - 0.5).slice(0, room.question_count);
         questions = shuffled.map((q, i) => ({
           room_id: room.id,
-          question_index: i,
+          question_order: i,
           question_text: q.question_text,
           correct_answer: q.correct_answer,
           incorrect_answers: q.incorrect_answers,
@@ -459,7 +445,7 @@ function MultiplayerLobby({ user, username, onBack }) {
         }
         questions = data.slice(0, room.question_count).map((q, i) => ({
           room_id: room.id,
-          question_index: i,
+          question_order: i,
           question_text: decodeHtml(q.question.text),
           correct_answer: decodeHtml(q.correctAnswer),
           incorrect_answers: q.incorrectAnswers.map(decodeHtml),
