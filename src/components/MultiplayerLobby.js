@@ -624,6 +624,25 @@ function MultiplayerLobby({ user, username, onBack }) {
           return [...prev, answer.user_id];
         });
       })
+      .on('broadcast', { event: 'player_answer' }, (msg) => {
+        const { user_id, is_correct, points } = msg.payload;
+        // Track that this player answered
+        setAnsweredPlayers(prev => {
+          if (prev.includes(user_id)) return prev;
+          return [...prev, user_id];
+        });
+        // Update their local score (skip self — already updated locally)
+        setTotalScores(prev => {
+          if (!prev[user_id]) return prev;
+          const updated = { ...prev };
+          updated[user_id] = {
+            ...updated[user_id],
+            points: updated[user_id].points + (points || 0),
+            correct: updated[user_id].correct + (is_correct ? 1 : 0)
+          };
+          return updated;
+        });
+      })
       .subscribe();
 
     answersChannelRef.current = channel;
@@ -663,8 +682,17 @@ function MultiplayerLobby({ user, username, onBack }) {
       return [...prev, user.id];
     });
 
-    // Insert answer into DB
-    await supabase.from('multiplayer_answers').insert([{
+    // Broadcast answer to other players for local score tracking
+    if (answersChannelRef.current) {
+      supabase.channel(`answers-${room.id}`).send({
+        type: 'broadcast',
+        event: 'player_answer',
+        payload: { user_id: user.id, question_index: currentQuestionIndex, is_correct: isCorrect, points }
+      });
+    }
+
+    // Insert answer into DB (best-effort — game scoring works via broadcast)
+    const { error: insertErr } = await supabase.from('multiplayer_answers').insert([{
       room_id: room.id,
       user_id: user.id,
       question_index: currentQuestionIndex,
@@ -673,6 +701,7 @@ function MultiplayerLobby({ user, username, onBack }) {
       answer_time_ms: answerTimeMs,
       points: points
     }]);
+    if (insertErr) console.error('Failed to insert answer:', insertErr.message);
   }, [stopGameTimer, gameQuestions, currentQuestionIndex, room?.id, room?.timer_seconds, user.id, calculatePoints]);
 
   const handleAnswerClick = useCallback((answer) => {
@@ -697,8 +726,17 @@ function MultiplayerLobby({ user, username, onBack }) {
       return [...prev, user.id];
     });
 
-    // Insert timed-out answer
-    await supabase.from('multiplayer_answers').insert([{
+    // Broadcast timeout to other players
+    if (answersChannelRef.current) {
+      supabase.channel(`answers-${room.id}`).send({
+        type: 'broadcast',
+        event: 'player_answer',
+        payload: { user_id: user.id, question_index: currentQuestionIndex, is_correct: false, points: 0 }
+      });
+    }
+
+    // Insert timed-out answer (best-effort)
+    const { error: insertErr } = await supabase.from('multiplayer_answers').insert([{
       room_id: room.id,
       user_id: user.id,
       question_index: currentQuestionIndex,
@@ -707,6 +745,7 @@ function MultiplayerLobby({ user, username, onBack }) {
       answer_time_ms: (room?.timer_seconds || 20) * 1000,
       points: 0
     }]);
+    if (insertErr) console.error('Failed to insert timeout answer:', insertErr.message);
   }, [gamePhase, stopGameTimer, currentQuestionIndex, room?.id, room?.timer_seconds, user.id]);
 
   // Timer timeout effect
@@ -723,70 +762,66 @@ function MultiplayerLobby({ user, username, onBack }) {
       failsafeTimerRef.current = null;
     }
 
-    // Fetch all answers for current question from DB for accurate scores
+    // Use local totalScores as primary source (updated via broadcast + local tracking)
+    const currentTotals = { ...totalScores };
+
+    // Try to fetch round answers from DB to get per-round breakdown
     const { data: answers } = await supabase
       .from('multiplayer_answers')
       .select('*')
       .eq('room_id', room.id)
       .eq('question_index', currentQuestionIndex);
 
-    // Build round scores and update totals
+    // Build round data — prefer DB data for round points, fall back to 0
     const roundData = [];
-    const updatedTotals = { ...totalScores };
-
+    const dbAnswerMap = {};
     (answers || []).forEach(a => {
-      // Update totals from DB (overwrite local estimates)
-      if (updatedTotals[a.user_id]) {
-        // We'll recalculate from scratch for accuracy below
-      }
+      dbAnswerMap[a.user_id] = a;
+    });
+
+    // Create entry for each participant
+    participants.forEach(p => {
+      const dbAnswer = dbAnswerMap[p.user_id];
       roundData.push({
-        user_id: a.user_id,
-        username: updatedTotals[a.user_id]?.username || 'Unknown',
-        round_points: a.points,
-        is_correct: a.is_correct
+        user_id: p.user_id,
+        username: currentTotals[p.user_id]?.username || p.username || 'Unknown',
+        round_points: dbAnswer ? (dbAnswer.points || 0) : 0,
+        is_correct: dbAnswer ? dbAnswer.is_correct : false,
+        total_points: currentTotals[p.user_id]?.points || 0
       });
     });
 
-    // Also add entries for players who didn't answer (disconnected etc)
-    participants.forEach(p => {
-      if (!roundData.find(r => r.user_id === p.user_id)) {
-        roundData.push({
-          user_id: p.user_id,
-          username: p.username || 'Unknown',
-          round_points: 0,
-          is_correct: false
+    // If DB had data, cross-check totals with DB for accuracy
+    if (answers && answers.length > 0) {
+      const { data: allAnswers } = await supabase
+        .from('multiplayer_answers')
+        .select('*')
+        .eq('room_id', room.id)
+        .lte('question_index', currentQuestionIndex);
+
+      if (allAnswers && allAnswers.length > 0) {
+        // DB has data — recalculate totals from DB for accuracy
+        Object.keys(currentTotals).forEach(uid => {
+          currentTotals[uid].points = 0;
+          currentTotals[uid].correct = 0;
+        });
+        allAnswers.forEach(a => {
+          if (currentTotals[a.user_id]) {
+            currentTotals[a.user_id].points += (a.points || 0);
+            currentTotals[a.user_id].correct += a.is_correct ? 1 : 0;
+          }
+        });
+        // Update round data total_points from DB-corrected totals
+        roundData.forEach(r => {
+          r.total_points = currentTotals[r.user_id]?.points || 0;
         });
       }
-    });
-
-    // Now recalculate totals from all answers in DB for this room up to current question
-    const { data: allAnswers } = await supabase
-      .from('multiplayer_answers')
-      .select('*')
-      .eq('room_id', room.id)
-      .lte('question_index', currentQuestionIndex);
-
-    // Reset and recalculate
-    Object.keys(updatedTotals).forEach(uid => {
-      updatedTotals[uid].points = 0;
-      updatedTotals[uid].correct = 0;
-    });
-    (allAnswers || []).forEach(a => {
-      if (updatedTotals[a.user_id]) {
-        updatedTotals[a.user_id].points += a.points;
-        updatedTotals[a.user_id].correct += a.is_correct ? 1 : 0;
-      }
-    });
-
-    // Add total points to round data
-    roundData.forEach(r => {
-      r.total_points = updatedTotals[r.user_id]?.points || 0;
-    });
+    }
 
     // Sort by total points descending
     roundData.sort((a, b) => b.total_points - a.total_points);
 
-    setTotalScores(updatedTotals);
+    setTotalScores(currentTotals);
     setRoundScores(roundData);
     setGamePhase('scoreboard');
   }, [room?.id, currentQuestionIndex, totalScores, participants]);
@@ -872,24 +907,30 @@ function MultiplayerLobby({ user, username, onBack }) {
   const finishGame = useCallback(async () => {
     stopGameTimer();
 
-    // Fetch all answers from DB for final accurate totals
-    const { data: allAnswers } = await supabase
+    // Try to fetch all answers from DB for accurate totals
+    const { data: allAnswers, error: fetchErr } = await supabase
       .from('multiplayer_answers')
       .select('*')
       .eq('room_id', room.id);
 
-    const finalScores = {};
-    participants.forEach(p => {
-      finalScores[p.user_id] = { points: 0, correct: 0, username: p.username || 'Unknown' };
-    });
-    (allAnswers || []).forEach(a => {
-      if (finalScores[a.user_id]) {
-        finalScores[a.user_id].points += a.points;
-        finalScores[a.user_id].correct += a.is_correct ? 1 : 0;
-      }
-    });
+    if (fetchErr) console.error('Failed to fetch final answers:', fetchErr.message);
 
-    setTotalScores(finalScores);
+    if (allAnswers && allAnswers.length > 0) {
+      // DB has data — use it for accurate cross-player totals
+      const finalScores = {};
+      participants.forEach(p => {
+        finalScores[p.user_id] = { points: 0, correct: 0, username: p.username || 'Unknown' };
+      });
+      allAnswers.forEach(a => {
+        if (finalScores[a.user_id]) {
+          finalScores[a.user_id].points += (a.points || 0);
+          finalScores[a.user_id].correct += a.is_correct ? 1 : 0;
+        }
+      });
+      setTotalScores(finalScores);
+    }
+    // else: keep current totalScores (accumulated locally via broadcast + submitAnswer)
+
     setView('results');
 
     // Host updates room status to completed
