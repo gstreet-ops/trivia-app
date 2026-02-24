@@ -60,6 +60,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [editingMediaId, setEditingMediaId] = useState(null);
   const [mediaUploading, setMediaUploading] = useState(false);
 
+  // Add Question form state
+  const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '' });
+  const [addQErrors, setAddQErrors] = useState([]);
+  const [addQSubmitting, setAddQSubmitting] = useState(false);
+  const [addQImageFile, setAddQImageFile] = useState(null);
+  const [addQImagePreview, setAddQImagePreview] = useState(null);
+
   useEffect(() => {
     fetchCommissionerData();
     fetchTemplates();
@@ -790,6 +798,61 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
+  // --- Add Question handler ---
+  const handleAddQuestion = async () => {
+    const errors = [];
+    if (!addQForm.question_text.trim()) errors.push('Question text is required');
+    if (!addQForm.correct_answer.trim()) errors.push('Correct answer is required');
+    if (!addQForm.incorrect_1.trim()) errors.push('Incorrect answer 1 is required');
+    if (!addQForm.incorrect_2.trim()) errors.push('Incorrect answer 2 is required');
+    if (!addQForm.incorrect_3.trim()) errors.push('Incorrect answer 3 is required');
+    if (!addQForm.category.trim()) errors.push('Category is required');
+    if (!addQForm.difficulty) errors.push('Difficulty is required');
+    if (addQForm.video_url.trim() && !isValidYouTubeUrl(addQForm.video_url.trim())) errors.push('Invalid YouTube URL format');
+    if (addQImageFile && addQImageFile.size > 500 * 1024) errors.push('Image must be under 500KB');
+    setAddQErrors(errors);
+    if (errors.length > 0) return;
+
+    setAddQSubmitting(true);
+    try {
+      let imageUrl = null;
+      if (addQImageFile) {
+        const path = `${communityId}/${Date.now()}-${addQImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error: uploadError } = await supabase.storage.from('question-images').upload(path, addQImageFile);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(path);
+        imageUrl = urlData.publicUrl;
+      }
+      const tags = addQForm.tags.trim() ? addQForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const row = {
+        community_id: communityId,
+        question_text: addQForm.question_text.trim(),
+        correct_answer: addQForm.correct_answer.trim(),
+        incorrect_answers: [addQForm.incorrect_1.trim(), addQForm.incorrect_2.trim(), addQForm.incorrect_3.trim()],
+        category: addQForm.category.trim(),
+        difficulty: addQForm.difficulty,
+        source: 'manual',
+        version_number: 1,
+        version_history: [],
+        tags
+      };
+      if (imageUrl) row.image_url = imageUrl;
+      if (addQForm.video_url.trim()) row.video_url = addQForm.video_url.trim();
+
+      const { error } = await supabase.from('community_questions').insert([row]);
+      if (error) throw error;
+      setAddQForm({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '' });
+      setAddQImageFile(null);
+      setAddQImagePreview(null);
+      setAddQErrors([]);
+      setShowAddQuestion(false);
+      fetchCommissionerData();
+    } catch (err) {
+      alert('Failed to add question: ' + err.message);
+    }
+    setAddQSubmitting(false);
+  };
+
   // --- Media helpers ---
   const extractYouTubeId = (url) => {
     if (!url) return null;
@@ -1172,6 +1235,91 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {/* QUESTIONS TAB */}
         {activeTab === 'questions' && (
           <div className="tab-pane">
+            {/* Add Question */}
+            <div className="commissioner-section">
+              <button className="add-q-toggle" onClick={() => setShowAddQuestion(!showAddQuestion)}>
+                {showAddQuestion ? '− Close Form' : '➕ Add Question'}
+              </button>
+              {showAddQuestion && (
+                <div className="add-q-form">
+                  {addQErrors.length > 0 && (
+                    <div className="add-q-errors">
+                      {addQErrors.map((e, i) => <p key={i}>{e}</p>)}
+                    </div>
+                  )}
+                  <div className="add-q-field">
+                    <label>Question Text <span className="required">*</span></label>
+                    <textarea rows={3} value={addQForm.question_text} onChange={e => setAddQForm(f => ({ ...f, question_text: e.target.value }))} placeholder="Enter your trivia question..." />
+                  </div>
+                  <div className="add-q-field">
+                    <label>Correct Answer <span className="required">*</span></label>
+                    <input type="text" value={addQForm.correct_answer} onChange={e => setAddQForm(f => ({ ...f, correct_answer: e.target.value }))} placeholder="The correct answer" />
+                  </div>
+                  <div className="add-q-row-3">
+                    <div className="add-q-field">
+                      <label>Incorrect Answer 1 <span className="required">*</span></label>
+                      <input type="text" value={addQForm.incorrect_1} onChange={e => setAddQForm(f => ({ ...f, incorrect_1: e.target.value }))} />
+                    </div>
+                    <div className="add-q-field">
+                      <label>Incorrect Answer 2 <span className="required">*</span></label>
+                      <input type="text" value={addQForm.incorrect_2} onChange={e => setAddQForm(f => ({ ...f, incorrect_2: e.target.value }))} />
+                    </div>
+                    <div className="add-q-field">
+                      <label>Incorrect Answer 3 <span className="required">*</span></label>
+                      <input type="text" value={addQForm.incorrect_3} onChange={e => setAddQForm(f => ({ ...f, incorrect_3: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="add-q-row-3">
+                    <div className="add-q-field">
+                      <label>Category <span className="required">*</span></label>
+                      <input type="text" value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Geography" />
+                    </div>
+                    <div className="add-q-field">
+                      <label>Difficulty <span className="required">*</span></label>
+                      <select value={addQForm.difficulty} onChange={e => setAddQForm(f => ({ ...f, difficulty: e.target.value }))}>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </div>
+                    <div className="add-q-field">
+                      <label>Tags (comma-separated)</label>
+                      <input type="text" value={addQForm.tags} onChange={e => setAddQForm(f => ({ ...f, tags: e.target.value }))} placeholder="e.g. history, europe" />
+                    </div>
+                  </div>
+                  <div className="add-q-row-2">
+                    <div className="add-q-field">
+                      <label>Image (optional, max 500KB)</label>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          setAddQImageFile(file || null);
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => setAddQImagePreview(ev.target.result);
+                            reader.readAsDataURL(file);
+                          } else { setAddQImagePreview(null); }
+                        }}
+                      />
+                      {addQImagePreview && <img src={addQImagePreview} alt="Preview" className="add-q-img-preview" />}
+                    </div>
+                    <div className="add-q-field">
+                      <label>YouTube Video URL (optional)</label>
+                      <input type="text" value={addQForm.video_url} onChange={e => setAddQForm(f => ({ ...f, video_url: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." />
+                      {addQForm.video_url && extractYouTubeId(addQForm.video_url) && (
+                        <img src={`https://img.youtube.com/vi/${extractYouTubeId(addQForm.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="add-q-img-preview" />
+                      )}
+                    </div>
+                  </div>
+                  <button className="add-q-submit" onClick={handleAddQuestion} disabled={addQSubmitting}>
+                    {addQSubmitting ? 'Adding...' : 'Add Question'}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Bulk Upload */}
             <div className="commissioner-section">
               <h2>Bulk Question Upload</h2>
