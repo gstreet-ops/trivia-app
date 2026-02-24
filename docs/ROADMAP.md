@@ -130,6 +130,16 @@
 - [x] CSV import support for image_url and video_url columns
 - [x] Media indicators on question cards (image and video icons)
 
+### Question Explanations
+- [x] Explanation field on community questions — optional text explaining the correct answer
+- [x] Commissioner Add Question form — explanation textarea
+- [x] CSV import/export/template support for explanation column
+- [x] AI-generated question passthrough — explanation preserved when adding to bank
+- [x] Explanation preview on question cards in Commissioner Dashboard
+- [x] QuizScreen — "💡 Why?" panel with fade-in animation after answering (community questions)
+- [x] MultiplayerLobby — explanation panel after answering
+- [x] GameReview — always-visible explanation below correct answer
+
 ### Multiplayer Quiz (Phase 1 — Lobby)
 - [x] Create Room — room name, question source (API/community), category, difficulty, question count, timer, speed bonus, max players
 - [x] Join Room — 6-character room code entry with validation
@@ -204,7 +214,6 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
-- [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install
 - [ ] **Dark mode**
 - [ ] **Mobile app** — React Native port

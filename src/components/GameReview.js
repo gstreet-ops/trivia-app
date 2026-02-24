@@ -61,6 +61,12 @@ function GameReview({ gameId, onBack }) {
                 </div>
               )}
             </div>
+            {answer.explanation && (
+              <div className="review-explanation">
+                <span className="review-explanation-icon">💡</span>
+                <span className="review-explanation-text">{answer.explanation}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>

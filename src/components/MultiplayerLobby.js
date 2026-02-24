@@ -507,7 +507,8 @@ function MultiplayerLobby({ user, username, onBack }) {
           category: q.category,
           difficulty: q.difficulty,
           image_url: q.image_url || null,
-          video_url: q.video_url || null
+          video_url: q.video_url || null,
+          explanation: q.explanation || null
         }));
       } else {
         // Fetch from Trivia API
@@ -1159,6 +1160,14 @@ function MultiplayerLobby({ user, username, onBack }) {
         {showResult && selectedAnswer !== null && (
           <div className={`mp-answer-feedback ${lastAnswerCorrect ? 'correct' : 'wrong'}`}>
             {lastAnswerCorrect ? `Correct! +${lastAnswerPoints}` : 'Wrong!'}
+          </div>
+        )}
+
+        {/* Explanation */}
+        {showResult && currentQ.explanation && (
+          <div className="mp-explanation-panel">
+            <div className="mp-explanation-header">💡 Why?</div>
+            <p className="mp-explanation-text">{currentQ.explanation}</p>
           </div>
         )}
 

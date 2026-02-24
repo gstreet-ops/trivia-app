@@ -2025,3 +2025,18 @@
   .add-q-row-3 { grid-template-columns: 1fr; }
   .add-q-row-2 { grid-template-columns: 1fr; }
 }
+
+/* Question Explanation Preview */
+.question-explanation-preview {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #F0F4FF;
+  border-left: 3px solid #667eea;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: #444;
+  line-height: 1.45;
+}
+.explanation-icon {
+  margin-right: 4px;
+}

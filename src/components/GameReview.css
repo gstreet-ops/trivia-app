@@ -121,6 +121,27 @@
   color: #333;
 }
 
+/* Explanation */
+.review-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #F0F4FF;
+  border-left: 3px solid #667eea;
+  border-radius: 6px;
+}
+.review-explanation-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+.review-explanation-text {
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
   .game-review {
     padding: 20px;

@@ -51,7 +51,8 @@ function QuizScreen({ config, onEnd }) {
       question_text: q.question,
       correct_answer: q.correctAnswer,
       user_answer: '(timed out)',
-      is_correct: false
+      is_correct: false,
+      explanation: q.explanation || null
     }]);
   }, [stopTimer, showResult, questions, currentQuestionIndex]);
 
@@ -167,7 +168,8 @@ function QuizScreen({ config, onEnd }) {
       question_text: q.question,
       correct_answer: q.correctAnswer,
       user_answer: answer,
-      is_correct: isCorrect
+      is_correct: isCorrect,
+      explanation: q.explanation || null
     }]);
   };
 
@@ -305,6 +307,13 @@ function QuizScreen({ config, onEnd }) {
 
         {showResult && selectedAnswer === null && (
           <div className="timeout-message">Time's up! The correct answer is highlighted above.</div>
+        )}
+
+        {showResult && currentQuestion.explanation && (
+          <div className="explanation-panel">
+            <div className="explanation-header">💡 Why?</div>
+            <p className="explanation-text">{currentQuestion.explanation}</p>
+          </div>
         )}
 
         <div className="quiz-actions">

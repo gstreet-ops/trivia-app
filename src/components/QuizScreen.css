@@ -238,3 +238,29 @@
   height: 100%;
   border-radius: 8px;
 }
+
+/* Explanation Panel */
+.explanation-panel {
+  background: #F0F4FF;
+  border-left: 4px solid #667eea;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 16px;
+  animation: explanation-fade-in 0.4s ease;
+}
+.explanation-header {
+  font-weight: 700;
+  color: #667eea;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+.explanation-text {
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+@keyframes explanation-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

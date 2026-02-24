@@ -62,7 +62,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   // Add Question form state
   const [showAddQuestion, setShowAddQuestion] = useState(false);
-  const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '' });
+  const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '', explanation: '' });
   const [addQErrors, setAddQErrors] = useState([]);
   const [addQSubmitting, setAddQSubmitting] = useState(false);
   const [addQImageFile, setAddQImageFile] = useState(null);
@@ -293,6 +293,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         };
         if (row.image_url?.trim()) q.image_url = row.image_url.trim();
         if (row.video_url?.trim()) q.video_url = row.video_url.trim();
+        if (row.explanation?.trim()) q.explanation = row.explanation.trim();
         validQuestions.push(q);
       }
     });
@@ -323,6 +324,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         };
         if (q.image_url) row.image_url = q.image_url;
         if (q.video_url) row.video_url = q.video_url;
+        if (q.explanation) row.explanation = q.explanation;
         return row;
       });
 
@@ -347,10 +349,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const downloadTemplate = () => {
-    const template = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,image_url,video_url
-"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy","",""
-"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium","https://example.com/mona-lisa.jpg",""
-"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy","","https://www.youtube.com/watch?v=dQw4w9WgXcQ"`;
+    const template = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,image_url,video_url,explanation
+"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy","","","Paris has been the capital of France since the 10th century."
+"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium","https://example.com/mona-lisa.jpg","","Leonardo da Vinci painted the Mona Lisa between 1503 and 1519."
+"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy","","https://www.youtube.com/watch?v=dQw4w9WgXcQ","Au comes from the Latin word 'aurum' meaning gold."`;
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -362,7 +364,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   const exportToCSV = () => {
     if (questions.length === 0) { alert('No questions to export'); return; }
-    const csvRows = ['question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty'];
+    const csvRows = ['question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,explanation'];
     questions.forEach(q => {
       const row = [
         `"${q.question_text.replace(/"/g, '""')}"`,
@@ -371,7 +373,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         `"${q.incorrect_answers[1]?.replace(/"/g, '""') || ''}"`,
         `"${q.incorrect_answers[2]?.replace(/"/g, '""') || ''}"`,
         `"${q.category}"`,
-        `"${q.difficulty}"`
+        `"${q.difficulty}"`,
+        `"${(q.explanation || '').replace(/"/g, '""')}"`
       ];
       csvRows.push(row.join(','));
     });
@@ -726,7 +729,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const handleAddGenQuestion = async (requestId, question) => {
     try {
       const req = genRequests.find(r => r.id === requestId);
-      const { error } = await supabase.from('community_questions').insert([{
+      const row = {
         community_id: communityId,
         question_text: question.question_text,
         correct_answer: question.correct_answer,
@@ -741,7 +744,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         ai_model: 'claude-sonnet-4-20250514',
         ai_theme: req?.theme || '',
         imported_by: currentUserId
-      }]);
+      };
+      if (question.explanation) row.explanation = question.explanation;
+      const { error } = await supabase.from('community_questions').insert([row]);
       if (error) throw error;
       // Track accepted count
       setGenAccepted(prev => ({
@@ -767,22 +772,26 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       .filter(q => q && !acceptedTexts.includes(q.question_text));
     if (toAdd.length === 0) { alert('All selected questions have already been added'); return; }
     try {
-      const rows = toAdd.map(q => ({
-        community_id: communityId,
-        question_text: q.question_text,
-        correct_answer: q.correct_answer,
-        incorrect_answers: q.incorrect_answers,
-        category: q.category || 'General Knowledge',
-        difficulty: q.difficulty || 'medium',
-        tags: ['ai-generated'],
-        version_number: 1,
-        version_history: [],
-        source: 'ai_generated',
-        ai_request_id: req.id,
-        ai_model: 'claude-sonnet-4-20250514',
-        ai_theme: req.theme || '',
-        imported_by: currentUserId
-      }));
+      const rows = toAdd.map(q => {
+        const r = {
+          community_id: communityId,
+          question_text: q.question_text,
+          correct_answer: q.correct_answer,
+          incorrect_answers: q.incorrect_answers,
+          category: q.category || 'General Knowledge',
+          difficulty: q.difficulty || 'medium',
+          tags: ['ai-generated'],
+          version_number: 1,
+          version_history: [],
+          source: 'ai_generated',
+          ai_request_id: req.id,
+          ai_model: 'claude-sonnet-4-20250514',
+          ai_theme: req.theme || '',
+          imported_by: currentUserId
+        };
+        if (q.explanation) r.explanation = q.explanation;
+        return r;
+      });
       const { error } = await supabase.from('community_questions').insert(rows);
       if (error) throw error;
       const addedTexts = toAdd.map(q => q.question_text);
@@ -838,10 +847,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       };
       if (imageUrl) row.image_url = imageUrl;
       if (addQForm.video_url.trim()) row.video_url = addQForm.video_url.trim();
+      if (addQForm.explanation.trim()) row.explanation = addQForm.explanation.trim();
 
       const { error } = await supabase.from('community_questions').insert([row]);
       if (error) throw error;
-      setAddQForm({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '' });
+      setAddQForm({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '', explanation: '' });
       setAddQImageFile(null);
       setAddQImagePreview(null);
       setAddQErrors([]);
@@ -1313,6 +1323,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       )}
                     </div>
                   </div>
+                  <div className="add-q-field">
+                    <label>Explanation (optional)</label>
+                    <textarea rows={2} value={addQForm.explanation} onChange={e => setAddQForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Why is this the correct answer? Shown after the player answers." />
+                  </div>
                   <button className="add-q-submit" onClick={handleAddQuestion} disabled={addQSubmitting}>
                     {addQSubmitting ? 'Adding...' : 'Add Question'}
                   </button>
@@ -1324,7 +1338,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             <div className="commissioner-section">
               <h2>Bulk Question Upload</h2>
               <div className="upload-instructions">
-                <p>Upload a CSV file to bulk import questions. Required columns: <code>question_text</code>, <code>correct_answer</code>, <code>incorrect_answer_1</code>, <code>incorrect_answer_2</code>, <code>incorrect_answer_3</code>, <code>category</code>, <code>difficulty</code></p>
+                <p>Upload a CSV file to bulk import questions. Required columns: <code>question_text</code>, <code>correct_answer</code>, <code>incorrect_answer_1</code>, <code>incorrect_answer_2</code>, <code>incorrect_answer_3</code>, <code>category</code>, <code>difficulty</code>. Optional: <code>image_url</code>, <code>video_url</code>, <code>explanation</code></p>
                 <button className="btn-secondary" onClick={downloadTemplate}>
                   📥 Download CSV Template
                 </button>
@@ -1550,6 +1564,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                             <div className="answer-more">+{question.incorrect_answers.length - 2} more</div>
                           )}
                         </div>
+                        {question.explanation && (
+                          <div className="question-explanation-preview">
+                            <span className="explanation-icon">💡</span> {question.explanation}
+                          </div>
+                        )}
                         <div className="question-tags">
                           {question.tags && question.tags.length > 0 && (
                             <div className="tags-list">
