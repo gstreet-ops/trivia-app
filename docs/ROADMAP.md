@@ -23,13 +23,12 @@
 - [x] Immediate per-answer feedback (correct/wrong highlighting)
 - [x] Score saved to Supabase on game completion
 - [x] Per-answer log saved to `game_answers` for review
+- [x] Per-question countdown timer — commissioner-configurable per community (15s–120s), visual bar with warning state, auto-submit on timeout, 50/50 hint adds 3 bonus seconds
 
 ### Dashboard
-- [x] Total games, average score %, best score % stats
+- [x] Total games, average score %, best score % stats (capped at 100%)
 - [x] Start New Quiz button
 - [x] Achievement badge display
-- [x] Score trend line chart (Recharts)
-- [x] Performance by category bar chart (Recharts)
 - [x] Community leaderboard (top 10 public players)
 - [x] Clickable leaderboard player names → user profile
 - [x] Recent games list (last 5, click to review)
@@ -56,6 +55,8 @@
 - [x] Quiz from community questions
 - [x] Active community shown in persistent top bar
 - [x] Community name clickable in top bar → community detail
+- [x] Community Marketplace — browse public communities, join directly, commissioner visibility toggle and description
+- [x] Community announcements — commissioner posts visible to all members on community detail page, with pin/unpin, edit, delete, "New" badge for recent posts
 
 ### Commissioner Dashboard
 - [x] Tabbed navigation (Overview, Questions, Members, Settings, Analytics)
@@ -89,6 +90,7 @@
 - [x] Approve / reject custom questions
 - [x] Recent users table (last 10)
 - [x] Recent games table (last 10)
+- [x] User management — promote/demote roles, toggle super admin, view user activity, search/filter/sort, pagination
 
 ### Custom Questions
 - [x] Submit custom question form (any logged-in user)
@@ -104,8 +106,45 @@
 ### Community Feed
 - [x] Public game activity feed
 
+### My Stats
+- [x] Dedicated My Stats page (accessible from nav menu)
+- [x] Score trend line chart (Recharts)
+- [x] Performance by category bar chart (Recharts)
+
 ### User Profiles
 - [x] View another user's public profile and game history
+
+### AI Question Generation (Request/Approval System)
+- [x] Commissioner request form — theme, difficulty, question count (5–25), special instructions
+- [x] Request submitted to generation_requests table with pending status
+- [x] Admin AI Requests tab — pending queue with community name, requester, theme, approve/reject
+- [x] Reject with optional admin notes
+- [x] Request history for commissioners (status badges, date, admin notes on rejection)
+- [x] Completed request review — commissioner can review generated questions, add to bank or discard
+- [x] Simulate Generation button (super admin) for testing the review flow
+
+### Multiplayer Quiz (Phase 1 — Lobby)
+- [x] Create Room — room name, question source (API/community), category, difficulty, question count, timer, speed bonus, max players
+- [x] Join Room — 6-character room code entry with validation
+- [x] Real-time lobby — player list updates via Supabase Realtime (postgres_changes)
+- [x] Host controls — Start Game (min 2 players), Cancel Room
+- [x] Player controls — Ready/Unready toggle, Leave Room
+- [x] Room code display with Copy button
+- [x] Settings summary tags in lobby (Qs, difficulty, timer, speed bonus, source)
+- [x] Open Rooms browser — lists all waiting rooms with host username, player count, settings; auto-refreshes every 10 seconds; direct Join button
+- [x] Game start logic — fetches questions from API or community bank, inserts into multiplayer_questions, updates room status
+
+### Multiplayer Quiz (Phase 2 — Live Game)
+- [x] Live game screen — all players answer the same questions simultaneously
+- [x] Per-question countdown timer with visual bar, warning pulse at ≤5s, auto-submit on timeout
+- [x] 2×2 answer grid with correct/wrong/selected highlighting
+- [x] Points-based scoring — 100 base per correct answer, up to +100 speed bonus when enabled
+- [x] Real-time answer tracking — player dots show who has answered via Supabase Realtime
+- [x] Disconnect failsafe — force-advances to scoreboard if not all players answer within grace period
+- [x] Round scoreboard — sorted leaderboard after each question showing round points and running total
+- [x] Host-controlled pacing — host clicks "Next Question" to advance, broadcast syncs all players
+- [x] Final results screen — game over leaderboard with medal emojis for top 3, highlighted self row
+- [x] Mobile responsive — single-column answer layout on small screens
 
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
@@ -114,6 +153,7 @@
 - [x] Georgetown-themed color palette (navy `#041E42`, gray, light blue)
 - [x] In-app Help Center with User Guide, Commissioner Guide, FAQ, About tabs and keyword search
 - [x] Sentry error monitoring (ErrorBoundary in index.js, `REACT_APP_SENTRY_DSN` env var)
+- [x] Hash-based routing — URL hash (`#dashboard`, `#review/{id}`, etc.) persists screen state across refresh and enables browser back/forward navigation
 
 ---
 
@@ -126,6 +166,7 @@
 | No email confirmation on signup | Supabase email confirmation may be disabled in project settings; users log in immediately after signup. |
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
 | Sentry test event confirmation pending | Sentry SDK integrated and DSN configured; awaiting confirmation that production errors are captured and visible in the Sentry dashboard. |
+| ~~BEST score could exceed 100%~~ | **Fixed** — Score display capped at 100%; validation added on game save; stale React state bug fixed in QuizScreen `handleNext`. |
 
 ---
 
@@ -133,23 +174,29 @@
 
 ### Near-term
 
-- [ ] **Timer per question** — countdown with auto-submit on expiry
+- [ ] **AI Question Generation (Claude API integration)** — wire approved requests to a Supabase Edge Function that calls the Claude API to generate trivia questions and populates the generated_questions JSONB
+- [x] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
+- [x] **Simplified role model (Phase 1)** — three roles: User, Commissioner (per-community), Super Admin (platform-wide). Removed redundant `admin` role.
+- [x] **Timer per question** — commissioner-configurable countdown with auto-submit on expiry, visual bar, warning state
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
 - [ ] **Email notifications** — notify submitter when their question is approved/rejected
 
 ### Medium-term
 
-- [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
+- [x] **Community Marketplace** — community discovery with public/private visibility toggle, marketplace browser page listing public communities with stats, direct join
+- [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
+- [x] **Admin user management UI** — promote/demote users, toggle super admin, view activity, search/filter/sort with pagination
 - [ ] **Admin delete user** — remove a user account from the platform
-- [ ] **Community announcements** — commissioner can post messages visible to all members
+- [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
+- [x] **Community announcements** — commissioner can post, edit, delete, pin/unpin announcements; members see them on community detail page with "New" badges
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
 - [ ] **Season reset** — archive season data and start fresh rankings
 - [ ] **Multiple communities per user** — currently the top bar only shows one community; support multi-league users
 
 ### Longer-term
 
-- [ ] **Real-time multiplayer quiz** — synchronous head-to-head trivia via WebSockets or Supabase Realtime
+- [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Image questions** — support attaching an image to a question
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install
