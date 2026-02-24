@@ -25,7 +25,7 @@ const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
   'community', 'createQuestion', 'quizConfig', 'quiz',
   'review', 'communityDetail', 'commissionerDashboard', 'userProfile',
-  'marketplace', 'multiplayer'
+  'marketplace', 'multiplayer', 'resetPassword'
 ]);
 
 function parseHash(hash) {
@@ -36,6 +36,47 @@ function parseHash(hash) {
   const param = parts[1] || null;
   if (!KNOWN_SCREENS.has(screen)) return { screen: 'dashboard', param: null };
   return { screen, param };
+}
+
+function ResetPasswordScreen({ onDone }) {
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) { setMessage('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setMessage('Passwords do not match.'); return; }
+    setSaving(true);
+    setMessage('');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) { setMessage('Error: ' + error.message); setSaving(false); return; }
+    setMessage('Password updated successfully!');
+    setTimeout(onDone, 1500);
+  };
+
+  const containerStyle = { maxWidth: '400px', margin: '60px auto', padding: '32px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.1)' };
+  const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '0.95rem', boxSizing: 'border-box' };
+  const btnStyle = { width: '100%', padding: '12px', background: '#041E42', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '1rem', cursor: 'pointer', marginTop: '8px' };
+
+  return (
+    <div style={containerStyle}>
+      <h2 style={{ textAlign: 'center', color: '#041E42', marginBottom: '20px' }}>Set New Password</h2>
+      {message && <div style={{ padding: '10px', marginBottom: '12px', borderRadius: '6px', background: message.startsWith('Error') ? '#fef2f2' : '#f0fdf4', color: message.startsWith('Error') ? '#dc2626' : '#16a34a', fontSize: '0.9rem' }}>{message}</div>}
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#333' }}>New Password</label>
+          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required style={inputStyle} />
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#333' }}>Confirm Password</label>
+          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={inputStyle} />
+        </div>
+        <button type="submit" disabled={saving} style={btnStyle}>{saving ? 'Updating...' : 'Update Password'}</button>
+      </form>
+    </div>
+  );
 }
 
 function App() {
@@ -109,21 +150,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      if (session) {
-        if (window.location.hash && window.location.hash !== '#') {
-          syncFromHash();
-        } else {
-          navigateTo('dashboard');
-        }
-        fetchUserRole(session.user.id);
-      }
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setLoading(false);
+
+      if (_event === 'PASSWORD_RECOVERY') {
+        navigateTo('resetPassword');
+        return;
+      }
+
+      if (_event === 'TOKEN_REFRESHED') {
+        // Don't re-navigate on token refresh
+        return;
+      }
+
       if (session) {
         if (window.location.hash && window.location.hash !== '#') {
           syncFromHash();
@@ -173,6 +213,7 @@ function App() {
   };
 
   const endQuiz = async (score, totalQuestions, answers = [], timedOutCount = 0) => {
+    if (totalQuestions === 0) { navigateTo('dashboard'); return; }
     try {
       // Validate score doesn't exceed total questions
       const validatedScore = Math.min(score, totalQuestions);
@@ -367,6 +408,7 @@ function App() {
         />
       )}
       {screen === 'settings' && <Settings user={session.user} onBack={() => navigateTo('dashboard')} />}
+      {screen === 'resetPassword' && <ResetPasswordScreen onDone={() => navigateTo('dashboard')} />}
       {screen === 'help' && <HelpCenter onBack={() => navigateTo('dashboard')} />}
     </div>
   );

@@ -8,6 +8,9 @@ function Settings({ user, onBack }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [darkMode, setDarkMode] = useState(getSavedTheme() === 'dark');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -37,6 +40,17 @@ function Settings({ user, onBack }) {
     setDarkMode(!darkMode);
     applyTheme(newTheme);
     await supabase.from('profiles').update({ theme: newTheme }).eq('id', user.id);
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMessage('');
+    if (newPassword.length < 6) { setPasswordMessage('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match.'); return; }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) { setPasswordMessage('Error: ' + error.message); return; }
+    setPasswordMessage('Password updated successfully!');
+    setNewPassword('');
+    setConfirmPassword('');
   };
 
   const handleLogout = async () => {
@@ -75,6 +89,19 @@ function Settings({ user, onBack }) {
         </div>
       </div>
       <button className="save-btn" onClick={saveSettings} disabled={saving}>{saving ? 'Saving...' : 'Save Settings'}</button>
+      <div className="settings-section">
+        <h2>Change Password</h2>
+        {passwordMessage && <div role="alert" className={passwordMessage.includes('Error') ? 'error-message' : 'success-message'}>{passwordMessage}</div>}
+        <div className="form-group">
+          <label htmlFor="settings-new-password">New Password</label>
+          <input id="settings-new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" />
+        </div>
+        <div className="form-group">
+          <label htmlFor="settings-confirm-password">Confirm New Password</label>
+          <input id="settings-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+        </div>
+        <button className="save-btn" onClick={handleChangePassword} style={{ marginTop: '8px' }}>Update Password</button>
+      </div>
       <div className="danger-zone">
         <h2>Account</h2>
         <button className="logout-btn" onClick={handleLogout}>Logout</button>

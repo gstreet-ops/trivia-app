@@ -39,7 +39,9 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
     setError(null);
     try {
       const slug = newCommunityName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // excludes ambiguous I/O/0/1
+      const randomBytes = crypto.getRandomValues(new Uint8Array(8));
+      const inviteCode = Array.from(randomBytes, b => chars[b % chars.length]).join('');
       const { data: community, error: createError } = await supabase.from('communities').insert([{ name: newCommunityName, slug: slug, commissioner_id: user.id, invite_code: inviteCode, season_start: new Date().toISOString(), season_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }]).select().single();
       if (createError) throw createError;
       await supabase.from('community_members').insert([{ community_id: community.id, user_id: user.id }]);

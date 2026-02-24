@@ -364,7 +364,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { error } = await supabase
         .from('community_questions')
         .delete()
-        .eq('id', questionId);
+        .eq('id', questionId)
+        .eq('community_id', communityId);
 
       if (error) {
         alert('Failed to delete question: ' + error.message);
@@ -506,19 +507,28 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     window.URL.revokeObjectURL(url);
   };
 
+  const sanitizeCSVField = (value) => {
+    const str = String(value ?? '');
+    const escaped = str.replace(/"/g, '""');
+    // Prevent formula injection: prepend single-quote for dangerous leading chars
+    const dangerous = /^[=+\-@\t\r]/;
+    const safe = dangerous.test(escaped) ? "'" + escaped : escaped;
+    return `"${safe}"`;
+  };
+
   const exportToCSV = () => {
     if (questions.length === 0) { alert('No questions to export'); return; }
     const csvRows = ['question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,explanation'];
     questions.forEach(q => {
       const row = [
-        `"${q.question_text.replace(/"/g, '""')}"`,
-        `"${q.correct_answer.replace(/"/g, '""')}"`,
-        `"${q.incorrect_answers[0]?.replace(/"/g, '""') || ''}"`,
-        `"${q.incorrect_answers[1]?.replace(/"/g, '""') || ''}"`,
-        `"${q.incorrect_answers[2]?.replace(/"/g, '""') || ''}"`,
-        `"${q.category}"`,
-        `"${q.difficulty}"`,
-        `"${(q.explanation || '').replace(/"/g, '""')}"`
+        sanitizeCSVField(q.question_text),
+        sanitizeCSVField(q.correct_answer),
+        sanitizeCSVField(q.incorrect_answers[0] || ''),
+        sanitizeCSVField(q.incorrect_answers[1] || ''),
+        sanitizeCSVField(q.incorrect_answers[2] || ''),
+        sanitizeCSVField(q.category),
+        sanitizeCSVField(q.difficulty),
+        sanitizeCSVField(q.explanation || '')
       ];
       csvRows.push(row.join(','));
     });
@@ -550,7 +560,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (selectedQuestions.length === 0) { alert('No questions selected'); return; }
     if (!window.confirm(`Are you sure you want to delete ${selectedQuestions.length} questions?`)) return;
     try {
-      const { error } = await supabase.from('community_questions').delete().in('id', selectedQuestions);
+      const { error } = await supabase.from('community_questions').delete().in('id', selectedQuestions).eq('community_id', communityId);
       if (error) {
         alert('Failed to delete questions: ' + error.message);
       } else {
@@ -588,7 +598,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (currentTags.includes(tag.trim())) { alert('Tag already exists on this question'); return; }
     const updatedTags = [...currentTags, tag.trim()];
     await createVersionHistory(questionId, 'tag_added', { tag: tag.trim() });
-    const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId);
+    const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
     if (error) { alert('Failed to add tag: ' + error.message); } else { setNewTag(''); fetchCommissionerData(); }
   };
 
@@ -596,7 +606,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const question = questions.find(q => q.id === questionId);
     const updatedTags = (question.tags || []).filter(t => t !== tag);
     await createVersionHistory(questionId, 'tag_removed', { tag });
-    const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId);
+    const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
     if (error) { alert('Failed to remove tag: ' + error.message); } else { fetchCommissionerData(); }
   };
 
@@ -618,7 +628,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     };
     const currentHistory = question.version_history || [];
     const updatedHistory = [historyEntry, ...currentHistory].slice(0, 10);
-    await supabase.from('community_questions').update({ version_history: updatedHistory, version_number: historyEntry.version_number }).eq('id', questionId);
+    await supabase.from('community_questions').update({ version_history: updatedHistory, version_number: historyEntry.version_number }).eq('id', questionId).eq('community_id', communityId);
   };
 
   const loadVersionHistory = async (questionId) => {
@@ -637,7 +647,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       category: versionSnapshot.category,
       difficulty: versionSnapshot.difficulty,
       tags: versionSnapshot.tags || []
-    }).eq('id', questionId);
+    }).eq('id', questionId).eq('community_id', communityId);
     if (error) { alert('Failed to restore version: ' + error.message); } else { setShowVersionHistory(null); fetchCommissionerData(); }
   };
 
@@ -712,7 +722,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         const question = questions.find(q => q.id === questionId);
         const currentTags = question.tags || [];
         if (!currentTags.includes(tag)) {
-          await supabase.from('community_questions').update({ tags: [...currentTags, tag] }).eq('id', questionId);
+          await supabase.from('community_questions').update({ tags: [...currentTags, tag] }).eq('id', questionId).eq('community_id', communityId);
           await createVersionHistory(questionId, 'tag_added', { tag, bulk: true });
         }
       }
@@ -731,7 +741,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       for (const questionId of selectedQuestions) {
         const question = questions.find(q => q.id === questionId);
         const updatedTags = (question.tags || []).filter(t => t !== tag);
-        await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId);
+        await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
         await createVersionHistory(questionId, 'tag_removed', { tag, bulk: true });
       }
       fetchCommissionerData();
@@ -1028,7 +1038,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(path);
       const publicUrl = urlData.publicUrl;
-      const { error } = await supabase.from('community_questions').update({ image_url: publicUrl }).eq('id', questionId);
+      const { error } = await supabase.from('community_questions').update({ image_url: publicUrl }).eq('id', questionId).eq('community_id', communityId);
       if (error) throw error;
       fetchCommissionerData();
     } catch (err) {
@@ -1039,13 +1049,13 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   const handleRemoveImage = async (questionId) => {
     if (!window.confirm('Remove image from this question?')) return;
-    const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId);
+    const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId).eq('community_id', communityId);
     if (error) { alert('Failed to remove image: ' + error.message); } else { fetchCommissionerData(); }
   };
 
   const handleSaveVideoUrl = async (questionId, url) => {
     if (url && !isValidYouTubeUrl(url)) { alert('Invalid YouTube URL. Use youtube.com/watch?v=... or youtu.be/... format.'); return; }
-    const { error } = await supabase.from('community_questions').update({ video_url: url || null }).eq('id', questionId);
+    const { error } = await supabase.from('community_questions').update({ video_url: url || null }).eq('id', questionId).eq('community_id', communityId);
     if (error) { alert('Failed to save video URL: ' + error.message); } else { fetchCommissionerData(); setEditingMediaId(null); }
   };
 

@@ -30,7 +30,9 @@ You will be taken directly to your Dashboard.
 2. Enter your email address
 3. Click **Send Reset Link**
 4. Check your email for a reset link from Supabase (check spam if not received)
-5. Click the link to reset your password, then log in normally
+5. Click the link — you will be taken to a **Set New Password** screen
+6. Enter and confirm your new password, then click **Update Password**
+7. You will be automatically redirected to the Dashboard
 
 ---
 
@@ -216,6 +218,8 @@ Your question enters a pending queue. Platform admins review and either approve 
 - **Privacy controls:**
   - *Show my profile to other users* — if unchecked, your profile page is hidden
   - *Show me on leaderboards* — if unchecked, you are excluded from all leaderboards
+- **Theme** — toggle Dark Mode on/off
+- **Change Password** — enter a new password and confirm it to update your password
 - **Logout** — signs you out and returns to the login screen
 
-Click **Save Settings** to apply changes.
+Click **Save Settings** to apply profile/privacy changes. Password changes are saved with the **Update Password** button.

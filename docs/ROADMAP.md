@@ -104,6 +104,7 @@
 - [x] Change username
 - [x] Toggle profile visibility
 - [x] Toggle leaderboard visibility
+- [x] Change password (new password + confirm)
 
 ### Community Feed
 - [x] Public game activity feed
@@ -196,6 +197,15 @@
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
 | Sentry test event confirmation pending | Sentry SDK integrated and DSN configured; awaiting confirmation that production errors are captured and visible in the Sentry dashboard. |
 | ~~BEST score could exceed 100%~~ | **Fixed** — Score display capped at 100%; validation added on game save; stale React state bug fixed in QuizScreen `handleNext`. |
+| ~~Quiz source selector ignored~~ | **Fixed** — QuizScreen now reads `config.source` and fetches from community questions, custom approved, mixed, or Trivia API accordingly. |
+| ~~Category map used wrong keys~~ | **Fixed** — categoryMap now maps human-readable category names (from QuizSourceSelector) to Trivia API v2 slugs. |
+| ~~Password reset had no UI~~ | **Fixed** — `PASSWORD_RECOVERY` event handled in onAuthStateChange; dedicated Set New Password screen; Change Password section added to Settings. |
+| ~~0-question games could be saved~~ | **Fixed** — `endQuiz` guards against `totalQuestions === 0`, preventing division-by-zero in stats. |
+| ~~CSV export formula injection~~ | **Fixed** — `sanitizeCSVField` escapes quotes and prepends single-quote for dangerous leading characters (`=+\-@`). |
+| ~~Commissioner mutations missing community_id~~ | **Fixed** — All question delete/tag/version/media operations now include `.eq('community_id', communityId)`. |
+| ~~Auth double-navigation on load~~ | **Fixed** — Removed duplicate `getSession()` call; app relies solely on `onAuthStateChange` (fires `INITIAL_SESSION`). |
+| ~~Invite codes used Math.random()~~ | **Fixed** — Invite code generation now uses `crypto.getRandomValues()` with an unambiguous character set. |
+| ~~Unbounded queries in Admin/Marketplace~~ | **Fixed** — AdminDashboard selects specific columns and parallelizes queries; CommunityMarketplace scopes count queries to public community IDs. |
 
 ---
 

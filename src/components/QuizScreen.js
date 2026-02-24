@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '../supabaseClient';
 import './QuizScreen.css';
 import decodeHtml from '../utils/decodeHtml';
 
 function QuizScreen({ config, onEnd }) {
-  const { category, difficulty, count, timerSettings } = config;
+  const { category, difficulty, count, timerSettings, source = 'trivia_api', communityId } = config;
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -97,47 +98,105 @@ function QuizScreen({ config, onEnd }) {
     }
   }, [showResult, stopTimer]);
 
-  // Map our category IDs to The Trivia API categories
+  // Map QuizSourceSelector's human-readable category strings to Trivia API v2 slugs
   const categoryMap = {
-    '9': 'general_knowledge',
-    '17': 'science',
-    '21': 'sport_and_leisure',
-    '23': 'history',
-    '11': 'film_and_tv',
-    '12': 'music',
-    '22': 'geography',
-    '18': 'science', // computers -> science
+    'General Knowledge': 'general_knowledge',
+    'Film': 'film_and_tv',
+    'Music': 'music',
+    'Geography': 'geography',
+    'History': 'history',
+    'Sports': 'sport_and_leisure',
+    'Science & Nature': 'science',
+    'Arts & Literature': 'arts_and_literature',
+  };
+
+  const fetchApiQuestions = async (requested) => {
+    const apiCategory = categoryMap[category] || 'general_knowledge';
+    const url = `https://the-trivia-api.com/v2/questions?limit=${requested}&categories=${apiCategory}&difficulties=${difficulty}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`API error ${response.status}`);
+    const data = await response.json();
+    return (data || []).map((q) => {
+      const correct = decodeHtml(q.correctAnswer);
+      return {
+        question: decodeHtml(q.question.text),
+        correctAnswer: correct,
+        allAnswers: shuffleArray([correct, ...q.incorrectAnswers.map(decodeHtml)])
+      };
+    });
+  };
+
+  const fetchCommunityQuestions = async (requested) => {
+    let query = supabase.from('community_questions').select('*').eq('community_id', communityId);
+    if (difficulty && difficulty !== 'mixed') {
+      query = query.eq('difficulty', difficulty);
+    }
+    const { data } = await query;
+    if (!data || data.length === 0) return [];
+    // Fisher-Yates shuffle
+    const shuffled = [...data];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, requested).map(q => ({
+      question: q.question_text,
+      correctAnswer: q.correct_answer,
+      allAnswers: shuffleArray([q.correct_answer, ...(q.incorrect_answers || [])]),
+      image_url: q.image_url || null,
+      video_url: q.video_url || null,
+      explanation: q.explanation || null
+    }));
+  };
+
+  const fetchCustomApprovedQuestions = async (requested) => {
+    const { data } = await supabase
+      .from('custom_questions')
+      .select('*')
+      .eq('status', 'approved');
+    if (!data || data.length === 0) return [];
+    const shuffled = [...data];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, requested).map(q => ({
+      question: q.question_text,
+      correctAnswer: q.correct_answer,
+      allAnswers: shuffleArray([q.correct_answer, ...(q.incorrect_answers || [])]),
+      explanation: q.explanation || null
+    }));
   };
 
   const fetchQuestions = async () => {
     try {
-      const apiCategory = categoryMap[category] || 'general_knowledge';
       const requested = count || 10;
-      const url = `https://the-trivia-api.com/v2/questions?limit=${requested}&categories=${apiCategory}&difficulties=${difficulty}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`API error ${response.status}`);
-      const data = await response.json();
+      let formatted = [];
 
-      if (!data || data.length === 0) {
-        setError('No questions found for this category and difficulty combination. Try different settings.');
+      if (source === 'community' && communityId) {
+        formatted = await fetchCommunityQuestions(requested);
+      } else if (source === 'custom_approved') {
+        formatted = await fetchCustomApprovedQuestions(requested);
+      } else if (source === 'mixed' && communityId) {
+        // Combine API + community questions
+        const half = Math.ceil(requested / 2);
+        const [apiQs, communityQs] = await Promise.all([
+          fetchApiQuestions(half).catch(() => []),
+          fetchCommunityQuestions(requested - half).catch(() => [])
+        ]);
+        formatted = shuffleArray([...apiQs, ...communityQs]);
+      } else {
+        // Default: trivia_api
+        formatted = await fetchApiQuestions(requested);
+      }
+
+      if (!formatted || formatted.length === 0) {
+        setError('No questions found for this configuration. Try different settings.');
         setLoading(false);
         return;
       }
-      if (data.length < requested) {
-        setError(`Only ${data.length} question${data.length === 1 ? '' : 's'} available for this category/difficulty combination. Try a different setting.`);
-        setLoading(false);
-        return;
-      }
 
-      const formattedQuestions = data.map((q) => {
-        const correct = decodeHtml(q.correctAnswer);
-        return {
-          question: decodeHtml(q.question.text),
-          correctAnswer: correct,
-          allAnswers: shuffleArray([correct, ...q.incorrectAnswers.map(decodeHtml)])
-        };
-      });
-      setQuestions(formattedQuestions);
+      setQuestions(formatted);
       setLoading(false);
     } catch (err) {
       setError('Failed to load questions. Check your connection and try again.');

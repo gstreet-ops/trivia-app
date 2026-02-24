@@ -38,13 +38,25 @@ function AdminDashboard({ onBack, currentUserId }) {
 
   const fetchAdminData = async () => {
     try {
-      const { data: allGames } = await supabase.from('games').select('*');
-      const { data: profilesData } = await supabase.from('profiles').select('id, username, created_at, role, super_admin');
-      const { data: publicGames } = await supabase.from('games').select('*').eq('visibility', 'public');
+      const [
+        { data: allGames },
+        { data: profilesData },
+        { data: memberships },
+        { data: games },
+        { data: pending }
+      ] = await Promise.all([
+        supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, user_id'),
+        supabase.from('profiles').select('id, username, created_at, role, super_admin'),
+        supabase.from('community_members').select('user_id'),
+        supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10),
+        supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false })
+      ]);
+
       const categoryCount = {};
+      const publicGameCount = (allGames || []).filter(g => g.visibility === 'public').length;
       allGames?.forEach(game => { categoryCount[game.category] = (categoryCount[game.category] || 0) + 1; });
       const mostPopularCategory = Object.keys(categoryCount).length > 0 ? Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0] : ['N/A', 0];
-      setStats({ totalUsers: profilesData?.length || 0, totalGames: allGames?.length || 0, publicGames: publicGames?.length || 0, avgGamesPerUser: profilesData?.length > 0 ? (allGames?.length / profilesData.length).toFixed(1) : 0, mostPopularCategory: mostPopularCategory[0], categoryPlayCount: mostPopularCategory[1] });
+      setStats({ totalUsers: profilesData?.length || 0, totalGames: allGames?.length || 0, publicGames: publicGameCount, avgGamesPerUser: profilesData?.length > 0 ? (allGames?.length / profilesData.length).toFixed(1) : 0, mostPopularCategory: mostPopularCategory[0], categoryPlayCount: mostPopularCategory[1] });
       setUsers(profilesData?.slice(0, 10) || []);
       setAllUsers(profilesData || []);
 
@@ -54,14 +66,11 @@ function AdminDashboard({ onBack, currentUserId }) {
       setUserGameCounts(gameCounts);
 
       // Build community membership counts
-      const { data: memberships } = await supabase.from('community_members').select('user_id');
       const commCounts = {};
       memberships?.forEach(m => { commCounts[m.user_id] = (commCounts[m.user_id] || 0) + 1; });
       setUserCommunityCounts(commCounts);
 
-      const { data: games } = await supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10);
       setRecentGames(games || []);
-      const { data: pending } = await supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false });
       setPendingQuestions(pending || []);
     } catch (err) { console.error('Error:', err); }
     setLoading(false);

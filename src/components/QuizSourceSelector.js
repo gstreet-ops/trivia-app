@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './QuizSourceSelector.css';
 
-function QuizSourceSelector({ onStart, userRole, communityId }) {
+function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
   const [category, setCategory] = useState('General Knowledge');
   const [difficulty, setDifficulty] = useState('medium');
   const [questionSource, setQuestionSource] = useState('trivia_api');
@@ -97,7 +97,10 @@ function QuizSourceSelector({ onStart, userRole, communityId }) {
         </div>
       )}
 
-      <button className='start-quiz-btn' onClick={handleStart}>Start Quiz</button>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+        {onBack && <button className='start-quiz-btn' onClick={onBack} style={{ background: '#fff', color: '#041E42', border: '1px solid #041E42' }}>Back</button>}
+        <button className='start-quiz-btn' onClick={handleStart} style={{ flex: 1 }}>Start Quiz</button>
+      </div>
     </div>
   );
 }

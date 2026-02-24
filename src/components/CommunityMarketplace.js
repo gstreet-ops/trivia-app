@@ -54,15 +54,18 @@ function CommunityMarketplace({ user, onBack }) {
         .eq('visibility', 'public')
         .order('name');
 
+      // Scope member/question count queries to public community IDs only
+      const publicIds = (publicCommunities || []).map(c => c.id);
+
       // Fetch member counts
-      const { data: memberCounts } = await supabase
-        .from('community_members')
-        .select('community_id');
+      const { data: memberCounts } = publicIds.length > 0
+        ? await supabase.from('community_members').select('community_id').in('community_id', publicIds)
+        : { data: [] };
 
       // Fetch question counts
-      const { data: questionCounts } = await supabase
-        .from('community_questions')
-        .select('community_id');
+      const { data: questionCounts } = publicIds.length > 0
+        ? await supabase.from('community_questions').select('community_id').in('community_id', publicIds)
+        : { data: [] };
 
       // Build count maps
       const memberCountMap = {};
