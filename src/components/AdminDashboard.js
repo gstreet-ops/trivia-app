@@ -102,13 +102,13 @@ function AdminDashboard({ onBack, currentUserId }) {
     // Call Edge Function to generate questions
     console.log('Invoking generate-questions Edge Function for request:', requestId);
     const { data: fnData, error: fnError } = await supabase.functions.invoke('generate-questions', {
-      body: JSON.stringify({ request_id: requestId })
+      body: { request_id: requestId }
     });
-    console.log('Edge Function response:', fnData);
+    console.log('Edge Function response:', { data: fnData, error: fnError });
     if (fnError) {
-      console.error('Edge Function error:', fnError);
+      console.error('Edge Function error (full):', JSON.stringify(fnError, null, 2));
       showToast('Generation failed: ' + fnError.message, 'error');
-      alert('Edge Function error: ' + fnError.message);
+      alert('Edge Function error: ' + JSON.stringify(fnError));
     } else {
       showToast('Questions generated successfully!');
     }
