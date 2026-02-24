@@ -1757,3 +1757,100 @@
   color: #2D6A4F;
   font-style: italic;
 }
+
+/* AI Badge */
+.ai-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Gen Review: Select Bar */
+.gen-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #F0F2F5;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.gen-select-toggle {
+  background: none;
+  border: none;
+  color: #041E42;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.gen-select-toggle:hover { color: #0a2d5e; }
+
+.gen-select-count {
+  font-size: 0.75rem;
+  color: #54585A;
+}
+
+/* Gen Review: Checkbox row layout */
+.gen-q-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.gen-q-checkbox {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #041E42;
+}
+
+.gen-q-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Gen Review: Bulk Add Button */
+.gen-bulk-add-btn {
+  margin-top: 8px;
+  padding: 8px 18px;
+  background: #2D6A4F;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+.gen-bulk-add-btn:hover { background: #236B43; }
+
+/* Source Filters */
+.source-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.source-filters label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gt-gray);
+}
+.source-filter-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

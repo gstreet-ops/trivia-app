@@ -28,6 +28,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [filterSource, setFilterSource] = useState('all');
   const [importHistory, setImportHistory] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -53,6 +54,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genReviewId, setGenReviewId] = useState(null);
   const [genAccepted, setGenAccepted] = useState({});
+  const [genSelected, setGenSelected] = useState({});
 
   useEffect(() => {
     fetchCommissionerData();
@@ -402,7 +404,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       q.incorrect_answers.some(ans => ans.toLowerCase().includes(searchQuery.toLowerCase())) ||
       q.category.toLowerCase().includes(searchQuery.toLowerCase());
     const tagMatch = selectedTags.length === 0 || (q.tags && selectedTags.every(tag => q.tags.includes(tag)));
-    return categoryMatch && difficultyMatch && searchMatch && tagMatch;
+    const sourceMatch = filterSource === 'all'
+      || (filterSource === 'manual' && !q.source && !q.imported_at)
+      || (filterSource === 'csv' && q.imported_at && q.source !== 'ai_generated')
+      || (filterSource === 'ai' && (q.source === 'ai_generated' || (q.tags && q.tags.includes('ai-generated'))));
+    return categoryMatch && difficultyMatch && searchMatch && tagMatch && sourceMatch;
   });
 
   const categories = [...new Set(questions.map(q => q.category))];
@@ -696,8 +702,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setGenSubmitting(false);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleAddGenQuestion = async (requestId, question) => {
     try {
+      const req = genRequests.find(r => r.id === requestId);
       const { error } = await supabase.from('community_questions').insert([{
         community_id: communityId,
         question_text: question.question_text,
@@ -707,7 +715,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         difficulty: question.difficulty || 'medium',
         tags: ['ai-generated'],
         version_number: 1,
-        version_history: []
+        version_history: [],
+        source: 'ai_generated',
+        ai_request_id: requestId,
+        ai_model: 'claude-sonnet-4-20250514',
+        ai_theme: req?.theme || '',
+        imported_by: currentUserId
       }]);
       if (error) throw error;
       // Track accepted count
@@ -721,6 +734,47 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       fetchCommissionerData();
     } catch (err) {
       alert('Failed to add question: ' + err.message);
+    }
+  };
+
+  const handleAddSelectedQuestions = async (req) => {
+    const selected = genSelected[req.id];
+    if (!selected || selected.size === 0) { alert('No questions selected'); return; }
+    const generatedQs = req.generated_questions || [];
+    const acceptedTexts = genAccepted[req.id] || [];
+    const toAdd = [...selected]
+      .map(i => generatedQs[i])
+      .filter(q => q && !acceptedTexts.includes(q.question_text));
+    if (toAdd.length === 0) { alert('All selected questions have already been added'); return; }
+    try {
+      const rows = toAdd.map(q => ({
+        community_id: communityId,
+        question_text: q.question_text,
+        correct_answer: q.correct_answer,
+        incorrect_answers: q.incorrect_answers,
+        category: q.category || 'General Knowledge',
+        difficulty: q.difficulty || 'medium',
+        tags: ['ai-generated'],
+        version_number: 1,
+        version_history: [],
+        source: 'ai_generated',
+        ai_request_id: req.id,
+        ai_model: 'claude-sonnet-4-20250514',
+        ai_theme: req.theme || '',
+        imported_by: currentUserId
+      }));
+      const { error } = await supabase.from('community_questions').insert(rows);
+      if (error) throw error;
+      const addedTexts = toAdd.map(q => q.question_text);
+      setGenAccepted(prev => ({
+        ...prev,
+        [req.id]: [...(prev[req.id] || []), ...addedTexts]
+      }));
+      const accepted = (genAccepted[req.id]?.length || 0) + addedTexts.length;
+      await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', req.id);
+      fetchCommissionerData();
+    } catch (err) {
+      alert('Failed to add questions: ' + err.message);
     }
   };
 
@@ -1192,6 +1246,26 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     </div>
                   )}
 
+                  <div className="source-filters">
+                    <label>Source:</label>
+                    <div className="source-filter-list">
+                      {[
+                        { value: 'all', label: 'All' },
+                        { value: 'manual', label: 'Manual' },
+                        { value: 'csv', label: 'CSV Import' },
+                        { value: 'ai', label: 'AI Generated' }
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          className={`tag-filter-btn ${filterSource === opt.value ? 'active' : ''}`}
+                          onClick={() => setFilterSource(opt.value)}
+                        >
+                          {opt.label} {filterSource === opt.value && '✓'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="bulk-controls">
                     <label className="checkbox-label">
                       <input
@@ -1258,6 +1332,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                           <span className={`difficulty-badge ${question.difficulty}`}>{question.difficulty}</span>
                           {question.version_number > 0 && <span className="version-badge">v{question.version_number}</span>}
                           {question.imported_at && <span className="import-badge">Imported</span>}
+                          {(question.source === 'ai_generated' || (question.tags && question.tags.includes('ai-generated'))) && (
+                            <span className="ai-badge">AI</span>
+                          )}
                         </div>
                         <div className="question-text">{question.question_text}</div>
                         <div className="answers-preview">
@@ -1792,48 +1869,94 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                             <strong>Admin notes:</strong> {req.admin_notes}
                           </div>
                         )}
-                        {req.status === 'completed' && generatedQs.length > 0 && (
+                        {req.status === 'completed' && generatedQs.length > 0 && (() => {
+                          const selectableIndices = generatedQs.map((q, i) => ({ q, i })).filter(({ q }) => !acceptedTexts.includes(q.question_text)).map(({ i }) => i);
+                          const currentSelected = genSelected[req.id] || new Set(selectableIndices);
+                          const selectedCount = [...currentSelected].filter(i => selectableIndices.includes(i)).length;
+                          const allSelected = selectedCount === selectableIndices.length && selectableIndices.length > 0;
+                          return (
                           <>
                             <button
                               className="gen-review-btn"
-                              onClick={() => setGenReviewId(isReviewing ? null : req.id)}
+                              onClick={() => {
+                                if (!isReviewing && !genSelected[req.id]) {
+                                  setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
+                                }
+                                setGenReviewId(isReviewing ? null : req.id);
+                              }}
                             >
                               {isReviewing ? 'Hide Questions' : `Review Questions (${generatedQs.length})`}
                             </button>
                             {isReviewing && (
                               <div className="gen-review-panel">
+                                {selectableIndices.length > 0 && (
+                                  <div className="gen-select-bar">
+                                    <button
+                                      className="gen-select-toggle"
+                                      onClick={() => {
+                                        if (allSelected) {
+                                          setGenSelected(prev => ({ ...prev, [req.id]: new Set() }));
+                                        } else {
+                                          setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
+                                        }
+                                      }}
+                                    >
+                                      {allSelected ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                    <span className="gen-select-count">{selectedCount} of {selectableIndices.length} selected</span>
+                                  </div>
+                                )}
                                 {generatedQs.map((q, qi) => {
                                   const alreadyAdded = acceptedTexts.includes(q.question_text);
+                                  const isChecked = currentSelected.has(qi);
                                   return (
                                     <div key={qi} className={`gen-q-card ${alreadyAdded ? 'gen-q-added' : ''}`}>
-                                      <p className="gen-q-text">{q.question_text}</p>
-                                      <div className="gen-q-answers">
-                                        <span className="gen-q-correct">{q.correct_answer}</span>
-                                        {q.incorrect_answers?.map((a, ai) => (
-                                          <span key={ai} className="gen-q-wrong">{a}</span>
-                                        ))}
-                                      </div>
-                                      <div className="gen-q-meta">
-                                        <span className="gen-tag">{q.category}</span>
-                                        <span className="gen-tag">{q.difficulty}</span>
-                                      </div>
-                                      <div className="gen-q-actions">
-                                        {alreadyAdded ? (
-                                          <span className="gen-q-added-label">Added</span>
-                                        ) : (
-                                          <>
-                                            <button className="gen-add-btn" onClick={() => handleAddGenQuestion(req.id, q)}>Add to Bank</button>
-                                            <button className="gen-discard-btn" onClick={() => setGenAccepted(prev => ({ ...prev, [req.id]: [...(prev[req.id] || []), q.question_text] }))}>Discard</button>
-                                          </>
+                                      <div className="gen-q-row">
+                                        {!alreadyAdded && (
+                                          <input
+                                            type="checkbox"
+                                            className="gen-q-checkbox"
+                                            checked={isChecked}
+                                            onChange={() => {
+                                              setGenSelected(prev => {
+                                                const s = new Set(prev[req.id] || selectableIndices);
+                                                if (s.has(qi)) s.delete(qi); else s.add(qi);
+                                                return { ...prev, [req.id]: s };
+                                              });
+                                            }}
+                                          />
                                         )}
+                                        <div className="gen-q-content">
+                                          <p className="gen-q-text">{q.question_text}</p>
+                                          <div className="gen-q-answers">
+                                            <span className="gen-q-correct">{q.correct_answer}</span>
+                                            {q.incorrect_answers?.map((a, ai) => (
+                                              <span key={ai} className="gen-q-wrong">{a}</span>
+                                            ))}
+                                          </div>
+                                          <div className="gen-q-meta">
+                                            <span className="gen-tag">{q.category}</span>
+                                            <span className="gen-tag">{q.difficulty}</span>
+                                          </div>
+                                          {alreadyAdded && <span className="gen-q-added-label">Added</span>}
+                                        </div>
                                       </div>
                                     </div>
                                   );
                                 })}
+                                {selectedCount > 0 && (
+                                  <button
+                                    className="gen-bulk-add-btn"
+                                    onClick={() => handleAddSelectedQuestions(req)}
+                                  >
+                                    Add Selected to Question Bank ({selectedCount})
+                                  </button>
+                                )}
                               </div>
                             )}
                           </>
-                        )}
+                          );
+                        })()}
                       </div>
                     );
                   })}
