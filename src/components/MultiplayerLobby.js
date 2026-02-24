@@ -31,7 +31,7 @@ function MultiplayerLobby({ user, username, onBack }) {
 
   // Create form
   const [roomName, setRoomName] = useState('');
-  const [questionSource, setQuestionSource] = useState('trivia_api');
+  const [questionSource, setQuestionSource] = useState('api');
   const [selectedCommunity, setSelectedCommunity] = useState('');
   const [category, setCategory] = useState('General Knowledge');
   const [difficulty, setDifficulty] = useState('mixed');
@@ -527,8 +527,8 @@ function MultiplayerLobby({ user, username, onBack }) {
               <div className="mp-form-group">
                 <label>Question Source</label>
                 <div className="mp-radio-group">
-                  <label className={`mp-radio ${questionSource === 'trivia_api' ? 'active' : ''}`}>
-                    <input type="radio" name="source" value="trivia_api" checked={questionSource === 'trivia_api'} onChange={() => setQuestionSource('trivia_api')} />
+                  <label className={`mp-radio ${questionSource === 'api' ? 'active' : ''}`}>
+                    <input type="radio" name="source" value="trivia_api" checked={questionSource === 'api'} onChange={() => setQuestionSource('api')} />
                     Trivia API
                   </label>
                   <label className={`mp-radio ${questionSource === 'community' ? 'active' : ''}`}>
@@ -548,7 +548,7 @@ function MultiplayerLobby({ user, username, onBack }) {
                 </div>
               )}
 
-              {questionSource === 'trivia_api' && (
+              {questionSource === 'api' && (
                 <div className="mp-form-group">
                   <label>Category</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)}>
