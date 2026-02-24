@@ -158,16 +158,6 @@ function MultiplayerLobby({ user, username, onBack }) {
         attempts++;
       }
 
-      const settings = {
-        question_source: questionSource,
-        community_id: questionSource === 'community' ? selectedCommunity : null,
-        category,
-        difficulty,
-        question_count: questionCount,
-        timer_seconds: timerSeconds,
-        speed_bonus: speedBonus
-      };
-
       const { data: newRoom, error: roomError } = await supabase
         .from('multiplayer_rooms')
         .insert([{
@@ -176,7 +166,13 @@ function MultiplayerLobby({ user, username, onBack }) {
           host_id: user.id,
           status: 'waiting',
           max_players: maxPlayers,
-          settings
+          question_source: questionSource,
+          community_id: questionSource === 'community' ? selectedCommunity : null,
+          category,
+          difficulty,
+          question_count: questionCount,
+          timer_seconds: timerSeconds,
+          speed_bonus: speedBonus
         }])
         .select()
         .single();
@@ -323,23 +319,22 @@ function MultiplayerLobby({ user, username, onBack }) {
     setError(null);
 
     try {
-      const settings = room.settings;
       let questions = [];
 
-      if (settings.question_source === 'community' && settings.community_id) {
+      if (room.question_source === 'community' && room.community_id) {
         // Fetch from community questions
-        let query = supabase.from('community_questions').select('*').eq('community_id', settings.community_id);
-        if (settings.difficulty && settings.difficulty !== 'mixed') {
-          query = query.eq('difficulty', settings.difficulty);
+        let query = supabase.from('community_questions').select('*').eq('community_id', room.community_id);
+        if (room.difficulty && room.difficulty !== 'mixed') {
+          query = query.eq('difficulty', room.difficulty);
         }
         const { data } = await query;
-        if (!data || data.length < settings.question_count) {
-          setError(`Only ${data?.length || 0} questions available. Need ${settings.question_count}.`);
+        if (!data || data.length < room.question_count) {
+          setError(`Only ${data?.length || 0} questions available. Need ${room.question_count}.`);
           setStarting(false);
           return;
         }
         // Shuffle and pick
-        const shuffled = data.sort(() => Math.random() - 0.5).slice(0, settings.question_count);
+        const shuffled = data.sort(() => Math.random() - 0.5).slice(0, room.question_count);
         questions = shuffled.map((q, i) => ({
           room_id: room.id,
           question_index: i,
@@ -351,25 +346,25 @@ function MultiplayerLobby({ user, username, onBack }) {
         }));
       } else {
         // Fetch from Trivia API
-        const apiCat = CATEGORY_API_MAP[settings.category];
-        let url = `https://the-trivia-api.com/v2/questions?limit=${settings.question_count}`;
+        const apiCat = CATEGORY_API_MAP[room.category];
+        let url = `https://the-trivia-api.com/v2/questions?limit=${room.question_count}`;
         if (apiCat) url += `&categories=${apiCat}`;
-        if (settings.difficulty && settings.difficulty !== 'mixed') url += `&difficulties=${settings.difficulty}`;
+        if (room.difficulty && room.difficulty !== 'mixed') url += `&difficulties=${room.difficulty}`;
         const resp = await fetch(url);
         if (!resp.ok) throw new Error('Failed to fetch questions from API');
         const data = await resp.json();
-        if (!data || data.length < settings.question_count) {
+        if (!data || data.length < room.question_count) {
           setError('Not enough questions available from API. Try different settings.');
           setStarting(false);
           return;
         }
-        questions = data.slice(0, settings.question_count).map((q, i) => ({
+        questions = data.slice(0, room.question_count).map((q, i) => ({
           room_id: room.id,
           question_index: i,
           question_text: decodeHtml(q.question.text),
           correct_answer: decodeHtml(q.correctAnswer),
           incorrect_answers: q.incorrectAnswers.map(decodeHtml),
-          category: settings.category,
+          category: room.category,
           difficulty: q.difficulty
         }));
       }
@@ -402,13 +397,13 @@ function MultiplayerLobby({ user, username, onBack }) {
     }
   };
 
-  const settingsSummary = room?.settings ? (
+  const settingsSummary = room ? (
     <div className="mp-settings-summary">
-      <span className="mp-setting-tag">{room.settings.question_count} Qs</span>
-      <span className="mp-setting-tag">{room.settings.difficulty || 'mixed'}</span>
-      <span className="mp-setting-tag">{room.settings.timer_seconds}s timer</span>
-      {room.settings.speed_bonus && <span className="mp-setting-tag mp-speed">Speed Bonus</span>}
-      <span className="mp-setting-tag">{room.settings.question_source === 'community' ? 'Community' : 'Trivia API'}</span>
+      <span className="mp-setting-tag">{room.question_count} Qs</span>
+      <span className="mp-setting-tag">{room.difficulty || 'mixed'}</span>
+      <span className="mp-setting-tag">{room.timer_seconds}s timer</span>
+      {room.speed_bonus && <span className="mp-setting-tag mp-speed">Speed Bonus</span>}
+      <span className="mp-setting-tag">{room.question_source === 'community' ? 'Community' : 'Trivia API'}</span>
     </div>
   ) : null;
 
