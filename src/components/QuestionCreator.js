@@ -32,12 +32,42 @@ function QuestionCreator({ user, onBack, onSuccess }) {
       <p className="subtitle">Submit your own trivia questions for community review!</p>
       {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div className="form-row"><div className="form-group"><label>Category</label><select name="category" value={formData.category} onChange={handleChange}>{CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select></div><div className="form-group"><label>Difficulty</label><select name="difficulty" value={formData.difficulty} onChange={handleChange}><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></div></div>
-        <div className="form-group"><label>Question</label><textarea name="question_text" value={formData.question_text} onChange={handleChange} placeholder="What is the capital of France?" rows={3} required /></div>
-        <div className="form-group correct-answer"><label>Correct Answer ✓</label><input type="text" name="correct_answer" value={formData.correct_answer} onChange={handleChange} placeholder="Paris" required /></div>
-        <div className="form-group"><label>Incorrect Answer 1</label><input type="text" name="incorrect_answer1" value={formData.incorrect_answer1} onChange={handleChange} placeholder="London" required /></div>
-        <div className="form-group"><label>Incorrect Answer 2</label><input type="text" name="incorrect_answer2" value={formData.incorrect_answer2} onChange={handleChange} placeholder="Berlin" required /></div>
-        <div className="form-group"><label>Incorrect Answer 3</label><input type="text" name="incorrect_answer3" value={formData.incorrect_answer3} onChange={handleChange} placeholder="Madrid" required /></div>
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="qc-category">Category</label>
+            <select id="qc-category" name="category" value={formData.category} onChange={handleChange}>
+              {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="qc-difficulty">Difficulty</label>
+            <select id="qc-difficulty" name="difficulty" value={formData.difficulty} onChange={handleChange}>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div className="form-group">
+          <label htmlFor="qc-question">Question</label>
+          <textarea id="qc-question" name="question_text" value={formData.question_text} onChange={handleChange} placeholder="What is the capital of France?" rows={3} required />
+        </div>
+        <div className="form-group correct-answer">
+          <label htmlFor="qc-correct-answer">Correct Answer <span aria-hidden="true">✓</span></label>
+          <input id="qc-correct-answer" type="text" name="correct_answer" value={formData.correct_answer} onChange={handleChange} placeholder="Paris" required />
+        </div>
+        <div className="form-group">
+          <label htmlFor="qc-incorrect1">Incorrect Answer 1</label>
+          <input id="qc-incorrect1" type="text" name="incorrect_answer1" value={formData.incorrect_answer1} onChange={handleChange} placeholder="London" required />
+        </div>
+        <div className="form-group">
+          <label htmlFor="qc-incorrect2">Incorrect Answer 2</label>
+          <input id="qc-incorrect2" type="text" name="incorrect_answer2" value={formData.incorrect_answer2} onChange={handleChange} placeholder="Berlin" required />
+        </div>
+        <div className="form-group">
+          <label htmlFor="qc-incorrect3">Incorrect Answer 3</label>
+          <input id="qc-incorrect3" type="text" name="incorrect_answer3" value={formData.incorrect_answer3} onChange={handleChange} placeholder="Madrid" required />
+        </div>
         <button type="submit" className="submit-btn" disabled={submitting}>{submitting ? 'Submitting...' : 'Submit Question for Review'}</button>
       </form>
     </div>

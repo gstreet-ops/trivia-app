@@ -41,13 +41,13 @@ function GameReview({ gameId, onBack }) {
         </div>
       </div>
       <div className="game-meta">
-        <span className="meta-item">📁 {game.category}</span>
-        <span className="meta-item">⚡ {game.difficulty}</span>
-        <span className="meta-item">📅 {new Date(game.created_at).toLocaleDateString()}</span>
+        <span className="meta-item"><span aria-hidden="true">📁</span> {game.category}</span>
+        <span className="meta-item"><span aria-hidden="true">⚡</span> {game.difficulty}</span>
+        <span className="meta-item"><span aria-hidden="true">📅</span> {new Date(game.created_at).toLocaleDateString()}</span>
       </div>
       <div className="answers-list">
         {answers.map((answer, index) => (
-          <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')}>
+          <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')} aria-label={`Question ${index + 1}: ${answer.is_correct ? 'Correct' : 'Incorrect'}`}>
             <div className="question-number">Question {index + 1}</div>
             <div className="question-text">{decodeHtml(answer.question_text)}</div>
             <div className="answer-options">

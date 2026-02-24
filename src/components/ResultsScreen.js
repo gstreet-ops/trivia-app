@@ -36,11 +36,13 @@ function ResultsScreen({ score, onRestart }) {
   };
 
   const getPerformanceMessage = () => {
-    if (score === 10) return '🏆 Perfect Score! Incredible!';
-    if (score >= 8) return '🌟 Excellent work!';
-    if (score >= 6) return '👍 Good job!';
-    if (score >= 4) return '📚 Not bad, keep practicing!';
-    return '💪 Try again, you can do better!';
+    let emoji, text;
+    if (score === 10)    { emoji = '🏆'; text = 'Perfect Score! Incredible!'; }
+    else if (score >= 8) { emoji = '🌟'; text = 'Excellent work!'; }
+    else if (score >= 6) { emoji = '👍'; text = 'Good job!'; }
+    else if (score >= 4) { emoji = '📚'; text = 'Not bad, keep practicing!'; }
+    else                 { emoji = '💪'; text = 'Try again, you can do better!'; }
+    return <><span aria-hidden="true">{emoji}</span> {text}</>;
   };
 
   return (
@@ -59,6 +61,7 @@ function ResultsScreen({ score, onRestart }) {
             <input
               type="text"
               placeholder="Enter your name"
+              aria-label="Your name"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && saveScore()}

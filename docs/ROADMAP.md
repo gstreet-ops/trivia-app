@@ -134,6 +134,18 @@
 - [x] Open Rooms browser — lists all waiting rooms with host username, player count, settings; auto-refreshes every 10 seconds; direct Join button
 - [x] Game start logic — fetches questions from API or community bank, inserts into multiplayer_questions, updates room status
 
+### Multiplayer Quiz (Phase 2 — Live Game)
+- [x] Live game screen — all players answer the same questions simultaneously
+- [x] Per-question countdown timer with visual bar, warning pulse at ≤5s, auto-submit on timeout
+- [x] 2×2 answer grid with correct/wrong/selected highlighting
+- [x] Points-based scoring — 100 base per correct answer, up to +100 speed bonus when enabled
+- [x] Real-time answer tracking — player dots show who has answered via Supabase Realtime
+- [x] Disconnect failsafe — force-advances to scoreboard if not all players answer within grace period
+- [x] Round scoreboard — sorted leaderboard after each question showing round points and running total
+- [x] Host-controlled pacing — host clicks "Next Question" to advance, broadcast syncs all players
+- [x] Final results screen — game over leaderboard with medal emojis for top 3, highlighted self row
+- [x] Mobile responsive — single-column answer layout on small screens
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon
@@ -185,7 +197,6 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
-- [ ] **Real-time multiplayer quiz (Phase 2 — live game)** — synchronous live game screen where all players answer the same questions simultaneously, real-time score updates, final leaderboard; Phase 1 lobby is complete
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Image questions** — support attaching an image to a question
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install

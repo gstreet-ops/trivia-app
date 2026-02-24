@@ -55,6 +55,12 @@ Do not batch doc updates for later — update them before ending the session.
 
 ---
 
+## User Preferences
+
+- **Avoid manual copy-paste tasks.** Whenever a value is needed (DSN, API key, config value, etc.), retrieve it programmatically, prompt for it interactively, or provide a direct command that inserts it automatically. Do not ask the user to copy a value from one place and paste it into a file manually. The user prefers to stay in Claude Code rather than switching to manual file editing.
+
+---
+
 ## Project Conventions
 
 - Georgetown color palette: navy `#041E42`, gray `#54585A`, light blue `#8B9DC3`, pale `#E8ECF0`
