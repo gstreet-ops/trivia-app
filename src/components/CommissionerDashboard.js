@@ -42,11 +42,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [analytics, setAnalytics] = useState(null);
   const [username, setUsername] = useState('');
   const [navOpen, setNavOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
+  const [annEditing, setAnnEditing] = useState(null);
+  const [annEditForm, setAnnEditForm] = useState({ title: '', body: '', pinned: false });
 
   useEffect(() => {
     fetchCommissionerData();
     fetchTemplates();
     fetchAnalytics();
+    fetchAnnouncements();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCommissionerData = async () => {
@@ -633,6 +638,99 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
+  const fetchAnnouncements = async () => {
+    try {
+      const { data } = await supabase
+        .from('community_announcements')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    }
+  };
+
+  const handlePostAnnouncement = async () => {
+    if (!annForm.title.trim() || !annForm.body.trim()) {
+      alert('Title and body are required');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('community_announcements').insert([{
+        community_id: communityId,
+        author_id: currentUserId,
+        title: annForm.title.trim(),
+        body: annForm.body.trim(),
+        pinned: annForm.pinned
+      }]);
+      if (error) { alert('Failed to post: ' + error.message); return; }
+      setAnnForm({ title: '', body: '', pinned: false });
+      fetchAnnouncements();
+    } catch (error) {
+      console.error('Error posting announcement:', error);
+    }
+  };
+
+  const handleUpdateAnnouncement = async (id) => {
+    if (!annEditForm.title.trim() || !annEditForm.body.trim()) {
+      alert('Title and body are required');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('community_announcements').update({
+        title: annEditForm.title.trim(),
+        body: annEditForm.body.trim(),
+        pinned: annEditForm.pinned,
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) { alert('Failed to update: ' + error.message); return; }
+      setAnnEditing(null);
+      fetchAnnouncements();
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      const { error } = await supabase.from('community_announcements').delete().eq('id', id);
+      if (error) { alert('Failed to delete: ' + error.message); return; }
+      fetchAnnouncements();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+    }
+  };
+
+  const handleTogglePin = async (id, currentPinned) => {
+    try {
+      const { error } = await supabase.from('community_announcements').update({
+        pinned: !currentPinned,
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) { alert('Failed to update: ' + error.message); return; }
+      fetchAnnouncements();
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+    }
+  };
+
+  const formatRelativeTime = (dateStr) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
   if (loading) {
     return (
       <div className="commissioner-dashboard">
@@ -677,6 +775,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           <span className="nav-current-label">
             {{
               overview: 'Overview',
+              announcements: `Announcements (${announcements.length})`,
               questions: `Questions (${questions.length})`,
               members: `Members (${members.length})`,
               settings: 'Settings',
@@ -692,6 +791,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             <div className="nav-dropdown-menu">
               {[
                 { id: 'overview', label: 'Overview', icon: '🏠' },
+                { id: 'announcements', label: `Announcements (${announcements.length})`, icon: '📢' },
                 { id: 'questions', label: `Questions (${questions.length})`, icon: '❓' },
                 { id: 'members', label: `Members (${members.length})`, icon: '👥' },
                 { id: 'settings', label: 'Settings', icon: '⚙️' },
@@ -777,6 +877,114 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ANNOUNCEMENTS TAB */}
+        {activeTab === 'announcements' && (
+          <div className="tab-pane">
+            <div className="commissioner-section">
+              <h2>Post Announcement</h2>
+              <div className="ann-form">
+                <input
+                  type="text"
+                  className="ann-title-input"
+                  placeholder="Announcement title"
+                  value={annForm.title}
+                  onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
+                />
+                <textarea
+                  className="ann-body-input"
+                  placeholder="Write your announcement..."
+                  value={annForm.body}
+                  onChange={(e) => { if (e.target.value.length <= 500) setAnnForm({ ...annForm, body: e.target.value }); }}
+                  rows={4}
+                  maxLength={500}
+                />
+                <div className="ann-form-footer">
+                  <label className="ann-pin-label">
+                    <input
+                      type="checkbox"
+                      checked={annForm.pinned}
+                      onChange={(e) => setAnnForm({ ...annForm, pinned: e.target.checked })}
+                    />
+                    Pin this announcement
+                  </label>
+                  <span className="ann-char-count">{annForm.body.length}/500</span>
+                </div>
+                <button className="btn-primary" onClick={handlePostAnnouncement} disabled={!annForm.title.trim() || !annForm.body.trim()}>
+                  Post Announcement
+                </button>
+              </div>
+            </div>
+
+            <div className="commissioner-section">
+              <h2>Announcements ({announcements.length})</h2>
+              {announcements.length === 0 ? (
+                <p className="empty-message">No announcements yet. Post one above!</p>
+              ) : (
+                <div className="ann-list">
+                  {announcements.map(ann => (
+                    <div key={ann.id} className={`ann-card ${ann.pinned ? 'pinned' : ''}`}>
+                      {annEditing === ann.id ? (
+                        <div className="ann-edit-form">
+                          <input
+                            type="text"
+                            className="ann-title-input"
+                            value={annEditForm.title}
+                            onChange={(e) => setAnnEditForm({ ...annEditForm, title: e.target.value })}
+                          />
+                          <textarea
+                            className="ann-body-input"
+                            value={annEditForm.body}
+                            onChange={(e) => { if (e.target.value.length <= 500) setAnnEditForm({ ...annEditForm, body: e.target.value }); }}
+                            rows={3}
+                            maxLength={500}
+                          />
+                          <div className="ann-form-footer">
+                            <label className="ann-pin-label">
+                              <input
+                                type="checkbox"
+                                checked={annEditForm.pinned}
+                                onChange={(e) => setAnnEditForm({ ...annEditForm, pinned: e.target.checked })}
+                              />
+                              Pinned
+                            </label>
+                            <span className="ann-char-count">{annEditForm.body.length}/500</span>
+                          </div>
+                          <div className="ann-edit-actions">
+                            <button className="btn-primary" onClick={() => handleUpdateAnnouncement(ann.id)}>Save</button>
+                            <button className="btn-secondary" onClick={() => setAnnEditing(null)}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="ann-card-header">
+                            <div className="ann-card-title-row">
+                              <h3 className="ann-title">{ann.title}</h3>
+                              {ann.pinned && <span className="ann-pinned-badge">Pinned</span>}
+                            </div>
+                            <span className="ann-date">{formatRelativeTime(ann.created_at)}</span>
+                          </div>
+                          <p className="ann-body">{ann.body}</p>
+                          <div className="ann-card-actions">
+                            <button className="btn-icon" onClick={() => handleTogglePin(ann.id, ann.pinned)}>
+                              {ann.pinned ? 'Unpin' : 'Pin'}
+                            </button>
+                            <button className="btn-icon" onClick={() => { setAnnEditing(ann.id); setAnnEditForm({ title: ann.title, body: ann.body, pinned: ann.pinned }); }}>
+                              Edit
+                            </button>
+                            <button className="btn-danger-sm" onClick={() => handleDeleteAnnouncement(ann.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -56,6 +56,7 @@
 - [x] Active community shown in persistent top bar
 - [x] Community name clickable in top bar → community detail
 - [x] Community Marketplace — browse public communities, join directly, commissioner visibility toggle and description
+- [x] Community announcements — commissioner posts visible to all members on community detail page, with pin/unpin, edit, delete, "New" badge for recent posts
 
 ### Commissioner Dashboard
 - [x] Tabbed navigation (Overview, Questions, Members, Settings, Analytics)
@@ -154,7 +155,7 @@
 - [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
 - [ ] **Admin delete user** — remove a user account from the platform
 - [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
-- [ ] **Community announcements** — commissioner can post messages visible to all members
+- [x] **Community announcements** — commissioner can post, edit, delete, pin/unpin announcements; members see them on community detail page with "New" badges
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
 - [ ] **Season reset** — archive season data and start fresh rankings
 - [ ] **Multiple communities per user** — currently the top bar only shows one community; support multi-league users

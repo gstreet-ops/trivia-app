@@ -1306,3 +1306,147 @@
 .visibility-toggle.on .visibility-toggle-knob {
   left: 23px;
 }
+
+/* ============================================================
+   Announcements Tab
+   ============================================================ */
+.ann-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ann-title-input {
+  padding: 10px 12px;
+  border: 2px solid var(--gt-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--gt-text);
+}
+
+.ann-title-input:focus {
+  outline: none;
+  border-color: var(--gt-navy);
+}
+
+.ann-body-input {
+  padding: 10px 12px;
+  border: 2px solid var(--gt-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--gt-text);
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ann-body-input:focus {
+  outline: none;
+  border-color: var(--gt-navy);
+}
+
+.ann-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ann-pin-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--gt-gray);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.ann-char-count {
+  font-size: 0.8rem;
+  color: var(--gt-text-muted);
+}
+
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ann-card {
+  background: var(--gt-white);
+  border: 1px solid var(--gt-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.ann-card.pinned {
+  border-left: 3px solid var(--gt-navy);
+  background: #F0F4F8;
+}
+
+.ann-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ann-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.ann-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gt-navy);
+}
+
+.ann-pinned-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--gt-navy);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.ann-date {
+  font-size: 0.78rem;
+  color: var(--gt-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ann-body {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  color: var(--gt-gray);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.ann-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ann-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ann-edit-actions {
+  display: flex;
+  gap: 8px;
+}

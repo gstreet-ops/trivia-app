@@ -8,6 +8,8 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
   const [leaderboard, setLeaderboard] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +47,15 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
         .eq('community_id', communityId);
       setQuestions(questionsData || []);
 
+      // Fetch announcements
+      const { data: annData } = await supabase
+        .from('community_announcements')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      setAnnouncements(annData || []);
+
       // Fetch recent community member activity
       const memberIds = (membersData || []).map(m => m.user_id);
       if (memberIds.length > 0) {
@@ -61,6 +72,24 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
       console.error('Error fetching community:', error);
     }
     setLoading(false);
+  };
+
+  const formatRelativeTime = (dateStr) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const isNew = (dateStr) => {
+    return (new Date() - new Date(dateStr)) < 48 * 60 * 60 * 1000;
   };
 
   const isCommissioner = community?.commissioner_id === currentUserId;
@@ -109,6 +138,32 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
       <button className="start-community-quiz-btn" onClick={() => onStartQuiz(communityId)}>
         Play Community Quiz
       </button>
+
+      {announcements.length > 0 && (
+        <div className="cd-announcements">
+          <h2 className="cd-ann-header">Announcements</h2>
+          <div className="cd-ann-list">
+            {(showAllAnnouncements ? announcements : announcements.slice(0, 5)).map(ann => (
+              <div key={ann.id} className={`cd-ann-card ${ann.pinned ? 'pinned' : ''}`}>
+                <div className="cd-ann-top">
+                  <div className="cd-ann-title-row">
+                    {ann.pinned && <span className="cd-ann-pin-icon" title="Pinned">📌</span>}
+                    <strong className="cd-ann-title">{ann.title}</strong>
+                    {isNew(ann.created_at) && <span className="cd-ann-new-badge">New</span>}
+                  </div>
+                  <span className="cd-ann-time">{formatRelativeTime(ann.created_at)}</span>
+                </div>
+                <p className="cd-ann-body">{ann.body}</p>
+              </div>
+            ))}
+          </div>
+          {announcements.length > 5 && !showAllAnnouncements && (
+            <button className="cd-ann-view-all" onClick={() => setShowAllAnnouncements(true)}>
+              View all {announcements.length} announcements
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="community-sections">
         <div className="section">

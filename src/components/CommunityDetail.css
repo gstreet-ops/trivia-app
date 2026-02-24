@@ -296,3 +296,106 @@
   color: #54585A;
   font-weight: 600;
 }
+
+/* ===== Community Detail Announcements ===== */
+.cd-announcements {
+  background: #f8f9ff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.cd-ann-header {
+  color: #333;
+  font-size: 1.5rem;
+  margin: 0 0 16px 0;
+}
+
+.cd-ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cd-ann-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.cd-ann-card.pinned {
+  border-left: 3px solid #041E42;
+  background: #F0F4F8;
+}
+
+.cd-ann-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.cd-ann-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.cd-ann-pin-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.cd-ann-title {
+  color: #041E42;
+  font-size: 0.95rem;
+}
+
+.cd-ann-new-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #C41E3A;
+  color: white;
+  padding: 1px 7px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.cd-ann-time {
+  font-size: 0.75rem;
+  color: #8B9DC3;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cd-ann-body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #54585A;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.cd-ann-view-all {
+  display: block;
+  margin: 12px auto 0;
+  padding: 8px 20px;
+  background: none;
+  border: 1px solid #041E42;
+  border-radius: 6px;
+  color: #041E42;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cd-ann-view-all:hover {
+  background: #041E42;
+  color: white;
+}
