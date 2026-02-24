@@ -18,6 +18,7 @@ import CommunityMarketplace from './components/CommunityMarketplace';
 import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
+import NotificationBell from './components/NotificationBell';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
@@ -214,6 +215,7 @@ function App() {
                   </button>
                 </>
               )}
+              <NotificationBell userId={session.user.id} onNavigate={(screen) => navigateTo(screen)} />
             </div>
             <div className="app-nav-dropdown">
               <button

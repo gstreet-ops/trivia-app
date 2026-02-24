@@ -163,6 +163,15 @@
 - [x] Final results screen — game over leaderboard with medal emojis for top 3, highlighted self row
 - [x] Mobile responsive — single-column answer layout on small screens
 
+### In-App Notifications
+- [x] Notifications table with RLS (users can only view/update own notifications)
+- [x] NotificationBell in top bar with unread count badge
+- [x] Dropdown panel with recent notifications, mark as read
+- [x] Auto-notify on custom question approve/reject
+- [x] Auto-notify on AI generation request approve/reject
+- [x] 30-second polling for new notifications
+- [x] Click notification to navigate to relevant screen
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon
@@ -197,7 +206,7 @@
 - [x] **Timer per question** — commissioner-configurable countdown with auto-submit on expiry, visual bar, warning state
 - [ ] **Achievement for all badges** — earn all 6 badges to unlock a "Grand Master" badge
 - [ ] **Achievement for community engagement** — play X community games
-- [ ] **Email notifications** — notify submitter when their question is approved/rejected
+- [x] ~~**Email notifications**~~ — replaced by in-app notification system (NotificationBell with unread badge, dropdown panel, auto-notify on approve/reject)
 
 ### Medium-term
 

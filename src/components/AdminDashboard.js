@@ -97,6 +97,19 @@ function AdminDashboard({ onBack, currentUserId }) {
     }).eq('id', requestId);
     if (error) { showToast('Failed to approve: ' + error.message, 'error'); return; }
     showToast('Approved — generating questions...');
+
+    // Notify requester
+    const req = aiRequests.find(r => r.id === requestId);
+    if (req?.requested_by) {
+      await supabase.from('notifications').insert([{
+        user_id: req.requested_by,
+        type: 'ai_request_approved',
+        title: 'AI Request Approved!',
+        message: `Your AI question request for "${req.theme}" has been approved and questions are being generated.`,
+        link_screen: 'commissioner'
+      }]);
+    }
+
     fetchAiRequests();
 
     // Call Edge Function to generate questions
@@ -124,6 +137,20 @@ function AdminDashboard({ onBack, currentUserId }) {
       admin_notes: notes || null
     }).eq('id', requestId);
     if (error) { showToast('Failed to reject: ' + error.message, 'error'); return; }
+
+    // Notify requester
+    const req = aiRequests.find(r => r.id === requestId);
+    if (req?.requested_by) {
+      const notesSuffix = notes ? ` Reason: "${notes}"` : '';
+      await supabase.from('notifications').insert([{
+        user_id: req.requested_by,
+        type: 'ai_request_rejected',
+        title: 'AI Request Declined',
+        message: `Your AI question request for "${req.theme}" was not approved.${notesSuffix}`,
+        link_screen: 'commissioner'
+      }]);
+    }
+
     setRejectingId(null);
     setRejectNotes(prev => { const n = { ...prev }; delete n[requestId]; return n; });
     showToast('Request rejected.');
@@ -138,6 +165,18 @@ function AdminDashboard({ onBack, currentUserId }) {
       alert('Failed to approve question: ' + error.message);
     } else {
       console.log('Question approved successfully:', data);
+      // Notify submitter
+      const q = pendingQuestions.find(q => q.id === questionId);
+      if (q?.creator_id) {
+        const preview = q.question_text.length > 50 ? q.question_text.slice(0, 50) + '...' : q.question_text;
+        await supabase.from('notifications').insert([{
+          user_id: q.creator_id,
+          type: 'question_approved',
+          title: 'Question Approved!',
+          message: `Your question "${preview}" has been approved and is now available in quizzes!`,
+          link_screen: 'dashboard'
+        }]);
+      }
       setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
     }
   };
@@ -149,6 +188,18 @@ function AdminDashboard({ onBack, currentUserId }) {
       alert('Failed to reject question: ' + error.message);
     } else {
       console.log('Question rejected successfully:', data);
+      // Notify submitter
+      const q = pendingQuestions.find(q => q.id === questionId);
+      if (q?.creator_id) {
+        const preview = q.question_text.length > 50 ? q.question_text.slice(0, 50) + '...' : q.question_text;
+        await supabase.from('notifications').insert([{
+          user_id: q.creator_id,
+          type: 'question_rejected',
+          title: 'Question Not Approved',
+          message: `Your question "${preview}" was not approved. You can edit and resubmit from the question creator.`,
+          link_screen: 'createQuestion'
+        }]);
+      }
       setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
     }
   };
