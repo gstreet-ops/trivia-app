@@ -56,6 +56,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [genAccepted, setGenAccepted] = useState({});
   const [genSelected, setGenSelected] = useState({});
 
+  // Media editing state
+  const [editingMediaId, setEditingMediaId] = useState(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
+
   useEffect(() => {
     fetchCommissionerData();
     fetchTemplates();
@@ -272,13 +276,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (rowErrors.length > 0) {
         errors.push(...rowErrors);
       } else {
-        validQuestions.push({
+        const q = {
           question_text: row.question_text.trim(),
           correct_answer: row.correct_answer.trim(),
           incorrect_answers: [row.incorrect_answer_1.trim(), row.incorrect_answer_2.trim(), row.incorrect_answer_3.trim()],
           category: row.category.trim(),
           difficulty: row.difficulty.toLowerCase().trim()
-        });
+        };
+        if (row.image_url?.trim()) q.image_url = row.image_url.trim();
+        if (row.video_url?.trim()) q.video_url = row.video_url.trim();
+        validQuestions.push(q);
       }
     });
 
@@ -294,17 +301,22 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setUploading(true);
     try {
       const importTimestamp = new Date().toISOString();
-      const questionsToInsert = csvData.map(q => ({
-        community_id: communityId,
-        question_text: q.question_text,
-        correct_answer: q.correct_answer,
-        incorrect_answers: q.incorrect_answers,
-        category: q.category,
-        difficulty: q.difficulty,
-        created_at: importTimestamp,
-        imported_by: currentUserId,
-        imported_at: importTimestamp
-      }));
+      const questionsToInsert = csvData.map(q => {
+        const row = {
+          community_id: communityId,
+          question_text: q.question_text,
+          correct_answer: q.correct_answer,
+          incorrect_answers: q.incorrect_answers,
+          category: q.category,
+          difficulty: q.difficulty,
+          created_at: importTimestamp,
+          imported_by: currentUserId,
+          imported_at: importTimestamp
+        };
+        if (q.image_url) row.image_url = q.image_url;
+        if (q.video_url) row.video_url = q.video_url;
+        return row;
+      });
 
       const { error } = await supabase.from('community_questions').insert(questionsToInsert);
 
@@ -327,10 +339,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const downloadTemplate = () => {
-    const template = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty
-"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy"
-"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium"
-"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy"`;
+    const template = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,image_url,video_url
+"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy","",""
+"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium","https://example.com/mona-lisa.jpg",""
+"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy","","https://www.youtube.com/watch?v=dQw4w9WgXcQ"`;
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -776,6 +788,48 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     } catch (err) {
       alert('Failed to add questions: ' + err.message);
     }
+  };
+
+  // --- Media helpers ---
+  const extractYouTubeId = (url) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  };
+
+  const isValidYouTubeUrl = (url) => !!extractYouTubeId(url);
+
+  const handleImageUpload = async (questionId, file) => {
+    if (!file) return;
+    if (file.size > 500 * 1024) { alert('Image must be under 500KB. Please resize and try again.'); return; }
+    const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) { alert('Invalid file type. Use PNG, JPEG, WebP, or GIF.'); return; }
+    setMediaUploading(true);
+    try {
+      const path = `${communityId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { error: uploadError } = await supabase.storage.from('question-images').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      const { error } = await supabase.from('community_questions').update({ image_url: publicUrl }).eq('id', questionId);
+      if (error) throw error;
+      fetchCommissionerData();
+    } catch (err) {
+      alert('Failed to upload image: ' + err.message);
+    }
+    setMediaUploading(false);
+  };
+
+  const handleRemoveImage = async (questionId) => {
+    if (!window.confirm('Remove image from this question?')) return;
+    const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId);
+    if (error) { alert('Failed to remove image: ' + error.message); } else { fetchCommissionerData(); }
+  };
+
+  const handleSaveVideoUrl = async (questionId, url) => {
+    if (url && !isValidYouTubeUrl(url)) { alert('Invalid YouTube URL. Use youtube.com/watch?v=... or youtu.be/... format.'); return; }
+    const { error } = await supabase.from('community_questions').update({ video_url: url || null }).eq('id', questionId);
+    if (error) { alert('Failed to save video URL: ' + error.message); } else { fetchCommissionerData(); setEditingMediaId(null); }
   };
 
   const handlePostAnnouncement = async () => {
@@ -1335,6 +1389,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                           {(question.source === 'ai_generated' || (question.tags && question.tags.includes('ai-generated'))) && (
                             <span className="ai-badge">AI</span>
                           )}
+                          {question.image_url && <span className="media-indicator" title="Has image">🖼️</span>}
+                          {question.video_url && <span className="media-indicator" title="Has video">🎬</span>}
                         </div>
                         <div className="question-text">{question.question_text}</div>
                         <div className="answers-preview">
@@ -1374,9 +1430,57 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                             <button className="add-tag-trigger" onClick={() => setEditingQuestionId(question.id)}>+ Add Tag</button>
                           )}
                         </div>
+                        {editingMediaId === question.id && (
+                          <div className="media-edit-panel">
+                            <div className="media-edit-section">
+                              <label className="media-edit-label">Image</label>
+                              {question.image_url ? (
+                                <div className="media-preview-row">
+                                  <img src={question.image_url} alt="Question" className="media-preview-thumb" />
+                                  <button className="btn-danger-sm" onClick={() => handleRemoveImage(question.id)}>Remove Image</button>
+                                </div>
+                              ) : (
+                                <div className="media-upload-row">
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/gif"
+                                    id={`img-upload-${question.id}`}
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => { if (e.target.files[0]) handleImageUpload(question.id, e.target.files[0]); }}
+                                  />
+                                  <label htmlFor={`img-upload-${question.id}`} className="btn-secondary media-upload-btn">
+                                    {mediaUploading ? 'Uploading...' : 'Upload Image'}
+                                  </label>
+                                  <span className="media-hint">PNG, JPEG, WebP, GIF — max 500KB</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="media-edit-section">
+                              <label className="media-edit-label">YouTube Video</label>
+                              {question.video_url ? (
+                                <div className="media-preview-row">
+                                  <img src={`https://img.youtube.com/vi/${extractYouTubeId(question.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="media-preview-thumb" />
+                                  <span className="media-url-display">{question.video_url}</span>
+                                  <button className="btn-danger-sm" onClick={() => handleSaveVideoUrl(question.id, '')}>Remove Video</button>
+                                </div>
+                              ) : (
+                                <div className="media-upload-row">
+                                  <input
+                                    type="text"
+                                    className="media-video-input"
+                                    placeholder="https://www.youtube.com/watch?v=..."
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(question.id, e.target.value); }}
+                                  />
+                                  <button className="btn-secondary" onClick={(e) => { const input = e.target.previousElementSibling; handleSaveVideoUrl(question.id, input.value); }}>Save</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         <div className="question-footer">
                           <span className="created-date">Added {new Date(question.created_at).toLocaleDateString()}</span>
                           <div className="question-actions-footer">
+                            <button className="btn-icon" onClick={() => setEditingMediaId(editingMediaId === question.id ? null : question.id)} title="Edit media">🖼️ Media</button>
                             <button className="btn-icon" onClick={() => saveAsTemplate(question.id)} title="Save as template">📋 Template</button>
                             <button className="btn-icon" onClick={() => loadVersionHistory(question.id)} title="Version history">📜 History</button>
                             <button className="btn-danger-sm" onClick={() => handleDeleteQuestion(question.id)}>Delete</button>

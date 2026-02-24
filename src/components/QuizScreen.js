@@ -248,6 +248,21 @@ function QuizScreen({ config, onEnd }) {
       )}
 
       <div className="question-container">
+        {currentQuestion.image_url && (
+          <div className="question-media">
+            <img src={currentQuestion.image_url} alt="Question" className="question-media-img" />
+          </div>
+        )}
+        {currentQuestion.video_url && (() => {
+          const vidMatch = currentQuestion.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+          return vidMatch ? (
+            <div className="question-media">
+              <div className="question-media-video">
+                <iframe src={`https://www.youtube.com/embed/${vidMatch[1]}`} title="Question video" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              </div>
+            </div>
+          ) : null;
+        })()}
         <h2 className="question">{currentQuestion.question}</h2>
 
         <div className="answers-grid">

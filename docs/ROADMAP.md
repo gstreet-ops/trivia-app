@@ -123,6 +123,13 @@
 - [x] Completed request review — commissioner can review generated questions, add to bank or discard
 - [x] Simulate Generation button (super admin) for testing the review flow
 
+### Media Questions
+- [x] Image questions — upload image to Supabase Storage, display above question text in quiz and multiplayer
+- [x] Video questions (YouTube embed) — paste YouTube URL, embed iframe above question text
+- [x] Commissioner media editor — upload/remove image and video per question card
+- [x] CSV import support for image_url and video_url columns
+- [x] Media indicators on question cards (image and video icons)
+
 ### Multiplayer Quiz (Phase 1 — Lobby)
 - [x] Create Room — room name, question source (API/community), category, difficulty, question count, timer, speed bonus, max players
 - [x] Join Room — 6-character room code entry with validation
@@ -198,7 +205,6 @@
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
-- [ ] **Image questions** — support attaching an image to a question
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install
 - [ ] **Dark mode**
 - [ ] **Mobile app** — React Native port

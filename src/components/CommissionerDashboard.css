@@ -1854,3 +1854,75 @@
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* Media indicators on question cards */
+.media-indicator {
+  font-size: 12px;
+  cursor: default;
+}
+
+/* Media edit panel */
+.media-edit-panel {
+  background: #F0F2F5;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.media-edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.media-edit-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gt-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.media-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.media-preview-thumb {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--gt-border);
+}
+.media-url-display {
+  font-size: 0.72rem;
+  color: var(--gt-gray);
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+.media-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.media-upload-btn {
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 5px 12px;
+}
+.media-hint {
+  font-size: 0.68rem;
+  color: var(--gt-gray-light);
+}
+.media-video-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid var(--gt-border);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}

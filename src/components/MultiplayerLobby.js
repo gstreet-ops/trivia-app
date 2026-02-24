@@ -505,7 +505,9 @@ function MultiplayerLobby({ user, username, onBack }) {
           correct_answer: q.correct_answer,
           incorrect_answers: q.incorrect_answers,
           category: q.category,
-          difficulty: q.difficulty
+          difficulty: q.difficulty,
+          image_url: q.image_url || null,
+          video_url: q.video_url || null
         }));
       } else {
         // Fetch from Trivia API
@@ -1108,6 +1110,21 @@ function MultiplayerLobby({ user, username, onBack }) {
             {currentQ.category && <span className="mp-setting-tag">{currentQ.category}</span>}
             {currentQ.difficulty && <span className="mp-setting-tag">{currentQ.difficulty}</span>}
           </div>
+          {currentQ.image_url && (
+            <div className="mp-question-media">
+              <img src={currentQ.image_url} alt="Question" className="mp-question-media-img" />
+            </div>
+          )}
+          {currentQ.video_url && (() => {
+            const vidMatch = currentQ.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+            return vidMatch ? (
+              <div className="mp-question-media">
+                <div className="mp-question-media-video">
+                  <iframe src={`https://www.youtube.com/embed/${vidMatch[1]}`} title="Question video" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                </div>
+              </div>
+            ) : null;
+          })()}
           <p className="mp-question-text">{currentQ.question_text}</p>
         </div>
 
