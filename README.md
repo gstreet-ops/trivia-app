@@ -13,7 +13,8 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 - Categories: General Knowledge, Film, Music, Geography, History, Sports, Science & Nature, Arts & Literature
 - Difficulties: Easy, Medium, Hard
 - Question counts: 3, 5, 10, 15, or 20 per game
-- 50/50 hint per question (removes 2 wrong answers)
+- Per-question countdown timer — commissioner-configurable per community (15s–120s), visual bar with warning state, auto-submit on timeout
+- 50/50 hint per question (removes 2 wrong answers, adds 3 bonus seconds to timer)
 - Full answer review after each game
 
 ### User Features
@@ -25,9 +26,20 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 - Community leaderboard with clickable player profiles
 - Privacy controls (profile visibility, leaderboard opt-out)
 
+### Multiplayer Quiz
+- Create or join real-time multiplayer rooms with configurable settings
+- 6-character room codes for sharing; copy-to-clipboard support
+- Open Rooms browser — browse and join waiting rooms without a code (auto-refreshes every 10s)
+- Real-time lobby with live player list via Supabase Realtime
+- Host controls: start game, cancel room; Player controls: ready/unready, leave
+- Speed bonus option — faster correct answers earn more points
+
 ### Community / Leagues
 - Create leagues with auto-generated 8-character invite codes
 - Join leagues via invite code
+- Community Marketplace — browse public communities with category filters, sorting, and direct join
+- Community announcements — commissioner posts with pin/unpin, edit, delete; "New" badge for recent posts
+- Invite code regeneration — commissioner can reset the invite code from Settings
 - View league leaderboard, members, and question bank count
 - Commissioner dashboard for league management
 
@@ -46,6 +58,7 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 ### Admin Tools
 - Platform-wide stats: total users, games, public games, avg games/user, most popular category
 - Pending custom question review queue (approve / reject)
+- User management — search/filter/sort users, promote/demote roles, toggle super admin, view activity with pagination
 - Recent users table
 - Recent games table with visibility status
 
@@ -91,8 +104,12 @@ trivia-app/
 │   │   ├── CommunitiesList.js/css       # League browser + create/join modals
 │   │   ├── CommunityDetail.js/css       # League overview + leaderboard + quiz entry
 │   │   ├── CommissionerDashboard.js/css # Full commissioner tools (tabbed)
-│   │   ├── AdminDashboard.js/css        # Platform admin panel
+│   │   ├── CommunityMarketplace.js/css  # Browse and join public communities
+│   │   ├── MultiplayerLobby.js/css     # Multiplayer room creation, join, lobby
+│   │   ├── AdminDashboard.js/css        # Platform admin panel + user management
 │   │   ├── QuestionCreator.js/css       # Submit custom question for review
+│   │   ├── MyStats.js/css               # Score trend + category performance charts
+│   │   ├── HelpCenter.js/css            # In-app help with guides, FAQ, search
 │   │   └── UserProfile.js/css           # View another user's public stats
 │   └── utils/
 │       └── achievementChecker.js        # Badge unlock logic
@@ -191,12 +208,17 @@ See [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) for full schema.
 | `profiles` | User profile, roles, privacy settings |
 | `games` | Game records with score and metadata |
 | `game_answers` | Per-answer records for game review |
-| `communities` | League definitions |
+| `communities` | League definitions (with marketplace visibility) |
 | `community_members` | League membership |
 | `community_questions` | Community-owned question bank |
 | `community_leaderboards` | Community ranking view |
+| `community_announcements` | Commissioner announcements per community |
 | `custom_questions` | User-submitted questions (pending admin review) |
 | `question_templates` | Reusable question templates per community |
+| `multiplayer_rooms` | Multiplayer game rooms |
+| `multiplayer_participants` | Players in multiplayer rooms |
+| `multiplayer_questions` | Questions for multiplayer games |
+| `multiplayer_answers` | Per-player answers in multiplayer (Phase 2) |
 
 ---
 

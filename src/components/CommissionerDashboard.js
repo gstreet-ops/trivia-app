@@ -47,11 +47,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [annEditing, setAnnEditing] = useState(null);
   const [annEditForm, setAnnEditForm] = useState({ title: '', body: '', pinned: false });
 
+  // AI Generation state
+  const [genRequests, setGenRequests] = useState([]);
+  const [genForm, setGenForm] = useState({ theme: '', difficulty: 'mixed', question_count: 10, special_instructions: '' });
+  const [genSubmitting, setGenSubmitting] = useState(false);
+  const [genReviewId, setGenReviewId] = useState(null);
+  const [genAccepted, setGenAccepted] = useState({});
+
   useEffect(() => {
     fetchCommissionerData();
     fetchTemplates();
     fetchAnalytics();
     fetchAnnouncements();
+    fetchGenRequests();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCommissionerData = async () => {
@@ -652,6 +660,70 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
+  // AI Generation requests
+  const fetchGenRequests = async () => {
+    try {
+      const { data } = await supabase
+        .from('generation_requests')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+      setGenRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching generation requests:', error);
+    }
+  };
+
+  const handleSubmitGenRequest = async () => {
+    if (!genForm.theme.trim()) return;
+    setGenSubmitting(true);
+    try {
+      const { error } = await supabase.from('generation_requests').insert([{
+        community_id: communityId,
+        requested_by: currentUserId,
+        status: 'pending',
+        theme: genForm.theme.trim(),
+        difficulty: genForm.difficulty,
+        question_count: genForm.question_count,
+        special_instructions: genForm.special_instructions.trim() || null
+      }]);
+      if (error) throw error;
+      setGenForm({ theme: '', difficulty: 'mixed', question_count: 10, special_instructions: '' });
+      fetchGenRequests();
+    } catch (err) {
+      alert('Failed to submit request: ' + err.message);
+    }
+    setGenSubmitting(false);
+  };
+
+  const handleAddGenQuestion = async (requestId, question) => {
+    try {
+      const { error } = await supabase.from('community_questions').insert([{
+        community_id: communityId,
+        question_text: question.question_text,
+        correct_answer: question.correct_answer,
+        incorrect_answers: question.incorrect_answers,
+        category: question.category || 'General Knowledge',
+        difficulty: question.difficulty || 'medium',
+        tags: ['ai-generated'],
+        version_number: 1,
+        version_history: []
+      }]);
+      if (error) throw error;
+      // Track accepted count
+      setGenAccepted(prev => ({
+        ...prev,
+        [requestId]: [...(prev[requestId] || []), question.question_text]
+      }));
+      // Update questions_accepted on the request
+      const accepted = (genAccepted[requestId]?.length || 0) + 1;
+      await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', requestId);
+      fetchCommissionerData();
+    } catch (err) {
+      alert('Failed to add question: ' + err.message);
+    }
+  };
+
   const handlePostAnnouncement = async () => {
     if (!annForm.title.trim() || !annForm.body.trim()) {
       alert('Title and body are required');
@@ -795,7 +867,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 { id: 'questions', label: `Questions (${questions.length})`, icon: '❓' },
                 { id: 'members', label: `Members (${members.length})`, icon: '👥' },
                 { id: 'settings', label: 'Settings', icon: '⚙️' },
-                { id: 'analytics', label: 'Analytics', icon: '📊' }
+                { id: 'analytics', label: 'Analytics', icon: '📊' },
+                { id: 'ai-generate', label: 'AI Generate', icon: '🤖' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -1620,6 +1693,153 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <p className="empty-message">No analytics data available yet. Questions need to be used in games first.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* AI GENERATE TAB */}
+        {activeTab === 'ai-generate' && (
+          <div className="tab-pane">
+            <div className="commissioner-section">
+              <h2 className="section-title">Request AI-Generated Questions</h2>
+              <div className="gen-form">
+                <div className="gen-form-group">
+                  <label>Theme / Topic <span className="gen-required">*</span></label>
+                  <input
+                    type="text"
+                    value={genForm.theme}
+                    onChange={e => setGenForm(f => ({ ...f, theme: e.target.value }))}
+                    placeholder='e.g. "American Revolution", "Python programming", "90s Hip-Hop"'
+                    maxLength={100}
+                  />
+                </div>
+                <div className="gen-form-group">
+                  <label>Difficulty</label>
+                  <div className="gen-radio-group">
+                    {['easy', 'medium', 'hard', 'mixed'].map(d => (
+                      <label key={d} className={`gen-radio ${genForm.difficulty === d ? 'active' : ''}`}>
+                        <input type="radio" name="gen-diff" value={d} checked={genForm.difficulty === d} onChange={() => setGenForm(f => ({ ...f, difficulty: d }))} />
+                        {d.charAt(0).toUpperCase() + d.slice(1)}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="gen-form-group">
+                  <label>Number of Questions ({genForm.question_count})</label>
+                  <input
+                    type="range"
+                    min={5}
+                    max={25}
+                    value={genForm.question_count}
+                    onChange={e => setGenForm(f => ({ ...f, question_count: parseInt(e.target.value) }))}
+                    className="gen-slider"
+                  />
+                  <div className="gen-slider-labels"><span>5</span><span>15</span><span>25</span></div>
+                </div>
+                <div className="gen-form-group">
+                  <label>Special Instructions <span className="gen-optional">(optional)</span></label>
+                  <textarea
+                    value={genForm.special_instructions}
+                    onChange={e => setGenForm(f => ({ ...f, special_instructions: e.target.value.slice(0, 200) }))}
+                    placeholder='e.g. "Focus on battles" or "Include code snippets"'
+                    maxLength={200}
+                    rows={2}
+                  />
+                  <span className="gen-char-count">{genForm.special_instructions.length}/200</span>
+                </div>
+                <button
+                  className="gen-submit-btn"
+                  onClick={handleSubmitGenRequest}
+                  disabled={genSubmitting || !genForm.theme.trim()}
+                >
+                  {genSubmitting ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </div>
+
+            <div className="commissioner-section">
+              <h2 className="section-title">Request History</h2>
+              {genRequests.length === 0 ? (
+                <p className="empty-message">No generation requests yet</p>
+              ) : (
+                <div className="gen-requests-list">
+                  {genRequests.map(req => {
+                    const statusClass = req.status === 'pending' ? 'gen-status-pending'
+                      : req.status === 'approved' ? 'gen-status-approved'
+                      : req.status === 'generating' ? 'gen-status-generating'
+                      : req.status === 'completed' ? 'gen-status-completed'
+                      : 'gen-status-rejected';
+                    const isReviewing = genReviewId === req.id;
+                    const generatedQs = req.generated_questions || [];
+                    const acceptedTexts = genAccepted[req.id] || [];
+                    return (
+                      <div key={req.id} className="gen-request-card">
+                        <div className="gen-request-top">
+                          <div className="gen-request-info">
+                            <span className="gen-request-theme">{req.theme}</span>
+                            <div className="gen-request-meta">
+                              <span className="gen-tag">{req.question_count} Qs</span>
+                              <span className="gen-tag">{req.difficulty}</span>
+                              <span className={`gen-status-badge ${statusClass}`}>{req.status}</span>
+                            </div>
+                          </div>
+                          <span className="gen-request-date">{new Date(req.created_at).toLocaleDateString()}</span>
+                        </div>
+                        {req.special_instructions && (
+                          <p className="gen-request-instructions">"{req.special_instructions}"</p>
+                        )}
+                        {req.status === 'rejected' && req.admin_notes && (
+                          <div className="gen-admin-notes">
+                            <strong>Admin notes:</strong> {req.admin_notes}
+                          </div>
+                        )}
+                        {req.status === 'completed' && generatedQs.length > 0 && (
+                          <>
+                            <button
+                              className="gen-review-btn"
+                              onClick={() => setGenReviewId(isReviewing ? null : req.id)}
+                            >
+                              {isReviewing ? 'Hide Questions' : `Review Questions (${generatedQs.length})`}
+                            </button>
+                            {isReviewing && (
+                              <div className="gen-review-panel">
+                                {generatedQs.map((q, qi) => {
+                                  const alreadyAdded = acceptedTexts.includes(q.question_text);
+                                  return (
+                                    <div key={qi} className={`gen-q-card ${alreadyAdded ? 'gen-q-added' : ''}`}>
+                                      <p className="gen-q-text">{q.question_text}</p>
+                                      <div className="gen-q-answers">
+                                        <span className="gen-q-correct">{q.correct_answer}</span>
+                                        {q.incorrect_answers?.map((a, ai) => (
+                                          <span key={ai} className="gen-q-wrong">{a}</span>
+                                        ))}
+                                      </div>
+                                      <div className="gen-q-meta">
+                                        <span className="gen-tag">{q.category}</span>
+                                        <span className="gen-tag">{q.difficulty}</span>
+                                      </div>
+                                      <div className="gen-q-actions">
+                                        {alreadyAdded ? (
+                                          <span className="gen-q-added-label">Added</span>
+                                        ) : (
+                                          <>
+                                            <button className="gen-add-btn" onClick={() => handleAddGenQuestion(req.id, q)}>Add to Bank</button>
+                                            <button className="gen-discard-btn" onClick={() => setGenAccepted(prev => ({ ...prev, [req.id]: [...(prev[req.id] || []), q.question_text] }))}>Discard</button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

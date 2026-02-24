@@ -114,6 +114,26 @@
 ### User Profiles
 - [x] View another user's public profile and game history
 
+### AI Question Generation (Request/Approval System)
+- [x] Commissioner request form — theme, difficulty, question count (5–25), special instructions
+- [x] Request submitted to generation_requests table with pending status
+- [x] Admin AI Requests tab — pending queue with community name, requester, theme, approve/reject
+- [x] Reject with optional admin notes
+- [x] Request history for commissioners (status badges, date, admin notes on rejection)
+- [x] Completed request review — commissioner can review generated questions, add to bank or discard
+- [x] Simulate Generation button (super admin) for testing the review flow
+
+### Multiplayer Quiz (Phase 1 — Lobby)
+- [x] Create Room — room name, question source (API/community), category, difficulty, question count, timer, speed bonus, max players
+- [x] Join Room — 6-character room code entry with validation
+- [x] Real-time lobby — player list updates via Supabase Realtime (postgres_changes)
+- [x] Host controls — Start Game (min 2 players), Cancel Room
+- [x] Player controls — Ready/Unready toggle, Leave Room
+- [x] Room code display with Copy button
+- [x] Settings summary tags in lobby (Qs, difficulty, timer, speed bonus, source)
+- [x] Open Rooms browser — lists all waiting rooms with host username, player count, settings; auto-refreshes every 10 seconds; direct Join button
+- [x] Game start logic — fetches questions from API or community bank, inserts into multiplayer_questions, updates room status
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon
@@ -142,6 +162,7 @@
 
 ### Near-term
 
+- [ ] **AI Question Generation (Claude API integration)** — wire approved requests to a Supabase Edge Function that calls the Claude API to generate trivia questions and populates the generated_questions JSONB
 - [x] **URL hash routing** — persist screen state across refresh/back button using `window.location.hash` (no dependencies)
 - [x] **Simplified role model (Phase 1)** — three roles: User, Commissioner (per-community), Super Admin (platform-wide). Removed redundant `admin` role.
 - [x] **Timer per question** — commissioner-configurable countdown with auto-submit on expiry, visual bar, warning state
@@ -164,7 +185,7 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
-- [ ] **Real-time multiplayer quiz (Phase 1 — lobby complete)** — room creation with unique codes, join via code, real-time player list via Supabase Realtime, host controls (start/cancel), ready toggle, question fetching; Phase 2 (live game screen) pending
+- [ ] **Real-time multiplayer quiz (Phase 2 — live game)** — synchronous live game screen where all players answer the same questions simultaneously, real-time score updates, final leaderboard; Phase 1 lobby is complete
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Image questions** — support attaching an image to a question
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install

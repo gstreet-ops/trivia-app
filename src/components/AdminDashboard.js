@@ -23,7 +23,13 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [toast, setToast] = useState(null);
   const USERS_PER_PAGE = 20;
 
-  useEffect(() => { fetchAdminData(); }, []);
+  // AI Requests tab state
+  const [aiRequests, setAiRequests] = useState([]);
+  const [aiHistory, setAiHistory] = useState([]);
+  const [rejectNotes, setRejectNotes] = useState({});
+  const [rejectingId, setRejectingId] = useState(null);
+
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); }, []);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -59,6 +65,73 @@ function AdminDashboard({ onBack, currentUserId }) {
       setPendingQuestions(pending || []);
     } catch (err) { console.error('Error:', err); }
     setLoading(false);
+  };
+
+  // AI Request handlers
+  const fetchAiRequests = async () => {
+    try {
+      const { data: pending } = await supabase
+        .from('generation_requests')
+        .select('*, communities(name), profiles:requested_by(username)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+      setAiRequests(pending || []);
+
+      const { data: history } = await supabase
+        .from('generation_requests')
+        .select('*, communities(name), profiles:requested_by(username), reviewer:reviewed_by(username)')
+        .neq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setAiHistory(history || []);
+    } catch (err) {
+      console.error('Error fetching AI requests:', err);
+    }
+  };
+
+  const handleApproveAiRequest = async (requestId) => {
+    // TODO: Call Supabase Edge Function to generate questions via Claude API
+    const { error } = await supabase.from('generation_requests').update({
+      status: 'approved',
+      reviewed_by: currentUserId,
+      reviewed_at: new Date().toISOString()
+    }).eq('id', requestId);
+    if (error) { showToast('Failed to approve: ' + error.message, 'error'); return; }
+    showToast('Approved — generation will begin shortly.');
+    fetchAiRequests();
+  };
+
+  const handleRejectAiRequest = async (requestId) => {
+    const notes = rejectNotes[requestId]?.trim() || '';
+    const { error } = await supabase.from('generation_requests').update({
+      status: 'rejected',
+      reviewed_by: currentUserId,
+      reviewed_at: new Date().toISOString(),
+      admin_notes: notes || null
+    }).eq('id', requestId);
+    if (error) { showToast('Failed to reject: ' + error.message, 'error'); return; }
+    setRejectingId(null);
+    setRejectNotes(prev => { const n = { ...prev }; delete n[requestId]; return n; });
+    showToast('Request rejected.');
+    fetchAiRequests();
+  };
+
+  const handleSimulateGeneration = async (request) => {
+    const sampleQs = Array.from({ length: request.question_count }, (_, i) => ({
+      question_text: `Sample question ${i + 1} about ${request.theme}?`,
+      correct_answer: 'Correct Answer',
+      incorrect_answers: ['Wrong 1', 'Wrong 2', 'Wrong 3'],
+      category: 'General Knowledge',
+      difficulty: request.difficulty === 'mixed' ? ['easy', 'medium', 'hard'][i % 3] : request.difficulty
+    }));
+    const { error } = await supabase.from('generation_requests').update({
+      status: 'completed',
+      generated_questions: sampleQs,
+      updated_at: new Date().toISOString()
+    }).eq('id', request.id);
+    if (error) { showToast('Simulation failed: ' + error.message, 'error'); return; }
+    showToast('Simulated generation complete.');
+    fetchAiRequests();
   };
 
   const handleApprove = async (questionId) => {
@@ -191,6 +264,7 @@ function AdminDashboard({ onBack, currentUserId }) {
       <div className="admin-tabs">
         <button className={`admin-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users ({allUsers.length})</button>
+        <button className={`admin-tab ${activeTab === 'ai-requests' ? 'active' : ''}`} onClick={() => setActiveTab('ai-requests')}>AI Requests{aiRequests.length > 0 ? ` (${aiRequests.length})` : ''}</button>
       </div>
 
       {activeTab === 'overview' && (
@@ -445,6 +519,93 @@ function AdminDashboard({ onBack, currentUserId }) {
                 <button className="um-page-btn" onClick={() => setUserPage(p => p - 1)} disabled={userPage === 0}>← Previous</button>
                 <span className="um-page-info">Page {userPage + 1} of {totalPages}</span>
                 <button className="um-page-btn" onClick={() => setUserPage(p => p + 1)} disabled={userPage >= totalPages - 1}>Next →</button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'ai-requests' && (
+        <>
+          <div className="admin-section">
+            <h2>Pending Requests</h2>
+            {aiRequests.length === 0 ? (
+              <div className="admin-empty">No pending AI generation requests</div>
+            ) : (
+              <div className="pending-questions">
+                {aiRequests.map(req => (
+                  <div key={req.id} className="ai-request-card">
+                    <div className="ai-req-header">
+                      <span className="ai-req-community">{req.communities?.name || 'Unknown'}</span>
+                      <span className="ai-req-date">{new Date(req.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="ai-req-theme">{req.theme}</div>
+                    <div className="ai-req-meta">
+                      <span className="ai-req-tag">{req.question_count} questions</span>
+                      <span className="ai-req-tag">{req.difficulty}</span>
+                      <span className="ai-req-by">by {req.profiles?.username || 'Unknown'}</span>
+                    </div>
+                    {req.special_instructions && (
+                      <p className="ai-req-instructions">"{req.special_instructions}"</p>
+                    )}
+                    <div className="review-actions">
+                      <button className="approve-btn" onClick={() => handleApproveAiRequest(req.id)}>Approve</button>
+                      {rejectingId === req.id ? (
+                        <div className="ai-reject-form">
+                          <textarea
+                            placeholder="Rejection reason (optional)"
+                            value={rejectNotes[req.id] || ''}
+                            onChange={e => setRejectNotes(prev => ({ ...prev, [req.id]: e.target.value }))}
+                            rows={2}
+                          />
+                          <div className="ai-reject-btns">
+                            <button className="reject-btn" onClick={() => handleRejectAiRequest(req.id)}>Confirm Reject</button>
+                            <button className="ai-cancel-btn" onClick={() => setRejectingId(null)}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="reject-btn" onClick={() => setRejectingId(req.id)}>Reject</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="admin-section">
+            <h2>Request History</h2>
+            {aiHistory.length === 0 ? (
+              <div className="admin-empty">No processed requests yet</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Community</th>
+                      <th>Theme</th>
+                      <th>Status</th>
+                      <th>Reviewer</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aiHistory.map(req => (
+                      <tr key={req.id}>
+                        <td>{req.communities?.name || '—'}</td>
+                        <td style={{ fontWeight: 600, color: '#041E42' }}>{req.theme}</td>
+                        <td>
+                          <span className={`ai-status-badge ai-status-${req.status}`}>{req.status}</span>
+                          {req.status === 'approved' && (
+                            <button className="ai-sim-btn" onClick={() => handleSimulateGeneration(req)} title="Simulate AI generation for testing">Simulate</button>
+                          )}
+                        </td>
+                        <td>{req.reviewer?.username || '—'}</td>
+                        <td>{new Date(req.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

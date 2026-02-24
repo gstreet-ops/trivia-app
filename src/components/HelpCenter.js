@@ -53,7 +53,7 @@ const userGuideSections = [
         <ul>
           <li><strong>Your avatar and username</strong> on the left</li>
           <li><strong>Active community badge</strong> — click it to jump to that community</li>
-          <li><strong>Menu button</strong> on the right — opens a dropdown with: My Leagues, Community Feed, Create Question, Help, Settings, and Admin Panel (admins only)</li>
+          <li><strong>Menu button</strong> on the right — opens a dropdown with: My Stats, Multiplayer, My Leagues, Help, Settings, and Super Admin (admins only)</li>
         </ul>
       </div>
     )
@@ -80,8 +80,16 @@ const userGuideSections = [
         <ul>
           <li>Four answer choices appear for each question — click to submit</li>
           <li>After answering: your choice highlights <strong>red</strong> if wrong, <strong>green</strong> if correct; the correct answer is always shown</li>
-          <li><strong>Hint (50/50)</strong> — available once per question <em>before</em> you answer; removes 2 incorrect choices</li>
+          <li><strong>Hint (50/50)</strong> — available once per question <em>before</em> you answer; removes 2 incorrect choices and adds 3 bonus seconds to the timer</li>
           <li>Click <strong>Next Question</strong> to proceed; on the last question click <strong>See Results</strong></li>
+        </ul>
+        <h3>Per-Question Timer</h3>
+        <p>If your community commissioner has enabled a timer, each question has a countdown bar at the top of the screen:</p>
+        <ul>
+          <li>The bar counts down from the configured time (e.g. 20 seconds)</li>
+          <li>When under 5 seconds remaining, the bar turns <strong>red</strong> as a warning</li>
+          <li>If time runs out before you answer, the question is automatically submitted as unanswered (counted as wrong)</li>
+          <li>Using the 50/50 hint adds <strong>3 bonus seconds</strong> to the current timer</li>
         </ul>
         <p>Your score is automatically saved to your history when you finish.</p>
       </div>
@@ -153,6 +161,69 @@ const userGuideSections = [
         </ol>
         <h3>Community Detail Page</h3>
         <p>Click any league card to see the commissioner name, season dates, invite code, member count, community leaderboard, and a <strong>Start Quiz</strong> button to play community questions.</p>
+        <h3>Community Announcements</h3>
+        <p>Commissioners can post announcements that appear on the community detail page. Look for the <strong>Announcements</strong> section — recent posts (less than 48 hours old) display a <strong>"New"</strong> badge. Pinned announcements always appear at the top.</p>
+      </div>
+    )
+  },
+  {
+    id: 'ug-marketplace',
+    tab: 'User Guide',
+    title: 'Community Marketplace',
+    searchText: 'marketplace browse discover public communities join category filter sort search',
+    content: (
+      <div>
+        <p>The Community Marketplace lets you discover and join public communities without needing an invite code.</p>
+        <h3>Browsing the Marketplace</h3>
+        <ol>
+          <li>Click <strong>Menu → My Leagues</strong></li>
+          <li>Click <strong>Browse Marketplace</strong></li>
+        </ol>
+        <h3>Finding Communities</h3>
+        <ul>
+          <li><strong>Search bar</strong> — search by community name or description</li>
+          <li><strong>Category filter chips</strong> — filter by community category (e.g. Science, History, Sports)</li>
+          <li><strong>Sort dropdown</strong> — sort by Newest, Most Members, or A–Z</li>
+        </ul>
+        <h3>Joining</h3>
+        <p>Click <strong>Join</strong> on any community card to join instantly — no invite code needed for public communities.</p>
+      </div>
+    )
+  },
+  {
+    id: 'ug-multiplayer',
+    tab: 'User Guide',
+    title: 'Multiplayer Quiz',
+    searchText: 'multiplayer room create join lobby code real-time live players host ready start open rooms',
+    content: (
+      <div>
+        <p>Challenge friends to real-time trivia. Access via <strong>Menu → Multiplayer</strong>.</p>
+        <h3>Creating a Room</h3>
+        <ol>
+          <li>Click <strong>Create Room</strong> on the multiplayer screen</li>
+          <li>Set a <strong>Room Name</strong>, choose question source (Trivia API or Community), category, difficulty, question count, timer, and max players</li>
+          <li>Optionally enable <strong>Speed Bonus</strong> (faster correct answers earn more points)</li>
+          <li>Click <strong>Create Room</strong> — you enter the lobby with a 6-character room code</li>
+          <li>Share the room code with friends so they can join</li>
+        </ol>
+        <h3>Joining a Room</h3>
+        <p>Two ways to join:</p>
+        <ul>
+          <li><strong>By code</strong> — Click <strong>Join Room</strong>, enter the 6-character code, and click Join</li>
+          <li><strong>Open Rooms list</strong> — Scroll down to see all waiting rooms. Click <strong>Join</strong> on any room card. The list auto-refreshes every 10 seconds.</li>
+        </ul>
+        <h3>In the Lobby</h3>
+        <ul>
+          <li>See all players with their ready status in real time</li>
+          <li>Click <strong>Ready Up</strong> to signal you are ready</li>
+          <li>The room code is displayed with a <strong>Copy</strong> button for easy sharing</li>
+          <li>Settings summary shows question count, difficulty, timer, and source</li>
+        </ul>
+        <h3>Host Controls</h3>
+        <ul>
+          <li><strong>Start Game</strong> — requires at least 2 players</li>
+          <li><strong>Cancel Room</strong> — closes the room and removes all players</li>
+        </ul>
       </div>
     )
   },
@@ -176,6 +247,28 @@ const userGuideSections = [
       </div>
     )
   },
+  {
+    id: 'ug-admin',
+    tab: 'User Guide',
+    title: 'Admin User Management',
+    searchText: 'admin super admin promote demote user management roles toggle users search filter',
+    content: (
+      <div>
+        <p>Super Admins have access to the <strong>Super Admin</strong> panel via the navigation menu.</p>
+        <h3>Users Tab</h3>
+        <p>The Users tab provides full user management:</p>
+        <ul>
+          <li><strong>Search</strong> — find users by username</li>
+          <li><strong>Filter</strong> — filter by role (All, User, Admin, Super Admin)</li>
+          <li><strong>Sort</strong> — click column headers to sort by username, role, or join date</li>
+          <li><strong>Promote / Demote</strong> — change a user&apos;s role between User and Admin</li>
+          <li><strong>Toggle Super Admin</strong> — grant or revoke platform-wide super admin access</li>
+          <li><strong>View Activity</strong> — expand a user row to see games played, communities joined, and account creation date</li>
+        </ul>
+        <p>The table uses pagination for large user lists. You cannot demote yourself.</p>
+      </div>
+    )
+  },
 ];
 
 // ── Commissioner Guide Sections ──────────────────────────────────────────────
@@ -194,7 +287,7 @@ const commissionerSections = [
           <li>Click your community card</li>
           <li>Click <strong>Manage Community</strong> on the detail page</li>
         </ol>
-        <p>The dashboard has five tabs: <strong>Overview · Questions · Members · Settings · Analytics</strong></p>
+        <p>The dashboard has six tabs: <strong>Overview · Announcements · Questions · Members · Settings · Analytics</strong></p>
       </div>
     )
   },
@@ -346,7 +439,7 @@ const commissionerSections = [
     id: 'cm-members-settings',
     tab: 'Commissioner Guide',
     title: 'Members & Settings Tabs',
-    searchText: 'members remove kick settings name season dates max members cap invite code',
+    searchText: 'members remove kick settings name season dates max members cap invite code regenerate timer marketplace visibility description',
     content: (
       <div>
         <h3>Members Tab</h3>
@@ -363,9 +456,85 @@ const commissionerSections = [
             <tr><td>Community Name</td><td>Display name shown to all members</td></tr>
             <tr><td>Season Start / End</td><td>Season date range</td></tr>
             <tr><td>Max Members</td><td>Member cap (default 50)</td></tr>
+            <tr><td>Timer Enabled</td><td>Toggle to enable per-question countdown timer for community quizzes</td></tr>
+            <tr><td>Timer Seconds</td><td>Time per question (15s–120s) when timer is enabled</td></tr>
+            <tr><td>Marketplace Visibility</td><td>Toggle Public/Private — public communities appear in the Marketplace</td></tr>
+            <tr><td>Description</td><td>Community description displayed on the Marketplace listing</td></tr>
+            <tr><td>Invite Code</td><td>Displayed with a <strong>Regenerate</strong> button to create a new code</td></tr>
           </tbody>
         </table>
-        <p>Click <strong>Save Settings</strong> to apply. The invite code cannot be changed after creation.</p>
+        <p>Click <strong>Save Settings</strong> to apply changes.</p>
+        <h3>Regenerating the Invite Code</h3>
+        <p>Click the <strong>Regenerate</strong> button next to the current invite code. Confirm in the dialog — the old code will <strong>stop working immediately</strong>. Share the new code with members who haven&apos;t joined yet.</p>
+      </div>
+    )
+  },
+  {
+    id: 'cm-announcements',
+    tab: 'Commissioner Guide',
+    title: 'Announcements',
+    searchText: 'announcements post pin unpin edit delete news community bulletin new badge',
+    content: (
+      <div>
+        <p>The Announcements tab lets you post messages visible to all community members on the Community Detail page.</p>
+        <h3>Posting an Announcement</h3>
+        <ol>
+          <li>Go to the <strong>Announcements</strong> tab in the Commissioner Dashboard</li>
+          <li>Type a title and content in the form</li>
+          <li>Click <strong>Post Announcement</strong></li>
+        </ol>
+        <h3>Managing Announcements</h3>
+        <ul>
+          <li><strong>Pin/Unpin</strong> — pinned announcements always appear at the top of the list</li>
+          <li><strong>Edit</strong> — update the title or content of an existing announcement</li>
+          <li><strong>Delete</strong> — permanently remove an announcement</li>
+        </ul>
+        <p>Announcements less than 48 hours old display a <strong>"New"</strong> badge to members.</p>
+      </div>
+    )
+  },
+  {
+    id: 'cm-timer',
+    tab: 'Commissioner Guide',
+    title: 'Per-Question Timer Settings',
+    searchText: 'timer countdown seconds per question auto submit timeout warning community settings configure',
+    content: (
+      <div>
+        <p>You can configure a per-question countdown timer for all quizzes using your community&apos;s questions.</p>
+        <h3>Enabling the Timer</h3>
+        <ol>
+          <li>Go to the <strong>Settings</strong> tab in the Commissioner Dashboard</li>
+          <li>Toggle <strong>Timer Enabled</strong> on</li>
+          <li>Set the <strong>Timer Seconds</strong> (15s to 120s)</li>
+          <li>Click <strong>Save Settings</strong></li>
+        </ol>
+        <h3>How it Works for Players</h3>
+        <ul>
+          <li>A countdown bar appears at the top of each question</li>
+          <li>The bar turns <strong>red</strong> when under 5 seconds remain</li>
+          <li>If time runs out, the question auto-submits as unanswered</li>
+          <li>Using the 50/50 hint adds 3 bonus seconds</li>
+        </ul>
+      </div>
+    )
+  },
+  {
+    id: 'cm-marketplace-visibility',
+    tab: 'Commissioner Guide',
+    title: 'Marketplace Visibility',
+    searchText: 'marketplace visibility public private listing description browse discover',
+    content: (
+      <div>
+        <p>Control whether your community appears in the public Community Marketplace.</p>
+        <h3>Making Your Community Public</h3>
+        <ol>
+          <li>Go to the <strong>Settings</strong> tab in the Commissioner Dashboard</li>
+          <li>Set <strong>Marketplace Visibility</strong> to <strong>Public</strong></li>
+          <li>Add a <strong>Description</strong> so players know what your community is about</li>
+          <li>Click <strong>Save Settings</strong></li>
+        </ol>
+        <p>Public communities can be found and joined by any user via Menu → My Leagues → Browse Marketplace, without needing an invite code.</p>
+        <p>Set visibility to <strong>Private</strong> to hide from the marketplace — members can still join with an invite code.</p>
       </div>
     )
   },
@@ -377,7 +546,7 @@ const faqSections = [
     id: 'faq-main',
     tab: 'FAQ',
     title: 'Frequently Asked Questions',
-    searchText: 'faq frequently asked questions help common problems password leaderboard invite code achievement hint quiz source stats commissioner profile',
+    searchText: 'faq frequently asked questions help common problems password leaderboard invite code achievement hint quiz source stats commissioner profile multiplayer room marketplace announcements timer admin',
     content: (
       <div>
         <p className="faq-q">How do I reset my password?</p>
@@ -414,6 +583,27 @@ const faqSections = [
 
         <p className="faq-q">The app looks outdated / my recent changes aren&apos;t showing. What do I do?</p>
         <p className="faq-a">The app is hosted on GitHub Pages which caches files aggressively. Do a hard refresh: <code>Ctrl+Shift+R</code> on Windows/Linux, or <code>Cmd+Shift+R</code> on Mac. On mobile, clear the browser cache or open in a private/incognito window.</p>
+
+        <p className="faq-q">How do I find communities to join without an invite code?</p>
+        <p className="faq-a">Go to <strong>Menu → My Leagues → Browse Marketplace</strong>. Public communities are listed with their description, member count, and a Join button. Use the search bar and category filters to find communities that interest you.</p>
+
+        <p className="faq-q">How do I create a multiplayer game room?</p>
+        <p className="faq-a">Go to <strong>Menu → Multiplayer</strong> and click <strong>Create Room</strong>. Configure the game settings (source, category, difficulty, timer, etc.), then click <strong>Create Room</strong>. Share the 6-character room code with friends, or they can find your room in the Open Rooms list.</p>
+
+        <p className="faq-q">Can I join a multiplayer room without a code?</p>
+        <p className="faq-a">Yes! On the Multiplayer screen, scroll down to the <strong>Open Rooms</strong> section. It shows all rooms currently waiting for players, with the host name, player count, and settings. Click <strong>Join</strong> on any room. The list refreshes automatically every 10 seconds.</p>
+
+        <p className="faq-q">Why is there a timer on my quiz questions?</p>
+        <p className="faq-a">Your community commissioner has enabled a per-question countdown timer. Each question must be answered within the time limit, or it auto-submits as unanswered. The timer bar turns red when under 5 seconds remain. Using the 50/50 hint adds 3 bonus seconds.</p>
+
+        <p className="faq-q">How do I post announcements to my community?</p>
+        <p className="faq-a">Open the Commissioner Dashboard (Menu → My Leagues → your community → Manage Community). Go to the <strong>Announcements</strong> tab, type your title and content, and click <strong>Post Announcement</strong>. You can pin, edit, or delete announcements from the same tab.</p>
+
+        <p className="faq-q">How do I regenerate my community&apos;s invite code?</p>
+        <p className="faq-a">In the Commissioner Dashboard, go to the <strong>Settings</strong> tab. Next to the current invite code, click <strong>Regenerate</strong>. Confirm in the dialog — the old code stops working immediately. Share the new code with anyone who needs it.</p>
+
+        <p className="faq-q">How do I promote or demote users? (Super Admins)</p>
+        <p className="faq-a">Go to <strong>Menu → Super Admin</strong> and click the <strong>Users</strong> tab. Search for the user, then use the action buttons to promote/demote roles or toggle super admin status. You can also expand a user row to see their activity details (games played, communities, join date).</p>
       </div>
     )
   },
@@ -449,7 +639,7 @@ const aboutContent = [
           <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
           <tbody>
             <tr><td>Frontend</td><td>React 18</td></tr>
-            <tr><td>Database &amp; Auth</td><td>Supabase (PostgreSQL + Row Level Security)</td></tr>
+            <tr><td>Database &amp; Auth</td><td>Supabase (PostgreSQL + Auth + RLS + Realtime)</td></tr>
             <tr><td>Charts</td><td>Recharts 3</td></tr>
             <tr><td>CSV Parsing</td><td>PapaParse 5</td></tr>
             <tr><td>Hosting</td><td>GitHub Pages</td></tr>

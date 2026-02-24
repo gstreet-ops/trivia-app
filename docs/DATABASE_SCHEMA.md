@@ -15,8 +15,13 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `community_members` | Membership join table |
 | `community_questions` | Community-owned question bank |
 | `community_leaderboards` | Computed rankings per community |
+| `community_announcements` | Commissioner announcements per community |
 | `custom_questions` | User-submitted questions awaiting admin review |
 | `question_templates` | Reusable question templates per community |
+| `multiplayer_rooms` | Multiplayer game rooms (lobby) |
+| `multiplayer_participants` | Players in a multiplayer room |
+| `multiplayer_questions` | Questions assigned to a multiplayer game |
+| `multiplayer_answers` | Per-player answers in a multiplayer game (Phase 2) |
 
 ---
 
@@ -122,16 +127,19 @@ A community (league) groups members and maintains a shared question bank.
 | `invite_code` | `text` | 8-character uppercase join code |
 | `season_start` | `timestamptz` | Season start date |
 | `season_end` | `timestamptz` | Season end date |
-| `settings` | `jsonb` | Flexible settings; currently `{ max_members: integer }` |
+| `visibility` | `text` | `'public'` or `'private'` — controls marketplace listing |
+| `description` | `text` | Community description shown in marketplace (nullable) |
+| `settings` | `jsonb` | Flexible settings; e.g. `{ max_members, timer_enabled, timer_seconds }` |
 | `created_at` | `timestamptz` | Creation timestamp |
 
 **Relationships:**
 - `commissioner_id` → `profiles.id`
 
 **Notes:**
-- `invite_code` is generated as `Math.random().toString(36).substring(2, 10).toUpperCase()`
+- `invite_code` is generated via `generate_invite_code` RPC or `Math.random().toString(36).substring(2, 10).toUpperCase()`
 - `slug` is generated as `name.toLowerCase().replace(/[^a-z0-9]+/g, '-')`
 - Default season length at creation: 30 days
+- `visibility = 'public'` makes the community appear in the Community Marketplace
 
 ---
 
@@ -244,6 +252,129 @@ Saved question templates within a community. Commissioners can create questions 
 
 ---
 
+### `community_announcements`
+
+Commissioner-posted announcements visible to all community members.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `uuid` | FK → `communities.id` |
+| `author_id` | `uuid` | FK → `profiles.id` (commissioner) |
+| `title` | `text` | Announcement title |
+| `content` | `text` | Announcement body |
+| `pinned` | `boolean` | Whether pinned to top (default false) |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last edit timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+- `author_id` → `profiles.id`
+
+**Notes:**
+- Pinned announcements sort above unpinned; within each group, newest first
+- "New" badge shown to members for announcements less than 48 hours old
+
+---
+
+### `multiplayer_rooms`
+
+A multiplayer game room. Created by a host; players join via room code or open rooms browser.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `room_code` | `text` | 6-character uppercase alphanumeric code |
+| `room_name` | `text` | Display name chosen by host |
+| `host_id` | `uuid` | FK → `auth.users.id` (room creator) |
+| `status` | `text` | `'waiting'`, `'in_progress'`, `'completed'`, or `'cancelled'` |
+| `max_players` | `integer` | Maximum participants (default 12) |
+| `question_source` | `text` | `'api'` or `'community'` |
+| `community_id` | `uuid` | FK → `communities.id` (nullable; set when source is community) |
+| `category` | `text` | Quiz category (default 'General Knowledge') |
+| `difficulty` | `text` | `'easy'`, `'medium'`, `'hard'`, or `'mixed'` |
+| `question_count` | `integer` | Number of questions (default 10) |
+| `timer_seconds` | `integer` | Seconds per question (default 20) |
+| `speed_bonus` | `boolean` | Whether faster answers earn more points (default false) |
+| `started_at` | `timestamptz` | When game started (nullable) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Indexes:**
+- `(room_code, status)` — for room lookup by code
+- `(host_id)` — for host queries
+
+**RLS:** Authenticated read all; insert own; update own (host only)
+
+**Realtime:** Enabled — lobby subscribes to UPDATE events for status changes
+
+---
+
+### `multiplayer_participants`
+
+Players currently in a multiplayer room.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `room_id` | `uuid` | FK → `multiplayer_rooms.id` (CASCADE delete) |
+| `user_id` | `uuid` | FK → `auth.users.id` |
+| `username` | `text` | Denormalized display name |
+| `is_host` | `boolean` | Whether this participant is the room host |
+| `is_ready` | `boolean` | Ready status in lobby |
+| `created_at` | `timestamptz` | Join timestamp |
+
+**Constraints:**
+- Unique on `(room_id, user_id)` — one entry per player per room
+
+**RLS:** Authenticated read all; insert/update/delete own rows
+
+**Realtime:** Enabled — lobby subscribes to INSERT, UPDATE, DELETE events
+
+---
+
+### `multiplayer_questions`
+
+Questions assigned to a multiplayer game. Populated when the host starts the game.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `room_id` | `uuid` | FK → `multiplayer_rooms.id` (CASCADE delete) |
+| `question_index` | `integer` | 0-based order within the game |
+| `question_text` | `text` | The question |
+| `correct_answer` | `text` | Correct answer |
+| `incorrect_answers` | `jsonb` | Array of incorrect answers |
+| `category` | `text` | Category label |
+| `difficulty` | `text` | Difficulty level |
+
+**Constraints:**
+- Unique on `(room_id, question_index)`
+
+**RLS:** Authenticated read all; insert by host only
+
+---
+
+### `multiplayer_answers`
+
+Per-player answers for each question in a multiplayer game. *(Phase 2 — not yet implemented)*
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `room_id` | `uuid` | FK → `multiplayer_rooms.id` (CASCADE delete) |
+| `user_id` | `uuid` | FK → `auth.users.id` |
+| `question_index` | `integer` | Which question was answered |
+| `user_answer` | `text` | The answer selected |
+| `is_correct` | `boolean` | Whether the answer was correct |
+| `answer_time_ms` | `integer` | Time taken to answer in milliseconds |
+| `points` | `integer` | Points earned (with speed bonus if enabled) |
+| `created_at` | `timestamptz` | Answer timestamp |
+
+**Constraints:**
+- Unique on `(room_id, user_id, question_index)`
+
+---
+
 ## Relationships Diagram
 
 ```
@@ -260,9 +391,15 @@ auth.users
             │       ├── community_members (community_id)
             │       ├── community_questions (community_id)
             │       ├── community_leaderboards (community_id)
+            │       ├── community_announcements (community_id)
             │       └── question_templates (community_id)
             │
-            └── custom_questions (creator_id)
+            ├── custom_questions (creator_id)
+            │
+            └── multiplayer_rooms (host_id)
+                    ├── multiplayer_participants (room_id, user_id)
+                    ├── multiplayer_questions (room_id)
+                    └── multiplayer_answers (room_id, user_id)
 ```
 
 ---
@@ -282,6 +419,11 @@ RLS (Row Level Security) is enabled on all tables. Policies are managed in Supab
 | `community_leaderboards` | Members of community | System/view |
 | `custom_questions` | Own rows; admins see all | Creator (insert); admin (update status) |
 | `question_templates` | Commissioner of community | Commissioner |
+| `community_announcements` | Members of community | Commissioner only |
+| `multiplayer_rooms` | All authenticated users | Host (insert/update) |
+| `multiplayer_participants` | All authenticated users | Own rows (insert/update/delete) |
+| `multiplayer_questions` | All authenticated users | Host only (insert) |
+| `multiplayer_answers` | All authenticated users | Own rows (insert) |
 
 ---
 

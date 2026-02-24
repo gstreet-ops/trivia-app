@@ -663,3 +663,144 @@
     font-size: 0.72rem;
   }
 }
+
+/* ===== AI Requests Tab ===== */
+.ai-request-card {
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.ai-req-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ai-req-community {
+  padding: 2px 10px;
+  background: #041E42;
+  color: white;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ai-req-date {
+  font-size: 0.72rem;
+  color: #54585A;
+}
+
+.ai-req-theme {
+  font-weight: 700;
+  color: #041E42;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.ai-req-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ai-req-tag {
+  padding: 2px 8px;
+  background: #E8ECF0;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #54585A;
+  text-transform: capitalize;
+}
+
+.ai-req-by {
+  font-size: 0.72rem;
+  color: #54585A;
+}
+
+.ai-req-instructions {
+  font-size: 0.8rem;
+  color: #54585A;
+  font-style: italic;
+  margin: 0 0 8px;
+}
+
+.ai-reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ai-reject-form textarea {
+  padding: 8px 10px;
+  border: 1px solid #DEE2E6;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.ai-reject-form textarea:focus {
+  outline: none;
+  border-color: #041E42;
+}
+
+.ai-reject-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.ai-cancel-btn {
+  padding: 6px 14px;
+  background: #E8ECF0;
+  color: #54585A;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.ai-cancel-btn:hover { background: #DEE2E6; }
+
+/* AI Status Badges */
+.ai-status-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.ai-status-pending { background: #f0ad4e; color: #fff; }
+.ai-status-approved { background: #5bc0de; color: #fff; }
+.ai-status-generating { background: #5bc0de; color: #fff; animation: ai-pulse 1.5s ease-in-out infinite; }
+.ai-status-completed { background: #5cb85c; color: #fff; }
+.ai-status-rejected { background: #d9534f; color: #fff; }
+.ai-status-failed { background: #d9534f; color: #fff; }
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.ai-sim-btn {
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: #E8ECF0;
+  color: #041E42;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ai-sim-btn:hover { background: #DEE2E6; }
