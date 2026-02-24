@@ -90,6 +90,7 @@
 - [x] Approve / reject custom questions
 - [x] Recent users table (last 10)
 - [x] Recent games table (last 10)
+- [x] User management — promote/demote roles, toggle super admin, view user activity, search/filter/sort, pagination
 
 ### Custom Questions
 - [x] Submit custom question form (any logged-in user)
@@ -152,7 +153,7 @@
 
 - [x] **Community Marketplace** — community discovery with public/private visibility toggle, marketplace browser page listing public communities with stats, direct join
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
-- [ ] **Admin user management UI** — promote/demote users to admin from the Admin Dashboard
+- [x] **Admin user management UI** — promote/demote users, toggle super admin, view activity, search/filter/sort with pagination
 - [ ] **Admin delete user** — remove a user account from the platform
 - [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
 - [x] **Community announcements** — commissioner can post, edit, delete, pin/unpin announcements; members see them on community detail page with "New" badges

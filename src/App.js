@@ -297,7 +297,7 @@ function App() {
           onBack={() => navigateTo('communities')}
         />
       )}
-      {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} />}
+      {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} currentUserId={session.user.id} />}
       {screen === 'createQuestion' && (
         <QuestionCreator
           user={session.user}
