@@ -17,12 +17,13 @@ import CommissionerDashboard from './components/CommissionerDashboard';
 import CommunityMarketplace from './components/CommunityMarketplace';
 import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
+import MultiplayerLobby from './components/MultiplayerLobby';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
   'community', 'createQuestion', 'quizConfig', 'quiz',
   'review', 'communityDetail', 'commissionerDashboard', 'userProfile',
-  'marketplace'
+  'marketplace', 'multiplayer'
 ]);
 
 function parseHash(hash) {
@@ -74,8 +75,8 @@ function App() {
   const syncFromHash = useCallback(() => {
     const { screen: hashScreen, param } = parseHash(window.location.hash);
 
-    // Quiz config can't be restored on refresh — redirect to dashboard
-    if (hashScreen === 'quiz') {
+    // Quiz config and multiplayer lobby can't be restored on refresh — redirect to dashboard
+    if (hashScreen === 'quiz' || hashScreen === 'multiplayer') {
       window.location.hash = 'dashboard';
       setScreen('dashboard');
       return;
@@ -191,6 +192,7 @@ function App() {
       {appUsername && (() => {
         const navItems = [
           { label: 'My Stats', icon: '📊', action: () => navigateTo('myStats') },
+          { label: 'Multiplayer', icon: '⚡', action: () => navigateTo('multiplayer') },
           { label: 'My Leagues', icon: '🏆', action: () => navigateTo('communities') },
           { label: 'Help', icon: '❓', action: () => navigateTo('help') },
           { label: 'Settings', icon: '⚙️', action: () => navigateTo('settings') },
@@ -322,6 +324,13 @@ function App() {
           communityId={viewCommunityId}
           currentUserId={session.user.id}
           onBack={() => navigateTo('communityDetail')}
+        />
+      )}
+      {screen === 'multiplayer' && (
+        <MultiplayerLobby
+          user={session.user}
+          username={appUsername}
+          onBack={() => navigateTo('dashboard')}
         />
       )}
       {screen === 'settings' && <Settings user={session.user} onBack={() => navigateTo('dashboard')} />}

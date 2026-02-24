@@ -164,7 +164,7 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
-- [ ] **Real-time multiplayer quiz** — synchronous head-to-head trivia via WebSockets or Supabase Realtime
+- [ ] **Real-time multiplayer quiz (Phase 1 — lobby complete)** — room creation with unique codes, join via code, real-time player list via Supabase Realtime, host controls (start/cancel), ready toggle, question fetching; Phase 2 (live game screen) pending
 - [ ] **Question explanations** — optionally add an explanation shown after each answer
 - [ ] **Image questions** — support attaching an image to a question
 - [ ] **Progressive Web App (PWA)** — offline support and home screen install
