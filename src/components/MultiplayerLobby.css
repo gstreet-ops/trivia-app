@@ -517,6 +517,123 @@
   margin: 0 0 20px 0;
 }
 
+/* ===== Open Rooms Browser ===== */
+.mp-open-rooms {
+  margin-top: 20px;
+}
+
+.mp-open-rooms-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mp-open-rooms-header h2 {
+  color: #041E42;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-left: 3px solid #041E42;
+  padding-left: 10px;
+  margin: 0;
+}
+
+.mp-refresh-btn {
+  padding: 5px 12px;
+  background: #E8ECF0;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #041E42;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mp-refresh-btn:hover:not(:disabled) {
+  background: #DEE2E6;
+}
+
+.mp-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mp-open-rooms-empty {
+  text-align: center;
+  color: #54585A;
+  padding: 24px 16px;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 10px;
+}
+
+.mp-open-rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-open-room-card {
+  background: #fff;
+  border: 1px solid #DEE2E6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+
+.mp-open-room-card:hover {
+  border-color: #041E42;
+}
+
+.mp-open-room-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.mp-open-room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mp-open-room-name {
+  font-weight: 700;
+  color: #041E42;
+  font-size: 0.9rem;
+}
+
+.mp-open-room-host {
+  font-size: 0.72rem;
+  color: #54585A;
+}
+
+.mp-open-room-players {
+  background: #041E42;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mp-open-room-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mp-open-room-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 400px) {
   .mp-room-code {

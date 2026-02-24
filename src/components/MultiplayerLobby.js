@@ -55,6 +55,11 @@ function MultiplayerLobby({ user, username, onBack }) {
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Open rooms browser
+  const [openRooms, setOpenRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [joiningRoomId, setJoiningRoomId] = useState(null);
+
   const channelRef = useRef(null);
 
   // Fetch communities for source selector
@@ -68,6 +73,42 @@ function MultiplayerLobby({ user, username, onBack }) {
     };
     fetchCommunities();
   }, [user.id]);
+
+  // Fetch open rooms and auto-refresh every 10s when on menu view
+  const fetchOpenRooms = useCallback(async () => {
+    setLoadingRooms(true);
+    const { data } = await supabase
+      .from('multiplayer_rooms')
+      .select('*, profiles:host_id(username)')
+      .eq('status', 'waiting')
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      // Fetch participant counts for each room
+      const roomIds = data.map(r => r.id);
+      const { data: parts } = await supabase
+        .from('multiplayer_participants')
+        .select('room_id')
+        .in('room_id', roomIds);
+
+      const countMap = {};
+      (parts || []).forEach(p => { countMap[p.room_id] = (countMap[p.room_id] || 0) + 1; });
+
+      setOpenRooms(data.map(r => ({
+        ...r,
+        host_username: r.profiles?.username || 'Unknown',
+        player_count: countMap[r.id] || 0
+      })));
+    }
+    setLoadingRooms(false);
+  }, []);
+
+  useEffect(() => {
+    if (view !== 'menu') return;
+    fetchOpenRooms();
+    const interval = setInterval(fetchOpenRooms, 10000);
+    return () => clearInterval(interval);
+  }, [view, fetchOpenRooms]);
 
   // Cleanup subscriptions on unmount
   useEffect(() => {
@@ -276,6 +317,64 @@ function MultiplayerLobby({ user, username, onBack }) {
       setError('Failed to join room: ' + err.message);
     }
     setJoining(false);
+  };
+
+  const handleJoinRoomDirect = async (targetRoom) => {
+    setJoiningRoomId(targetRoom.id);
+    setError(null);
+
+    try {
+      // Check if full
+      const { data: existingParts } = await supabase
+        .from('multiplayer_participants')
+        .select('id, user_id')
+        .eq('room_id', targetRoom.id);
+
+      if ((existingParts?.length || 0) >= targetRoom.max_players) {
+        setError('Room is full');
+        setJoiningRoomId(null);
+        return;
+      }
+
+      // Check if already in room
+      if (existingParts?.some(p => p.user_id === user.id)) {
+        setRoom(targetRoom);
+        setIsHost(targetRoom.host_id === user.id);
+        setParticipants(existingParts);
+        subscribeToRoom(targetRoom.id);
+        setView('lobby');
+        setJoiningRoomId(null);
+        return;
+      }
+
+      const { error: joinError } = await supabase
+        .from('multiplayer_participants')
+        .insert([{
+          room_id: targetRoom.id,
+          user_id: user.id,
+          username: username,
+          is_host: false,
+          is_ready: false
+        }]);
+
+      if (joinError) throw joinError;
+
+      setRoom(targetRoom);
+      setIsHost(false);
+      setIsReady(false);
+
+      const { data: parts } = await supabase
+        .from('multiplayer_participants')
+        .select('*')
+        .eq('room_id', targetRoom.id);
+      setParticipants(parts || []);
+
+      subscribeToRoom(targetRoom.id);
+      setView('lobby');
+    } catch (err) {
+      setError('Failed to join room: ' + err.message);
+    }
+    setJoiningRoomId(null);
   };
 
   const handleToggleReady = async () => {
@@ -654,6 +753,52 @@ function MultiplayerLobby({ user, username, onBack }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Open Rooms Browser */}
+      <div className="mp-open-rooms">
+        <div className="mp-open-rooms-header">
+          <h2>Open Rooms</h2>
+          <button className="mp-refresh-btn" onClick={fetchOpenRooms} disabled={loadingRooms}>
+            {loadingRooms ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+        {openRooms.length === 0 ? (
+          <div className="mp-open-rooms-empty">
+            {loadingRooms ? 'Loading rooms...' : 'No open rooms right now. Create one!'}
+          </div>
+        ) : (
+          <div className="mp-open-rooms-list">
+            {openRooms.map(r => (
+              <div key={r.id} className="mp-open-room-card">
+                <div className="mp-open-room-top">
+                  <div className="mp-open-room-info">
+                    <span className="mp-open-room-name">{r.room_name}</span>
+                    <span className="mp-open-room-host">hosted by {r.host_username}</span>
+                  </div>
+                  <div className="mp-open-room-players">
+                    {r.player_count}/{r.max_players}
+                  </div>
+                </div>
+                <div className="mp-open-room-bottom">
+                  <div className="mp-open-room-tags">
+                    <span className="mp-setting-tag">{r.question_count} Qs</span>
+                    <span className="mp-setting-tag">{r.difficulty || 'mixed'}</span>
+                    <span className="mp-setting-tag">{r.timer_seconds}s</span>
+                    {r.speed_bonus && <span className="mp-setting-tag mp-speed">Speed</span>}
+                  </div>
+                  <button
+                    className="mp-btn mp-btn-primary"
+                    onClick={() => handleJoinRoomDirect(r)}
+                    disabled={joiningRoomId === r.id || r.player_count >= r.max_players}
+                  >
+                    {joiningRoomId === r.id ? 'Joining...' : r.player_count >= r.max_players ? 'Full' : 'Join'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
