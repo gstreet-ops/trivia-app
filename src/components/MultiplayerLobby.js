@@ -78,6 +78,13 @@ function MultiplayerLobby({ user, username, onBack }) {
     };
   }, []);
 
+  const cleanup = useCallback(() => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+  }, []);
+
   const subscribeToRoom = useCallback((roomId) => {
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -128,13 +135,6 @@ function MultiplayerLobby({ user, username, onBack }) {
 
     channelRef.current = channel;
   }, [cleanup]);
-
-  const cleanup = useCallback(() => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-  }, []);
 
   const handleCreateRoom = async () => {
     if (!roomName.trim()) { setError('Room name is required'); return; }
