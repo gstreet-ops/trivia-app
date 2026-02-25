@@ -105,7 +105,6 @@ function AdminDashboard({ onBack, currentUserId }) {
       reviewed_at: new Date().toISOString()
     }).eq('id', requestId);
     if (error) { showToast('Failed to approve: ' + error.message, 'error'); return; }
-    showToast('Approved — generating questions...');
 
     // Notify requester
     const req = aiRequests.find(r => r.id === requestId);
@@ -119,22 +118,19 @@ function AdminDashboard({ onBack, currentUserId }) {
       }]);
     }
 
+    showToast('Request approved! Questions are being generated...');
     fetchAiRequests();
 
-    // Call Edge Function to generate questions
-    console.log('Invoking generate-questions Edge Function for request:', requestId);
-    const { data: fnData, error: fnError } = await supabase.functions.invoke('generate-questions', {
+    // Fire-and-forget: invoke Edge Function to generate questions
+    supabase.functions.invoke('generate-questions', {
       body: { request_id: requestId }
+    }).then(({ error: fnError }) => {
+      if (fnError) {
+        console.error('Edge Function error:', fnError);
+        showToast('Generation failed: ' + fnError.message, 'error');
+      }
+      fetchAiRequests();
     });
-    console.log('Edge Function response:', { data: fnData, error: fnError });
-    if (fnError) {
-      console.error('Edge Function error (full):', JSON.stringify(fnError, null, 2));
-      showToast('Generation failed: ' + fnError.message, 'error');
-      alert('Edge Function error: ' + JSON.stringify(fnError));
-    } else {
-      showToast('Questions generated successfully!');
-    }
-    fetchAiRequests();
   };
 
   const handleRejectAiRequest = async (requestId) => {

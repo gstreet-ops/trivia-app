@@ -97,6 +97,42 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchSeasonData();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Poll for in-progress AI generation requests
+  useEffect(() => {
+    const hasInProgress = genRequests.some(r => r.status === 'approved' || r.status === 'generating');
+    if (!hasInProgress || activeTab !== 'ai-generate') return;
+
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('generation_requests')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+      if (!data) return;
+
+      // Check if any request just completed
+      const prevInProgress = genRequests.filter(r => r.status === 'approved' || r.status === 'generating');
+      const nowCompleted = prevInProgress.filter(prev => {
+        const updated = data.find(d => d.id === prev.id);
+        return updated && updated.status === 'completed';
+      });
+      if (nowCompleted.length > 0) {
+        showToast('Questions ready for review!');
+      }
+      const nowFailed = prevInProgress.filter(prev => {
+        const updated = data.find(d => d.id === prev.id);
+        return updated && updated.status === 'failed';
+      });
+      if (nowFailed.length > 0) {
+        showToast('Generation failed. You can retry.', 'error');
+      }
+
+      setGenRequests(data);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [genRequests, activeTab, communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchCommissionerData = async () => {
     try {
       const { data: communityData } = await supabase
@@ -969,6 +1005,29 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setGenRequests(data || []);
     } catch (error) {
       console.error('Error fetching generation requests:', error);
+    }
+  };
+
+  const handleRetryGenRequest = async (requestId) => {
+    try {
+      const { error } = await supabase.from('generation_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestId);
+      if (error) throw error;
+      showToast('Retrying generation...');
+      fetchGenRequests();
+      // Fire-and-forget Edge Function call
+      supabase.functions.invoke('generate-questions', {
+        body: { request_id: requestId }
+      }).then(({ error: fnError }) => {
+        if (fnError) {
+          console.error('Retry Edge Function error:', fnError);
+          showToast('Generation failed: ' + fnError.message, 'error');
+        }
+        fetchGenRequests();
+      });
+    } catch (err) {
+      showToast('Failed to retry: ' + err.message, 'error');
     }
   };
 
@@ -2635,10 +2694,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <div className="gen-requests-list">
                   {genRequests.map(req => {
                     const statusClass = req.status === 'pending' ? 'gen-status-pending'
-                      : req.status === 'approved' ? 'gen-status-approved'
+                      : req.status === 'approved' ? 'gen-status-generating'
                       : req.status === 'generating' ? 'gen-status-generating'
                       : req.status === 'completed' ? 'gen-status-completed'
+                      : req.status === 'failed' ? 'gen-status-failed'
                       : 'gen-status-rejected';
+                    const statusLabel = req.status === 'pending' ? '⏳ Pending approval'
+                      : (req.status === 'approved' || req.status === 'generating') ? '🔄 Generating...'
+                      : req.status === 'completed' ? '✅ Completed'
+                      : req.status === 'failed' ? '❌ Failed'
+                      : '❌ Rejected';
                     const isReviewing = genReviewId === req.id;
                     const generatedQs = req.generated_questions || [];
                     const acceptedTexts = genAccepted[req.id] || [];
@@ -2650,7 +2715,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                             <div className="gen-request-meta">
                               <span className="gen-tag">{req.question_count} Qs</span>
                               <span className="gen-tag">{req.difficulty}</span>
-                              <span className={`gen-status-badge ${statusClass}`}>{req.status}</span>
+                              <span className={`gen-status-badge ${statusClass}`}>{statusLabel}</span>
                             </div>
                           </div>
                           <span className="gen-request-date">{new Date(req.created_at).toLocaleDateString()}</span>
@@ -2661,6 +2726,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         {req.status === 'rejected' && req.admin_notes && (
                           <div className="gen-admin-notes">
                             <strong>Admin notes:</strong> {req.admin_notes}
+                          </div>
+                        )}
+                        {req.status === 'failed' && (
+                          <div className="gen-admin-notes" style={{borderLeftColor: '#d9534f'}}>
+                            <strong>Error:</strong> {req.generation_error || 'Unknown error during generation'}
+                            <button
+                              className="gen-review-btn"
+                              style={{marginTop:'8px', display:'block'}}
+                              onClick={() => handleRetryGenRequest(req.id)}
+                            >
+                              🔄 Retry Generation
+                            </button>
                           </div>
                         )}
                         {req.status === 'completed' && generatedQs.length > 0 && (() => {
@@ -2728,6 +2805,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                               <span key={ai} className="gen-q-wrong">{a}</span>
                                             ))}
                                           </div>
+                                          {q.explanation && (
+                                            <div style={{background:'#E8F4FD', border:'1px solid #B8D4E8', borderRadius:'6px', padding:'8px 12px', fontSize:'13px', color:'#333', marginTop:'6px', lineHeight:'1.45'}}>
+                                              💡 {q.explanation}
+                                            </div>
+                                          )}
                                           <div className="gen-q-meta">
                                             <span className="gen-tag">{q.category}</span>
                                             <span className="gen-tag">{q.difficulty}</span>

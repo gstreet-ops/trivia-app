@@ -127,6 +127,9 @@
 - [x] Request history for commissioners (status badges, date, admin notes on rejection)
 - [x] Completed request review — commissioner can review generated questions, add to bank or discard
 - [x] Simulate Generation button (super admin) for testing the review flow
+- [x] Admin approval triggers Edge Function (fire-and-forget) to generate questions
+- [x] Commissioner sees descriptive status labels (Pending, Generating, Completed, Failed, Rejected) with retry on failure
+- [x] Auto-poll every 5s when requests are generating; toast on completion or failure
 
 ### Media Questions
 - [x] Image questions — upload image to Supabase Storage, display above question text in quiz and multiplayer
