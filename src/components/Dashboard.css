@@ -183,103 +183,94 @@
 }
 
 /* ===== Recent Games ===== */
-.recent-games {
-  margin-bottom: 16px;
-}
-.recent-games h3 {
-  color: var(--navy);
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  border-left: 3px solid var(--navy);
-  padding-left: 10px;
-}
-
-.game-card {
+.recent-games-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  transition: background 0.1s, box-shadow 0.15s;
-}
-.game-card:hover {
-  background: var(--bg-hover);
-  box-shadow: var(--shadow);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
-.game-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  max-width: 55%;
+.recent-games-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.game-category {
-  font-weight: 600;
-  color: #fff;
-  background: var(--navy);
-  font-size: 0.72rem;
-  padding: 3px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.game-difficulty {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 6px;
-  display: inline-block;
-  width: fit-content;
-  text-transform: capitalize;
-}
-.diff-easy {
-  background: var(--correct-bg);
-  color: var(--correct-text);
-}
-.diff-medium {
-  background: var(--warning-bg);
-  color: #856404;
-}
-.diff-hard {
-  background: var(--incorrect-bg);
-  color: var(--incorrect-text);
-}
-
-.game-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  min-width: 48px;
-}
-
-.game-score {
-  font-weight: 800;
-  color: var(--navy);
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.game-pct {
-  font-size: 0.65rem;
+.recent-games-table thead th {
+  text-align: left;
+  padding: 8px 12px;
   color: var(--text-secondary);
   font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.game-date {
-  font-size: 0.72rem;
-  color: #8B9DC3;
+.recent-game-row td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.recent-game-row:last-child td {
+  border-bottom: none;
+}
+
+.recent-game-row:hover {
+  background: var(--bg-hover);
+}
+
+.cat-badge-sm {
+  background: var(--navy);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
   white-space: nowrap;
+}
+
+.diff-badge-sm {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.diff-badge-sm.easy { background: var(--correct-bg); color: var(--correct-text); }
+.diff-badge-sm.medium { background: var(--warning-bg); color: #856404; }
+.diff-badge-sm.hard { background: var(--incorrect-bg); color: var(--incorrect-text); }
+
+.score-cell {
+  white-space: nowrap;
+}
+.score-cell strong {
+  margin-right: 6px;
+}
+
+.score-pct {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.date-cell {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.review-btn-sm {
+  background: transparent;
+  color: var(--navy);
+  border: 1px solid var(--navy);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.review-btn-sm:hover {
+  background: var(--navy);
+  color: white;
 }
 
 /* ===== Nav dropdown (used in App.js top bar) ===== */
@@ -364,6 +355,16 @@
 }
 
 /* ===== Mobile tweaks ===== */
+@media (max-width: 768px) {
+  .recent-games-table .date-cell,
+  .recent-games-table thead th:nth-child(4) {
+    display: none;
+  }
+  .recent-games-table td, .recent-games-table th {
+    padding: 6px 8px;
+  }
+}
+
 @media (max-width: 400px) {
   .stats-grid {
     gap: 6px;
@@ -373,8 +374,5 @@
   }
   .stat-number {
     font-size: 1.1rem;
-  }
-  .game-card {
-    padding: 8px 10px;
   }
 }

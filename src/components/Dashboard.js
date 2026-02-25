@@ -115,32 +115,33 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
 
       {/* Recent Games */}
       {recentGames.length > 0 && (
-        <div className="recent-games">
+        <div className="recent-games-section">
           <h3>Recent Games</h3>
-          {recentGames.map(game => {
-            const pct = game.total_questions > 0 ? Math.min(Math.round((game.score / game.total_questions) * 100), 100) : 0;
-            return (
-              <div
-                key={game.id}
-                className="game-card"
-                onClick={() => onReviewGame(game.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onReviewGame(game.id)}
-                aria-label={`Review ${game.category} quiz, ${game.difficulty} difficulty, ${game.score} of ${game.total_questions} correct, played ${new Date(game.created_at).toLocaleDateString()}`}
-              >
-                <div className="game-left">
-                  <span className="game-category">{game.category}</span>
-                  <span className={`game-difficulty diff-${game.difficulty}`}>{game.difficulty}</span>
-                </div>
-                <div className="game-center">
-                  <span className="game-score">{game.score}/{game.total_questions}</span>
-                  <span className="game-pct">{pct}%</span>
-                </div>
-                <div className="game-date">{new Date(game.created_at).toLocaleDateString()}</div>
-              </div>
-            );
-          })}
+          <table className="recent-games-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Difficulty</th>
+                <th>Score</th>
+                <th className="date-cell">Date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentGames.map(game => (
+                <tr key={game.id} className="recent-game-row">
+                  <td><span className="cat-badge-sm">{game.category}</span></td>
+                  <td><span className={`diff-badge-sm ${game.difficulty}`}>{game.difficulty}</span></td>
+                  <td className="score-cell">
+                    <strong>{game.score}/{game.total_questions}</strong>
+                    <span className="score-pct">{game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0}%</span>
+                  </td>
+                  <td className="date-cell">{new Date(game.created_at).toLocaleDateString()}</td>
+                  <td><button className="review-btn-sm" onClick={() => onReviewGame(game.id)}>Review</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
