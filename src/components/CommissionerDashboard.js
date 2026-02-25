@@ -285,7 +285,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const topPlayer = leaderboard[0] || null;
 
       // 2. Atomic archive + season update via RPC
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('reset_season', {
+      const { error: rpcError } = await supabase.rpc('reset_season', {
         p_community_id: communityId,
         p_archived_by: currentUserId,
         p_leaderboard_snapshot: leaderboard,
