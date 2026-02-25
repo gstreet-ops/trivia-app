@@ -205,6 +205,14 @@
 - [x] SQL migration script (`docs/MIGRATION_ROLES.sql`) with RLS policy updates
 - [x] Backward-compatible — legacy `role`, `super_admin`, `commissioner_id` columns preserved and kept in sync
 
+### Legal Framework
+- [x] Terms of Service page — full legal text covering acceptance, accounts, user content, communities, IP, prohibited conduct, disclaimers, liability
+- [x] Privacy Policy page — covers data collection, usage, storage, third parties, sharing, user rights, children's privacy, cookies, retention, security
+- [x] Signup consent flow — checkbox with linked ToS/Privacy pages, blocks signup until accepted, records consent timestamp and version
+- [x] Footer links — Terms of Service and Privacy Policy links on all screens (except during active quiz)
+- [x] Settings links — legal section with ToS and Privacy Policy buttons
+- [x] Unauthenticated access — ToS and Privacy pages viewable from signup screen via hash routing
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon

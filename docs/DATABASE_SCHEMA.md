@@ -46,6 +46,9 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 | `profile_visibility` | `boolean` | If false, profile hidden from other users |
 | `leaderboard_visibility` | `boolean` | If false, excluded from leaderboards |
 | `theme` | `text` | `'light'` or `'dark'` — user's preferred color theme |
+| `tos_accepted_at` | `timestamptz` | When user accepted Terms of Service (nullable) |
+| `privacy_accepted_at` | `timestamptz` | When user accepted Privacy Policy (nullable) |
+| `tos_version` | `text` | Version of ToS accepted (e.g., `'1.0'`) (nullable) |
 | `created_at` | `timestamptz` | Row creation timestamp |
 
 **Notes:**

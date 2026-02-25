@@ -20,6 +20,8 @@ import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
 import NotificationBell from './components/NotificationBell';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon, ChevronDownIcon, CheckIcon } from './components/Icons';
 import { isPlatformAdmin, getPlatformRole } from './utils/permissions';
 
@@ -27,7 +29,7 @@ const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
   'community', 'createQuestion', 'quizConfig', 'quiz',
   'review', 'communityDetail', 'commissionerDashboard', 'userProfile',
-  'marketplace', 'multiplayer', 'resetPassword'
+  'marketplace', 'multiplayer', 'resetPassword', 'terms', 'privacy'
 ]);
 
 function parseHash(hash) {
@@ -371,7 +373,12 @@ function App() {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>Loading...</div>;
   }
 
-  if (!session) return <StartScreen />;
+  if (!session) {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'terms') return <TermsOfService onBack={() => { window.location.hash = ''; window.location.reload(); }} />;
+    if (hash === 'privacy') return <PrivacyPolicy onBack={() => { window.location.hash = ''; window.location.reload(); }} />;
+    return <StartScreen />;
+  }
 
   return (
     <div className="App">
@@ -575,9 +582,18 @@ function App() {
           onBack={() => navigateTo('dashboard')}
         />
       )}
-      {screen === 'settings' && <Settings user={session.user} onBack={() => navigateTo('dashboard')} />}
+      {screen === 'settings' && <Settings user={session.user} onBack={() => navigateTo('dashboard')} onNavigate={navigateTo} />}
       {screen === 'resetPassword' && <ResetPasswordScreen onDone={() => navigateTo('dashboard')} />}
       {screen === 'help' && <HelpCenter onBack={() => navigateTo('dashboard')} />}
+      {screen === 'terms' && <TermsOfService onBack={() => navigateTo('dashboard')} />}
+      {screen === 'privacy' && <PrivacyPolicy onBack={() => navigateTo('dashboard')} />}
+      {screen !== 'quiz' && screen !== 'quizConfig' && (
+        <footer className="app-footer">
+          <button className="footer-link" onClick={() => navigateTo('terms')}>Terms of Service</button>
+          <span className="footer-divider">|</span>
+          <button className="footer-link" onClick={() => navigateTo('privacy')}>Privacy Policy</button>
+        </footer>
+      )}
     </div>
   );
 }

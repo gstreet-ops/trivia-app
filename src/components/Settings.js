@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import { applyTheme, getSavedTheme } from '../utils/theme';
 import './Settings.css';
 
-function Settings({ user, onBack }) {
+function Settings({ user, onBack, onNavigate }) {
   const [profile, setProfile] = useState({ username: '', profile_visibility: true, leaderboard_visibility: true });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -108,6 +108,13 @@ function Settings({ user, onBack }) {
           <input id="settings-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
         </div>
         <button className="save-btn" onClick={handleChangePassword} style={{ marginTop: '8px' }}>Update Password</button>
+      </div>
+      <div className="settings-section">
+        <h2>Legal</h2>
+        <div className="legal-links">
+          <button className="legal-link-btn" onClick={() => onNavigate && onNavigate('terms')}>Terms of Service</button>
+          <button className="legal-link-btn" onClick={() => onNavigate && onNavigate('privacy')}>Privacy Policy</button>
+        </div>
       </div>
       <div className="danger-zone">
         <h2>Account</h2>

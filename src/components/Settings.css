@@ -161,6 +161,27 @@
   color: var(--text-primary);
 }
 
+.legal-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.legal-link-btn {
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.legal-link-btn:hover {
+  border-color: var(--navy);
+  background: var(--bg-hover);
+}
+
 @media (max-width: 768px) {
   .settings {
     padding: 20px;

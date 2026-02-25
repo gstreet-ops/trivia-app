@@ -315,6 +315,9 @@ Your question enters a pending queue. Platform admins review and either approve 
   - *Show me on leaderboards* — if unchecked, you are excluded from all leaderboards
 - **Theme** — toggle Dark Mode on/off
 - **Change Password** — enter a new password and confirm it to update your password
+- **Legal** — links to Terms of Service and Privacy Policy
 - **Logout** — signs you out and returns to the login screen
 
 Click **Save Settings** to apply profile/privacy changes. Password changes are saved with the **Update Password** button.
+
+A footer with **Terms of Service** and **Privacy Policy** links also appears at the bottom of every screen (except during an active quiz).

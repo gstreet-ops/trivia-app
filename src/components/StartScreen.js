@@ -15,6 +15,7 @@ function StartScreen() {
   const [signupSuccess, setSignupSuccess] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState({});
+  const [tosAccepted, setTosAccepted] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -33,6 +34,9 @@ function StartScreen() {
       }
       if (password.length < 8) {
         errors.password = 'Password must be at least 8 characters';
+      }
+      if (!tosAccepted) {
+        errors.tos = 'You must agree to the Terms of Service and Privacy Policy';
       }
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
@@ -59,6 +63,14 @@ function StartScreen() {
         // Check if email confirmation is required (identities will be empty)
         if (signUpData?.user?.identities?.length === 0) {
           throw new Error('An account with this email already exists.');
+        }
+        // Record ToS consent
+        if (signUpData?.user?.id) {
+          await supabase.from('profiles').update({
+            tos_accepted_at: new Date().toISOString(),
+            privacy_accepted_at: new Date().toISOString(),
+            tos_version: '1.0'
+          }).eq('id', signUpData.user.id);
         }
         setSignupSuccess(true);
         setTimeout(() => { setIsLogin(true); setSignupSuccess(false); }, 2000);
@@ -153,7 +165,16 @@ function StartScreen() {
             <input id="auth-password" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: null })); }} required />
             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
           </div>
-          <button type="submit" disabled={loading}>
+          {!isLogin && (
+            <div className="tos-consent">
+              <label className="tos-label">
+                <input type="checkbox" checked={tosAccepted} onChange={(e) => { setTosAccepted(e.target.checked); setFieldErrors(prev => ({ ...prev, tos: null })); }} />
+                <span>I agree to the <a href="#terms" className="tos-link" onClick={(e) => { e.preventDefault(); window.location.hash = 'terms'; }}>Terms of Service</a> and <a href="#privacy" className="tos-link" onClick={(e) => { e.preventDefault(); window.location.hash = 'privacy'; }}>Privacy Policy</a></span>
+              </label>
+              {fieldErrors.tos && <div className="field-error">{fieldErrors.tos}</div>}
+            </div>
+          )}
+          <button type="submit" disabled={loading || (!isLogin && !tosAccepted)}>
             {loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}
           </button>
         </form>
