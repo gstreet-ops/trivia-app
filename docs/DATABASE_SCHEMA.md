@@ -27,6 +27,7 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `multiplayer_questions` | Questions assigned to a multiplayer game |
 | `multiplayer_answers` | Per-player answers in a multiplayer game |
 | `media_library` | Centralized media assets per community |
+| `community_requests` | User requests for new community creation (admin approval) |
 
 ---
 
@@ -350,6 +351,8 @@ In-app notifications for users. Triggered by admin actions (question/AI request 
 - `question_rejected` — custom question was rejected by admin
 - `ai_request_approved` — AI generation request was approved
 - `ai_request_rejected` — AI generation request was rejected
+- `community_request_approved` — community creation request was approved
+- `community_request_rejected` — community creation request was rejected
 
 **RLS Policies:**
 - SELECT: own rows only (`user_id = auth.uid()`)
@@ -563,6 +566,8 @@ auth.users
             │
             ├── custom_questions (creator_id)
             │
+            ├── community_requests (requester_id, reviewed_by)
+            │
             └── multiplayer_rooms (host_id)
                     ├── multiplayer_participants (room_id, user_id)
                     ├── multiplayer_questions (room_id)
@@ -596,6 +601,34 @@ Centralized media asset library per community. Commissioners upload images and s
 - SELECT: community members
 - INSERT: owner, commissioner, moderator roles
 - DELETE: owner, commissioner roles
+
+---
+
+### `community_requests`
+
+User-submitted requests to create a new community. Super admins approve or reject.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `requester_id` | `uuid` | FK → `profiles.id` (CASCADE delete) |
+| `name` | `text` | Requested community name |
+| `description` | `text` | Community description (nullable) |
+| `reason` | `text` | Reason for the request (nullable) |
+| `status` | `text` | `'pending'`, `'approved'`, or `'rejected'` (default `'pending'`) |
+| `reviewed_by` | `uuid` | FK → `profiles.id` (admin who reviewed) (nullable) |
+| `reviewed_at` | `timestamptz` | When request was reviewed (nullable) |
+| `rejection_reason` | `text` | Reason for rejection (nullable) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Relationships:**
+- `requester_id` → `profiles.id`
+- `reviewed_by` → `profiles.id`
+
+**RLS Policies:**
+- SELECT: own rows (`requester_id = auth.uid()`); super admins see all
+- INSERT: own rows only (`requester_id = auth.uid()`)
+- UPDATE: super admins only (for approve/reject)
 
 ---
 
@@ -636,6 +669,7 @@ RLS (Row Level Security) is enabled on all tables. Policies are managed in Supab
 | `multiplayer_questions` | All authenticated users | Host only (insert) |
 | `multiplayer_answers` | All authenticated users | Own rows (insert) |
 | `media_library` | Community members | Owner/commissioner/moderator (insert); owner/commissioner (delete) |
+| `community_requests` | Own rows; super admins see all | Own rows (insert); super admins (update status) |
 
 ---
 

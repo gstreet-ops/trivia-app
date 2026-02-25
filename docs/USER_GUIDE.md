@@ -220,6 +220,22 @@ The **Community Marketplace** lets you discover and join public communities with
 
 Commissioners control whether their community appears in the marketplace via a public/private visibility toggle in Settings.
 
+### Requesting a New Community
+
+Any user can request a new community:
+
+1. Go to **My Leagues**
+2. Click **Request a Community**
+3. Fill in:
+   - **Community Name** — the name you'd like for your community
+   - **Description** (optional) — what the community is about
+   - **Reason** — why you want to create this community
+4. Click **Submit Request**
+
+A platform admin will review your request. You'll receive an in-app notification when it's approved or rejected. If approved, the community is created automatically and you become its commissioner.
+
+You can view your past requests by clicking the **My Requests** toggle on the My Leagues page. Each request shows its status (pending/approved/rejected), and rejected requests include the rejection reason if one was provided.
+
 ---
 
 ## Multiplayer Quiz

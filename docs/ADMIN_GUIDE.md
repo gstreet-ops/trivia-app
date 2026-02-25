@@ -134,6 +134,42 @@ Super admins see a **Simulate** button on approved requests for testing the revi
 
 ---
 
+## Community Requests
+
+The **Communities** tab shows community creation requests submitted by users.
+
+### Pending Requests
+
+Each pending request card shows:
+- Requested community name
+- Requester username
+- Description and reason
+- Submission date
+- **Approve** and **Reject** buttons
+
+### Approving a Request
+
+Click **Approve** on a pending request. This:
+1. Creates the community with the requester as commissioner
+2. Adds the requester as an owner member
+3. Generates an invite code and sets a 90-day default season
+4. Updates the request status to `'approved'`
+5. Sends a notification to the requester
+
+### Rejecting a Request
+
+Click **Reject** on a pending request. This:
+1. Opens a dialog where you can optionally add a rejection reason
+2. Updates the request status to `'rejected'`
+3. Records the reviewing admin and timestamp
+4. Sends a notification to the requester (includes rejection reason if provided)
+
+### Request History
+
+Below the pending queue, a history table shows all previously approved and rejected requests with the reviewer name and date.
+
+---
+
 ## User Management
 
 The **Users** tab provides comprehensive user management:

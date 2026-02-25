@@ -36,7 +36,14 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [rejectingId, setRejectingId] = useState(null);
   const [currentAdminProfile, setCurrentAdminProfile] = useState(null);
 
-  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Community Requests tab state
+  const [communityRequests, setCommunityRequests] = useState([]);
+  const [communityRequestHistory, setCommunityRequestHistory] = useState([]);
+  const [crRejectNotes, setCrRejectNotes] = useState({});
+  const [crRejectingId, setCrRejectingId] = useState(null);
+  const [crProcessingId, setCrProcessingId] = useState(null);
+
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); fetchCommunityRequests(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCurrentProfile = async () => {
     const { data } = await supabase.from('profiles').select('id, platform_role, super_admin, role').eq('id', currentUserId).single();
@@ -174,6 +181,113 @@ function AdminDashboard({ onBack, currentUserId }) {
     fetchAiRequests();
   };
 
+  // Community Request handlers
+  const fetchCommunityRequests = async () => {
+    try {
+      const { data: pending } = await supabase
+        .from('community_requests')
+        .select('*, profiles:requester_id(username)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+      setCommunityRequests(pending || []);
+
+      const { data: history } = await supabase
+        .from('community_requests')
+        .select('*, profiles:requester_id(username), reviewer:reviewed_by(username)')
+        .neq('status', 'pending')
+        .order('reviewed_at', { ascending: false })
+        .limit(20);
+      setCommunityRequestHistory(history || []);
+    } catch (err) {
+      console.error('Error fetching community requests:', err);
+    }
+  };
+
+  const handleApproveCommunityRequest = async (requestId) => {
+    const req = communityRequests.find(r => r.id === requestId);
+    if (!req) return;
+    setCrProcessingId(requestId);
+    try {
+      // Create the community
+      const slug = req.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const randomBytes = crypto.getRandomValues(new Uint8Array(8));
+      const inviteCode = Array.from(randomBytes, b => chars[b % chars.length]).join('');
+      const { data: community, error: createError } = await supabase.from('communities').insert([{
+        name: req.name,
+        slug,
+        description: req.description || null,
+        commissioner_id: req.requester_id,
+        invite_code: inviteCode,
+        season_start: new Date().toISOString(),
+        season_end: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+      }]).select().single();
+      if (createError) throw createError;
+
+      // Add requester as owner member
+      await supabase.from('community_members').insert([{
+        community_id: community.id,
+        user_id: req.requester_id,
+        role: 'owner'
+      }]);
+
+      // Update request status
+      await supabase.from('community_requests').update({
+        status: 'approved',
+        reviewed_by: currentUserId,
+        reviewed_at: new Date().toISOString()
+      }).eq('id', requestId);
+
+      // Notify requester
+      await supabase.from('notifications').insert([{
+        user_id: req.requester_id,
+        type: 'community_request_approved',
+        title: 'Community Request Approved!',
+        message: `Your community "${req.name}" has been created! You are now the commissioner.`,
+        link_screen: 'communities'
+      }]);
+
+      showToast(`"${req.name}" created — ${req.profiles?.username} is now commissioner`);
+      fetchCommunityRequests();
+    } catch (err) {
+      showToast('Failed to approve: ' + err.message, 'error');
+    }
+    setCrProcessingId(null);
+  };
+
+  const handleRejectCommunityRequest = async (requestId) => {
+    const notes = crRejectNotes[requestId]?.trim() || '';
+    setCrProcessingId(requestId);
+    try {
+      await supabase.from('community_requests').update({
+        status: 'rejected',
+        reviewed_by: currentUserId,
+        reviewed_at: new Date().toISOString(),
+        rejection_reason: notes || null
+      }).eq('id', requestId);
+
+      // Notify requester
+      const req = communityRequests.find(r => r.id === requestId);
+      if (req?.requester_id) {
+        const notesSuffix = notes ? ` Reason: "${notes}"` : '';
+        await supabase.from('notifications').insert([{
+          user_id: req.requester_id,
+          type: 'community_request_rejected',
+          title: 'Community Request Declined',
+          message: `Your request for "${req.name}" was not approved.${notesSuffix}`,
+          link_screen: 'communities'
+        }]);
+      }
+
+      setCrRejectingId(null);
+      setCrRejectNotes(prev => { const n = { ...prev }; delete n[requestId]; return n; });
+      showToast('Request rejected.');
+      fetchCommunityRequests();
+    } catch (err) {
+      showToast('Failed to reject: ' + err.message, 'error');
+    }
+    setCrProcessingId(null);
+  };
 
   const handleApprove = async (questionId) => {
     const { data, error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
@@ -397,6 +511,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         <button className={`admin-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users ({allUsers.length})</button>
         <button className={`admin-tab ${activeTab === 'ai-requests' ? 'active' : ''}`} onClick={() => setActiveTab('ai-requests')}>AI Requests{aiRequests.length > 0 ? ` (${aiRequests.length})` : ''}</button>
+        <button className={`admin-tab ${activeTab === 'community-requests' ? 'active' : ''}`} onClick={() => setActiveTab('community-requests')}>Communities{communityRequests.length > 0 ? ` (${communityRequests.length})` : ''}</button>
       </div>
 
       {activeTab === 'overview' && (
@@ -783,6 +898,96 @@ function AdminDashboard({ onBack, currentUserId }) {
                         </td>
                         <td>{req.reviewer?.username || '—'}</td>
                         <td>{new Date(req.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'community-requests' && (
+        <>
+          <div className="admin-section">
+            <h2>Pending Community Requests</h2>
+            {communityRequests.length === 0 ? (
+              <div className="admin-empty">No pending community requests</div>
+            ) : (
+              <div className="pending-questions">
+                {communityRequests.map(req => (
+                  <div key={req.id} className="cr-request-card">
+                    <div className="cr-header">
+                      <span className="cr-name">{req.name}</span>
+                      <span className="cr-date">{new Date(req.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="cr-by">Requested by {req.profiles?.username || 'Unknown'}</div>
+                    {req.description && <p className="cr-description">{req.description}</p>}
+                    <p className="cr-reason">"{req.reason}"</p>
+                    <div className="review-actions">
+                      <button
+                        className="approve-btn"
+                        onClick={() => handleApproveCommunityRequest(req.id)}
+                        disabled={crProcessingId === req.id}
+                      >
+                        {crProcessingId === req.id ? 'Processing...' : 'Approve'}
+                      </button>
+                      {crRejectingId === req.id ? (
+                        <div className="ai-reject-form">
+                          <textarea
+                            placeholder="Rejection reason (optional)"
+                            value={crRejectNotes[req.id] || ''}
+                            onChange={e => setCrRejectNotes(prev => ({ ...prev, [req.id]: e.target.value }))}
+                            rows={2}
+                          />
+                          <div className="ai-reject-btns">
+                            <button
+                              className="reject-btn"
+                              onClick={() => handleRejectCommunityRequest(req.id)}
+                              disabled={crProcessingId === req.id}
+                            >
+                              Confirm Reject
+                            </button>
+                            <button className="ai-cancel-btn" onClick={() => setCrRejectingId(null)}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="reject-btn" onClick={() => setCrRejectingId(req.id)}>Reject</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="admin-section">
+            <h2>Request History</h2>
+            {communityRequestHistory.length === 0 ? (
+              <div className="admin-empty">No processed requests yet</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Community</th>
+                      <th>Requester</th>
+                      <th>Status</th>
+                      <th>Reviewer</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {communityRequestHistory.map(req => (
+                      <tr key={req.id}>
+                        <td style={{ fontWeight: 600, color: 'var(--navy)' }}>{req.name}</td>
+                        <td>{req.profiles?.username || '—'}</td>
+                        <td>
+                          <span className={`request-status-badge status-${req.status}`}>{req.status}</span>
+                        </td>
+                        <td>{req.reviewer?.username || '—'}</td>
+                        <td>{req.reviewed_at ? new Date(req.reviewed_at).toLocaleDateString() : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

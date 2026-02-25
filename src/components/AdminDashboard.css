@@ -811,6 +811,65 @@
 
 .ai-sim-btn:hover { background: var(--border-color); }
 
+/* ===== Community Requests Tab ===== */
+.cr-request-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.cr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.cr-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.cr-date {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.cr-by {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.cr-description {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.cr-reason {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.request-status-badge {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-pending { background: #f0ad4e; color: #fff; }
+.status-approved { background: #2D6A4F; color: #fff; }
+.status-rejected { background: #DC3545; color: #fff; }
+
 /* ===== Delete User Button & Modal ===== */
 .um-delete {
   background: transparent;

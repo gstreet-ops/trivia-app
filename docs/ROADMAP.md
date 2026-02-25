@@ -56,6 +56,7 @@
 - [x] Active community shown in persistent top bar
 - [x] Community name clickable in top bar → community detail
 - [x] Community Marketplace — browse public communities, join directly, commissioner visibility toggle and description
+- [x] Community Request System — any user can request a new community (name, description, reason); super admins approve/reject from Admin Dashboard; approval auto-creates community with requester as commissioner; notifications on approval/rejection; user can view their request history with status badges
 - [x] Community announcements — commissioner posts visible to all members on community detail page, with pin/unpin, edit, delete, "New" badge for recent posts
 - [x] Real-time community chat — Supabase Realtime powered chat on community detail page, message bubbles (own=navy, other=gray), commissioner message deletion, load older messages, 500-char limit, auto-scroll
 
@@ -97,6 +98,7 @@
 - [x] Recent users table (last 10)
 - [x] Recent games table (last 10)
 - [x] User management — promote/demote roles, toggle super admin, view user activity, search/filter/sort, pagination
+- [x] Community Requests tab — pending request queue with approve/reject, auto-creates community on approval, rejection with optional reason, request history table
 
 ### Custom Questions
 - [x] Submit custom question form (any logged-in user)
