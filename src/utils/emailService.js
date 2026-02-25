@@ -6,10 +6,21 @@ import { supabase } from '../supabaseClient';
  * to console without blocking the UI.
  */
 
-function send(body) {
-  supabase.functions.invoke('send-email', { body }).then(({ error }) => {
+async function send(body) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('Email send skipped: no active session');
+      return;
+    }
+    const { error } = await supabase.functions.invoke('send-email', {
+      body,
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
     if (error) console.error('Email send failed:', error);
-  });
+  } catch (err) {
+    console.error('Email send failed:', err);
+  }
 }
 
 export function sendInvitationEmail(to, communityName, inviteCode, description, personalMessage) {
