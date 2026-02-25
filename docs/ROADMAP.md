@@ -190,6 +190,7 @@
 - [x] Sentry error monitoring (ErrorBoundary in index.js, `REACT_APP_SENTRY_DSN` env var)
 - [x] Hash-based routing — URL hash (`#dashboard`, `#review/{id}`, etc.) persists screen state across refresh and enables browser back/forward navigation
 - [x] Dark mode — CSS custom properties across all 23 CSS files, toggle in top bar and Settings, localStorage + Supabase profile persistence, smooth transitions
+- [x] SVG icon system — replaced all emoji icons with inline SVG components (`Icons.js` with 30+ icons), consistent stroke-based design, `currentColor` for theme compatibility, applied across nav bar, dashboards, stat cards, notification bell, community detail, achievements, multiplayer, help center, and quiz screens
 
 ---
 

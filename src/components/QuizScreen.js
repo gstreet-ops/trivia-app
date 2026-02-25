@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import './QuizScreen.css';
 import decodeHtml from '../utils/decodeHtml';
+import { LightbulbIcon } from './Icons';
 
 function QuizScreen({ config, onEnd }) {
   const { category, difficulty, count, timerSettings, source = 'trivia_api', communityId } = config;
@@ -370,7 +371,7 @@ function QuizScreen({ config, onEnd }) {
 
         {showResult && currentQuestion.explanation && (
           <div className="explanation-panel">
-            <div className="explanation-header">💡 Why?</div>
+            <div className="explanation-header"><LightbulbIcon size={14} /> Why?</div>
             <p className="explanation-text">{currentQuestion.explanation}</p>
           </div>
         )}

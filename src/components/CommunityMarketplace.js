@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityMarketplace.css';
+import { UsersIcon, HelpIcon } from './Icons';
 
 const CATEGORY_MAP = {
   'grade-school-trivia': 'Education',
@@ -237,11 +238,11 @@ function CommunityMarketplace({ user, onBack }) {
 
               <div className="marketplace-stats">
                 <span className="marketplace-stat">
-                  <span className="marketplace-stat-icon">👥</span>
+                  <span className="marketplace-stat-icon"><UsersIcon size={14} /></span>
                   {community.memberCount} {community.memberCount === 1 ? 'member' : 'members'}
                 </span>
                 <span className="marketplace-stat">
-                  <span className="marketplace-stat-icon">❓</span>
+                  <span className="marketplace-stat-icon"><HelpIcon size={14} /></span>
                   {community.questionCount} {community.questionCount === 1 ? 'question' : 'questions'}
                 </span>
               </div>

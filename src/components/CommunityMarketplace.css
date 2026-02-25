@@ -232,7 +232,8 @@
 }
 
 .marketplace-stat-icon {
-  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 .marketplace-dates {

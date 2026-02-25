@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
+import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon } from './Icons';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -1397,12 +1398,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             <div className="nav-backdrop" onClick={() => setNavOpen(false)} />
             <div className="nav-dropdown-menu">
               {[
-                { id: 'overview', label: 'Overview', icon: '🏠' },
-                { id: 'announcements', label: `Announcements (${announcements.length})`, icon: '📢' },
-                { id: 'questions', label: `Questions (${questions.length})`, icon: '❓' },
-                { id: 'members', label: `Members (${members.length})`, icon: '👥' },
-                { id: 'settings', label: 'Settings', icon: '⚙️' },
-                { id: 'analytics', label: 'Analytics', icon: '📊' }
+                { id: 'overview', label: 'Overview', icon: <HomeIcon size={16} /> },
+                { id: 'announcements', label: `Announcements (${announcements.length})`, icon: <MegaphoneIcon size={16} /> },
+                { id: 'questions', label: `Questions (${questions.length})`, icon: <HelpIcon size={16} /> },
+                { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
+                { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
+                { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -1425,22 +1426,22 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           <div className="tab-pane">
             <div className="stats-overview">
               <div className="stat-card">
-                <div className="stat-icon">🎮</div>
+                <div className="stat-icon"><GamepadIcon size={22} /></div>
                 <div className="stat-number">{stats.totalGames}</div>
                 <div className="stat-label">Total Games</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">👥</div>
+                <div className="stat-icon"><UsersIcon size={22} /></div>
                 <div className="stat-number">{members.length}</div>
                 <div className="stat-label">Total Members</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⭐</div>
+                <div className="stat-icon"><StarIcon size={22} /></div>
                 <div className="stat-number">{stats.activeMembers}</div>
                 <div className="stat-label">Active Players</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">❓</div>
+                <div className="stat-icon"><HelpIcon size={22} /></div>
                 <div className="stat-number">{stats.questionBankSize}</div>
                 <div className="stat-label">Questions</div>
               </div>
@@ -1452,7 +1453,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <div className="import-history-list">
                   {importHistory.map((entry, index) => (
                     <div key={index} className="history-entry">
-                      <span className="history-icon">📤</span>
+                      <span className="history-icon"><UploadIcon size={14} /></span>
                       <span className="history-text">Imported <strong>{entry.count}</strong> questions</span>
                       <span className="history-date">{new Date(entry.timestamp).toLocaleString()}</span>
                     </div>
@@ -1466,19 +1467,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <h2>Quick Actions</h2>
                 <div className="quick-actions">
                   <button className="quick-action-btn" onClick={() => setActiveTab('questions')}>
-                    <span className="qa-icon">❓</span>
+                    <span className="qa-icon"><HelpIcon size={18} /></span>
                     <span>Manage Questions</span>
                   </button>
                   <button className="quick-action-btn" onClick={() => setActiveTab('members')}>
-                    <span className="qa-icon">👥</span>
+                    <span className="qa-icon"><UsersIcon size={18} /></span>
                     <span>Manage Members</span>
                   </button>
                   <button className="quick-action-btn" onClick={() => setActiveTab('analytics')}>
-                    <span className="qa-icon">📊</span>
+                    <span className="qa-icon"><ChartIcon size={18} /></span>
                     <span>View Analytics</span>
                   </button>
                   <button className="quick-action-btn" onClick={() => setActiveTab('settings')}>
-                    <span className="qa-icon">⚙️</span>
+                    <span className="qa-icon"><SettingsIcon size={18} /></span>
                     <span>Community Settings</span>
                   </button>
                 </div>
@@ -1602,10 +1603,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             <div className="q-action-bar">
               <h2 className="q-action-bar-title">Questions ({questions.length})</h2>
               <div className="q-action-bar-buttons">
-                <button className="q-action-btn" onClick={() => setActiveModal('add')}>➕ Add</button>
-                <button className="q-action-btn" onClick={() => setActiveModal('import')}>📥 Import CSV</button>
-                <button className="q-action-btn" onClick={() => setActiveModal('ai')}>🤖 AI Generate</button>
-                <button className="q-action-btn" onClick={exportToCSV} disabled={questions.length === 0}>📤 Export</button>
+                <button className="q-action-btn" onClick={() => setActiveModal('add')}><PlusIcon size={14} /> Add</button>
+                <button className="q-action-btn" onClick={() => setActiveModal('import')}><UploadIcon size={14} /> Import CSV</button>
+                <button className="q-action-btn" onClick={() => setActiveModal('ai')}><SparklesIcon size={14} /> AI Generate</button>
+                <button className="q-action-btn" onClick={exportToCSV} disabled={questions.length === 0}><DownloadIcon size={14} /> Export</button>
               </div>
             </div>
 
@@ -1700,7 +1701,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     {selectedQuestions.length > 0 && (
                       <div className="bulk-actions-row">
                         <button className="btn-secondary" onClick={() => setShowBulkTagging(!showBulkTagging)}>
-                          🏷️ Bulk Tags
+                          <TagIcon size={14} /> Bulk Tags
                         </button>
                         <button className="btn-danger" onClick={handleBulkDelete}>
                           Delete Selected ({selectedQuestions.length})
@@ -1762,8 +1763,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                           {(question.source === 'ai_generated' || (question.tags && question.tags.includes('ai-generated'))) && (
                             <span className="ai-badge">AI</span>
                           )}
-                          {question.image_url && <span className="media-indicator" title="Has image">🖼️</span>}
-                          {question.video_url && <span className="media-indicator" title="Has video">🎬</span>}
+                          {question.image_url && <span className="media-indicator" title="Has image"><ImageIcon size={14} /></span>}
+                          {question.video_url && <span className="media-indicator" title="Has video"><VideoIcon size={14} /></span>}
                         </div>
                         <div className="question-text">{question.question_text}</div>
                         <div className="answers-preview">
@@ -1777,7 +1778,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         </div>
                         {question.explanation && (
                           <div className="question-explanation-preview">
-                            <span className="explanation-icon">💡</span> {question.explanation}
+                            <span className="explanation-icon"><LightbulbIcon size={14} /></span> {question.explanation}
                           </div>
                         )}
                         <div className="question-tags">
@@ -1858,9 +1859,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         <div className="question-footer">
                           <span className="created-date">Added {new Date(question.created_at).toLocaleDateString()}</span>
                           <div className="question-actions-footer">
-                            <button className="btn-icon" onClick={() => setEditingMediaId(editingMediaId === question.id ? null : question.id)} title="Edit media">🖼️ Media</button>
-                            <button className="btn-icon" onClick={() => saveAsTemplate(question.id)} title="Save as template">📋 Template</button>
-                            <button className="btn-icon" onClick={() => loadVersionHistory(question.id)} title="Version history">📜 History</button>
+                            <button className="btn-icon" onClick={() => setEditingMediaId(editingMediaId === question.id ? null : question.id)} title="Edit media"><ImageIcon size={13} /> Media</button>
+                            <button className="btn-icon" onClick={() => saveAsTemplate(question.id)} title="Save as template"><FileIcon size={13} /> Template</button>
+                            <button className="btn-icon" onClick={() => loadVersionHistory(question.id)} title="Version history"><FileIcon size={13} /> History</button>
                             <button className="btn-danger-sm" onClick={() => handleDeleteQuestion(question.id)}>Delete</button>
                           </div>
                         </div>
@@ -2251,7 +2252,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 className="season-reset-btn"
                 onClick={() => { setShowResetModal(true); setResetConfirmed(false); }}
               >
-                🔄 Reset Season & Start New
+                Reset Season & Start New
               </button>
 
               {/* Reset Confirmation Modal */}
@@ -2608,7 +2609,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               <div className="upload-instructions">
                 <p>Upload a CSV file to bulk import questions. Required columns: <code>question_text</code>, <code>correct_answer</code>, <code>incorrect_answer_1</code>, <code>incorrect_answer_2</code>, <code>incorrect_answer_3</code>, <code>category</code>, <code>difficulty</code>. Optional: <code>image_url</code>, <code>video_url</code>, <code>explanation</code></p>
                 <button className="btn-secondary" onClick={downloadTemplate}>
-                  📥 Download CSV Template
+                  <DownloadIcon size={14} /> Download CSV Template
                 </button>
               </div>
               <div className="file-upload-section">
@@ -2734,11 +2735,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         : req.status === 'completed' ? 'gen-status-completed'
                         : req.status === 'failed' ? 'gen-status-failed'
                         : 'gen-status-rejected';
-                      const statusLabel = req.status === 'pending' ? '⏳ Pending approval'
-                        : (req.status === 'approved' || req.status === 'generating') ? '🔄 Generating...'
-                        : req.status === 'completed' ? '✅ Completed'
-                        : req.status === 'failed' ? '❌ Failed'
-                        : '❌ Rejected';
+                      const statusLabel = req.status === 'pending' ? 'Pending approval'
+                        : (req.status === 'approved' || req.status === 'generating') ? 'Generating...'
+                        : req.status === 'completed' ? 'Completed'
+                        : req.status === 'failed' ? 'Failed'
+                        : 'Rejected';
                       const isReviewing = genReviewId === req.id;
                       const generatedQs = req.generated_questions || [];
                       const acceptedTexts = genAccepted[req.id] || [];
@@ -2771,7 +2772,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                 style={{marginTop:'8px', display:'block'}}
                                 onClick={() => handleRetryGenRequest(req.id)}
                               >
-                                🔄 Retry Generation
+                                Retry Generation
                               </button>
                             </div>
                           )}
@@ -2842,7 +2843,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                             </div>
                                             {q.explanation && (
                                               <div style={{background:'#E8F4FD', border:'1px solid #B8D4E8', borderRadius:'6px', padding:'8px 12px', fontSize:'13px', color:'#333', marginTop:'6px', lineHeight:'1.45'}}>
-                                                💡 {q.explanation}
+                                                {q.explanation}
                                               </div>
                                             )}
                                             <div className="gen-q-meta">

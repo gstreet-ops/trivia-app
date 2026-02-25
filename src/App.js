@@ -20,6 +20,7 @@ import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
 import NotificationBell from './components/NotificationBell';
+import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon } from './components/Icons';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
@@ -306,12 +307,12 @@ function App() {
     <div className="App">
       {appUsername && (() => {
         const navItems = [
-          { label: 'My Stats', icon: '📊', action: () => navigateTo('myStats') },
-          { label: 'Multiplayer', icon: '⚡', action: () => navigateTo('multiplayer') },
-          { label: 'My Leagues', icon: '🏆', action: () => navigateTo('communities') },
-          { label: 'Help', icon: '❓', action: () => navigateTo('help') },
-          { label: 'Settings', icon: '⚙️', action: () => navigateTo('settings') },
-          ...(appIsAdmin ? [{ label: 'Super Admin', icon: '🛡️', action: () => navigateTo('admin') }] : []),
+          { label: 'My Stats', icon: <ChartIcon size={16} />, action: () => navigateTo('myStats') },
+          { label: 'Multiplayer', icon: <BoltIcon size={16} />, action: () => navigateTo('multiplayer') },
+          { label: 'My Leagues', icon: <TrophyIcon size={16} />, action: () => navigateTo('communities') },
+          { label: 'Help', icon: <HelpIcon size={16} />, action: () => navigateTo('help') },
+          { label: 'Settings', icon: <SettingsIcon size={16} />, action: () => navigateTo('settings') },
+          ...(appIsAdmin ? [{ label: 'Super Admin', icon: <ShieldIcon size={16} />, action: () => navigateTo('admin') }] : []),
         ];
         return (
           <div className="app-user-bar">
@@ -325,7 +326,7 @@ function App() {
                     className="app-user-bar-community"
                     onClick={() => { if (viewCommunityId) navigateTo('communityDetail', { communityId: viewCommunityId }); }}
                   >
-                    <span aria-hidden="true">🏆</span> {appCommunityName}
+                    <TrophyIcon size={12} /> {appCommunityName}
                   </button>
                 </>
               )}
@@ -336,7 +337,7 @@ function App() {
                 aria-label={currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                 title={currentTheme === 'dark' ? 'Light mode' : 'Dark mode'}
               >
-                {currentTheme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                {currentTheme === 'dark' ? <SunIcon size={16} color="#fff" /> : <MoonIcon size={16} color="#fff" />}
               </button>
             </div>
             <div className="app-nav-dropdown">

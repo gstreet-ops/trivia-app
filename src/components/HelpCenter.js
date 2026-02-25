@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './HelpCenter.css';
+import { SearchIcon } from './Icons';
 
 // ── User Guide Sections ──────────────────────────────────────────────────────
 const userGuideSections = [
@@ -125,12 +126,12 @@ const userGuideSections = [
         <table>
           <thead><tr><th>Badge</th><th>How to Earn</th></tr></thead>
           <tbody>
-            <tr><td>🎯 Perfect Score</td><td>Score 10/10 on any game</td></tr>
-            <tr><td>🎮 Getting Started</td><td>Complete 5 games total</td></tr>
-            <tr><td>🔥 Dedicated Player</td><td>Complete 10 games total</td></tr>
-            <tr><td>👑 Category Master</td><td>Score 10/10 in the same category 3 or more times</td></tr>
-            <tr><td>⚡ Speed Demon</td><td>Play 5 or more games in a single day</td></tr>
-            <tr><td>🎩 Hat Trick</td><td>Score 10/10 on any game 3 or more times</td></tr>
+            <tr><td>Perfect Score</td><td>Score 10/10 on any game</td></tr>
+            <tr><td>Getting Started</td><td>Complete 5 games total</td></tr>
+            <tr><td>Dedicated Player</td><td>Complete 10 games total</td></tr>
+            <tr><td>Category Master</td><td>Score 10/10 in the same category 3 or more times</td></tr>
+            <tr><td>Speed Demon</td><td>Play 5 or more games in a single day</td></tr>
+            <tr><td>Hat Trick</td><td>Score 10/10 on any game 3 or more times</td></tr>
           </tbody>
         </table>
         <p><strong>Note:</strong> Perfect score badges require exactly a 10-question game.</p>
@@ -699,7 +700,7 @@ const aboutContent = [
         <p>It was built as a personal project and is hosted for free on GitHub Pages with Supabase as the backend.</p>
         <p>
           <a href="https://gstreet-ops.github.io/trivia-app" target="_blank" rel="noopener noreferrer">
-            🔗 Open the live app
+            Open the live app
           </a>
         </p>
       </div>
@@ -737,27 +738,27 @@ const aboutContent = [
         <ul>
           <li>
             <a href="https://github.com/gstreet-ops/trivia-app" target="_blank" rel="noopener noreferrer">
-              📂 GitHub Repository
+              GitHub Repository
             </a>
           </li>
           <li>
             <a href="https://github.com/gstreet-ops/trivia-app/blob/main/README.md" target="_blank" rel="noopener noreferrer">
-              📄 README — Setup &amp; Deployment Guide
+              README — Setup &amp; Deployment Guide
             </a>
           </li>
           <li>
             <a href="https://github.com/gstreet-ops/trivia-app/tree/main/docs" target="_blank" rel="noopener noreferrer">
-              📁 Full Documentation (docs/)
+              Full Documentation (docs/)
             </a>
           </li>
           <li>
             <a href="https://github.com/gstreet-ops/trivia-app/blob/main/docs/DATABASE_SCHEMA.md" target="_blank" rel="noopener noreferrer">
-              🗄️ Database Schema
+              Database Schema
             </a>
           </li>
           <li>
             <a href="https://github.com/gstreet-ops/trivia-app/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">
-              🗺️ Roadmap &amp; Known Issues
+              Roadmap &amp; Known Issues
             </a>
           </li>
         </ul>
@@ -809,7 +810,7 @@ function HelpCenter({ onBack }) {
       </div>
 
       <div className="help-search-bar">
-        <span className="help-search-icon" aria-hidden="true">🔍</span>
+        <span className="help-search-icon" aria-hidden="true"><SearchIcon size={16} /></span>
         <input
           type="search"
           className="help-search-input"

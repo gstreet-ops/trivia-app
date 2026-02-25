@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './GameReview.css';
 import decodeHtml from '../utils/decodeHtml';
+import { BoltIcon, LightbulbIcon } from './Icons';
 
 function GameReview({ gameId, onBack }) {
   const [game, setGame] = useState(null);
@@ -41,9 +42,9 @@ function GameReview({ gameId, onBack }) {
         </div>
       </div>
       <div className="game-meta">
-        <span className="meta-item"><span aria-hidden="true">📁</span> {game.category}</span>
-        <span className="meta-item"><span aria-hidden="true">⚡</span> {game.difficulty}</span>
-        <span className="meta-item"><span aria-hidden="true">📅</span> {new Date(game.created_at).toLocaleDateString()}</span>
+        <span className="meta-item">{game.category}</span>
+        <span className="meta-item"><BoltIcon size={13} /> {game.difficulty}</span>
+        <span className="meta-item">{new Date(game.created_at).toLocaleDateString()}</span>
       </div>
       <div className="answers-list">
         {answers.map((answer, index) => (
@@ -63,7 +64,7 @@ function GameReview({ gameId, onBack }) {
             </div>
             {answer.explanation && (
               <div className="review-explanation">
-                <span className="review-explanation-icon">💡</span>
+                <span className="review-explanation-icon"><LightbulbIcon size={14} /></span>
                 <span className="review-explanation-text">{answer.explanation}</span>
               </div>
             )}

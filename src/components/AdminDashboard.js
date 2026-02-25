@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
+import { ShieldIcon, UsersIcon, GamepadIcon, ChartIcon, StarIcon, PlusIcon } from './Icons';
 
 function AdminDashboard({ onBack, currentUserId }) {
   const [stats, setStats] = useState(null);
@@ -301,12 +302,12 @@ function AdminDashboard({ onBack, currentUserId }) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const newUsersThisWeek = allUsers.filter(u => new Date(u.created_at) >= oneWeekAgo).length;
 
-  if (loading) return (<div className="admin-dashboard"><button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button><h1 className="admin-title">🛡️ Super Admin</h1><p className="admin-empty">Loading...</p></div>);
+  if (loading) return (<div className="admin-dashboard"><button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button><h1 className="admin-title"><ShieldIcon size={20} /> Super Admin</h1><p className="admin-empty">Loading...</p></div>);
 
   return (
     <div className="admin-dashboard">
       <button className="admin-back-btn" onClick={onBack}>← Back to Dashboard</button>
-      <h1 className="admin-title">🛡️ Super Admin</h1>
+      <h1 className="admin-title"><ShieldIcon size={20} /> Super Admin</h1>
 
       {toast && (
         <div className={`admin-toast ${toast.type}`}>
@@ -324,22 +325,22 @@ function AdminDashboard({ onBack, currentUserId }) {
         <>
           <div className="admin-stats-grid">
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">👥</div>
+              <div className="admin-stat-icon"><UsersIcon size={22} /></div>
               <div className="admin-stat-number">{stats.totalUsers}</div>
               <div className="admin-stat-label">Total Users</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">🎮</div>
+              <div className="admin-stat-icon"><GamepadIcon size={22} /></div>
               <div className="admin-stat-number">{stats.totalGames}</div>
               <div className="admin-stat-label">Total Games</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">🌐</div>
+              <div className="admin-stat-icon"><GamepadIcon size={22} /></div>
               <div className="admin-stat-number">{stats.publicGames}</div>
               <div className="admin-stat-label">Public Games</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">📊</div>
+              <div className="admin-stat-icon"><ChartIcon size={22} /></div>
               <div className="admin-stat-number">{stats.avgGamesPerUser}</div>
               <div className="admin-stat-label">Avg Games/User</div>
             </div>
@@ -434,22 +435,22 @@ function AdminDashboard({ onBack, currentUserId }) {
         <>
           <div className="admin-stats-grid">
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">👥</div>
+              <div className="admin-stat-icon"><UsersIcon size={22} /></div>
               <div className="admin-stat-number">{allUsers.length}</div>
               <div className="admin-stat-label">Total Users</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">🛡️</div>
+              <div className="admin-stat-icon"><ShieldIcon size={22} /></div>
               <div className="admin-stat-number">{adminCount}</div>
               <div className="admin-stat-label">Admins</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">⭐</div>
+              <div className="admin-stat-icon"><StarIcon size={22} /></div>
               <div className="admin-stat-number">{superAdminCount}</div>
               <div className="admin-stat-label">Super Admins</div>
             </div>
             <div className="admin-stat-card">
-              <div className="admin-stat-icon">🆕</div>
+              <div className="admin-stat-icon"><PlusIcon size={22} /></div>
               <div className="admin-stat-number">{newUsersThisWeek}</div>
               <div className="admin-stat-label">New This Week</div>
             </div>

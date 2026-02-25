@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import decodeHtml from '../utils/decodeHtml';
 import './MultiplayerLobby.css';
+import { TargetIcon, LightbulbIcon, BoltIcon } from './Icons';
 
 const CATEGORIES = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature', 'Random/Mixed'];
 
@@ -1038,7 +1039,7 @@ function MultiplayerLobby({ user, username, onBack }) {
       .map(([uid, data]) => ({ user_id: uid, ...data }))
       .sort((a, b) => b.points - a.points);
 
-    const medals = ['🥇', '🥈', '🥉'];
+    const medals = ['1st', '2nd', '3rd'];
 
     return (
       <div className="mp-lobby">
@@ -1172,7 +1173,7 @@ function MultiplayerLobby({ user, username, onBack }) {
         {/* Explanation */}
         {showResult && currentQ.explanation && (
           <div className="mp-explanation-panel">
-            <div className="mp-explanation-header">💡 Why?</div>
+            <div className="mp-explanation-header"><LightbulbIcon size={14} /> Why?</div>
             <p className="mp-explanation-text">{currentQ.explanation}</p>
           </div>
         )}
@@ -1317,7 +1318,7 @@ function MultiplayerLobby({ user, username, onBack }) {
         {/* Create Room Card */}
         <div className={`mp-menu-card ${activePanel === 'create' ? 'expanded' : ''}`}>
           <button className="mp-menu-card-header" onClick={() => setActivePanel(activePanel === 'create' ? null : 'create')}>
-            <span className="mp-menu-icon">🎯</span>
+            <span className="mp-menu-icon"><TargetIcon size={20} /></span>
             <div>
               <h2>Create Room</h2>
               <p>Host a game for your friends</p>
@@ -1441,7 +1442,7 @@ function MultiplayerLobby({ user, username, onBack }) {
         {/* Join Room Card */}
         <div className={`mp-menu-card ${activePanel === 'join' ? 'expanded' : ''}`}>
           <button className="mp-menu-card-header" onClick={() => setActivePanel(activePanel === 'join' ? null : 'join')}>
-            <span className="mp-menu-icon">🚀</span>
+            <span className="mp-menu-icon"><BoltIcon size={20} /></span>
             <div>
               <h2>Join Room</h2>
               <p>Enter a room code to join</p>

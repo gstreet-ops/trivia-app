@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import './NotificationBell.css';
+import { BellIcon, CheckIcon, XIcon, SparklesIcon, BlockIcon } from './Icons';
 
 function NotificationBell({ userId, onNavigate }) {
   const [notifications, setNotifications] = useState([]);
@@ -88,11 +89,11 @@ function NotificationBell({ userId, onNavigate }) {
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'question_approved': return '✅';
-      case 'question_rejected': return '❌';
-      case 'ai_request_approved': return '🤖';
-      case 'ai_request_rejected': return '🚫';
-      default: return '🔔';
+      case 'question_approved': return <CheckIcon size={16} color="var(--correct-text)" />;
+      case 'question_rejected': return <XIcon size={16} color="var(--incorrect-text)" />;
+      case 'ai_request_approved': return <SparklesIcon size={16} color="var(--navy)" />;
+      case 'ai_request_rejected': return <BlockIcon size={16} color="var(--incorrect-text)" />;
+      default: return <BellIcon size={16} />;
     }
   };
 
@@ -117,9 +118,9 @@ function NotificationBell({ userId, onNavigate }) {
         onClick={() => setDropdownOpen(prev => !prev)}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
-        <span className="notification-bell-icon">🔔</span>
+        <span className="notification-bell-icon"><BellIcon size={18} color="#fff" /></span>
         {unreadCount > 0 && (
-          <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          <span className="notification-badge" />
         )}
       </button>
 

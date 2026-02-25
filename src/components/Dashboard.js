@@ -4,6 +4,7 @@ import './Dashboard.css';
 import Achievements from './Achievements';
 import { checkAchievements } from '../utils/achievementChecker';
 import decodeHtml from '../utils/decodeHtml';
+import { GamepadIcon, ChartIcon, TrophyIcon } from './Icons';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
   const [stats, setStats] = useState({ totalGames: 0, avgScore: 0, bestScore: 0 });
@@ -85,17 +86,17 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">🎮</div>
+          <div className="stat-icon"><GamepadIcon size={22} /></div>
           <div className="stat-number">{stats.totalGames}</div>
           <div className="stat-label">Games</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon"><ChartIcon size={22} /></div>
           <div className="stat-number">{stats.avgScore}%</div>
           <div className="stat-label">Avg Score</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🏆</div>
+          <div className="stat-icon"><TrophyIcon size={22} /></div>
           <div className="stat-number">{stats.bestScore}%</div>
           <div className="stat-label">Best</div>
         </div>
@@ -108,7 +109,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
 
       {/* Leaderboard */}
       <div className="leaderboard">
-        <h3>🏆 Community Leaderboard</h3>
+        <h3><TrophyIcon size={18} /> Community Leaderboard</h3>
         <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (

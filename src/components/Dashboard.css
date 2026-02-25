@@ -70,9 +70,11 @@
 }
 
 .stat-icon {
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 4px;
-  line-height: 1;
+  color: var(--navy);
 }
 
 .stat-number {
@@ -138,6 +140,9 @@
   font-weight: 700;
   margin-bottom: 12px;
   border-left: 3px solid var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding-left: 10px;
 }
 .leaderboard table {

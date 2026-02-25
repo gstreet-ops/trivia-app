@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
 import CommunityChat from './CommunityChat';
+import { SettingsIcon, PinIcon, TrophyIcon, UsersIcon, FileIcon, MessageIcon } from './Icons';
 
 function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQuiz, onManageCommunity }) {
   const [community, setCommunity] = useState(null);
@@ -196,7 +197,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
       {isCommissioner && (
         <button className="manage-community-btn" onClick={() => onManageCommunity(communityId)}>
-          ⚙️ Manage Community
+          <SettingsIcon size={14} /> Manage Community
         </button>
       )}
 
@@ -212,7 +213,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
               <div key={ann.id} className={`cd-ann-card ${ann.pinned ? 'pinned' : ''}`}>
                 <div className="cd-ann-top">
                   <div className="cd-ann-title-row">
-                    {ann.pinned && <span className="cd-ann-pin-icon" title="Pinned">📌</span>}
+                    {ann.pinned && <span className="cd-ann-pin-icon" title="Pinned"><PinIcon size={14} /></span>}
                     <strong className="cd-ann-title">{ann.title}</strong>
                     {isNew(ann.created_at) && <span className="cd-ann-new-badge">New</span>}
                   </div>
@@ -232,7 +233,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
       <div className="community-sections">
         <div className="section">
-          <h2>🏆 {community.current_season ? `Season ${community.current_season} ` : ''}Leaderboard</h2>
+          <h2><TrophyIcon size={18} /> {community.current_season ? `Season ${community.current_season} ` : ''}Leaderboard</h2>
           {leaderboard.length === 0 ? (
             <p className="empty-message">No games played yet</p>
           ) : (
@@ -262,7 +263,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
         </div>
 
         <div className="section">
-          <h2>👥 Members ({members.length})</h2>
+          <h2><UsersIcon size={18} /> Members ({members.length})</h2>
           <div className="members-list">
             {members.map(member => (
               <div key={member.user_id} className="member-card">
@@ -275,7 +276,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
         {seasonArchives.length > 0 && (
           <div className="section">
-            <h2>📜 Past Seasons</h2>
+            <h2><FileIcon size={18} /> Past Seasons</h2>
             {seasonArchives.map(archive => (
               <div key={archive.id} className="cd-archive-card">
                 <button
@@ -293,7 +294,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
                   <div className="cd-archive-body">
                     {archive.top_player_username && (
                       <div className="cd-archive-mvp">
-                        🏅 MVP: {archive.top_player_username} ({archive.top_player_avg != null ? Math.round(archive.top_player_avg) : '—'}%)
+                        <TrophyIcon size={14} /> MVP: {archive.top_player_username} ({archive.top_player_avg != null ? Math.round(archive.top_player_avg) : '—'}%)
                       </div>
                     )}
                     {archive.leaderboard_snapshot && archive.leaderboard_snapshot.length > 0 ? (
@@ -324,13 +325,13 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
         {session && (
           <div className="section">
-            <h2>💬 Community Chat</h2>
+            <h2><MessageIcon size={18} /> Community Chat</h2>
             <CommunityChat communityId={communityId} session={session} isCommissioner={isCommissioner} />
           </div>
         )}
 
         <div className="section">
-          <h2>📋 Recent Activity</h2>
+          <h2><FileIcon size={18} /> Recent Activity</h2>
           {recentActivity.length === 0 ? (
             <p className="empty-message">No recent games from members yet</p>
           ) : (
