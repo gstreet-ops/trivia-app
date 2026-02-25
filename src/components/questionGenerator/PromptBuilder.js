@@ -1,193 +1,112 @@
 /**
  * PromptBuilder.js — Pure utility, no UI
  * Builds AI prompt strings for trivia question generation.
- * Supports Phase 2 super-admin mode via the `mode` parameter.
+ * Zero API calls — only assembles prompt strings.
  */
 
-const SOURCE_TYPES = {
-  general: {
-    key: 'general',
-    label: 'General Knowledge',
-    emoji: '🌐',
-    description: 'Any topic — AI picks the best sources',
-    mode: 'ai-accessible',
-    fields: [
-      { name: 'topic', label: 'Topic or Theme', type: 'text', placeholder: 'e.g. Ancient Rome, 90s Pop Music, Space Exploration', required: true },
-      { name: 'focusArea', label: 'Focus Area (optional)', type: 'text', placeholder: 'e.g. battles, one-hit wonders, Mars missions' },
-    ],
-  },
-  url: {
-    key: 'url',
-    label: 'Webpage / Article',
-    emoji: '🔗',
-    description: 'Generate from a specific URL',
-    mode: 'ai-accessible',
-    fields: [
-      { name: 'url', label: 'URL', type: 'url', placeholder: 'https://en.wikipedia.org/wiki/...', required: true },
-      { name: 'focusArea', label: 'Focus Area (optional)', type: 'text', placeholder: 'e.g. specific section or topic within the page' },
-    ],
-  },
-  video: {
-    key: 'video',
-    label: 'YouTube Video',
-    emoji: '🎥',
-    description: 'Questions from a YouTube video',
-    mode: 'ai-accessible',
-    fields: [
-      { name: 'url', label: 'YouTube URL', type: 'url', placeholder: 'https://www.youtube.com/watch?v=...', required: true },
-      { name: 'focusArea', label: 'Focus Area (optional)', type: 'text', placeholder: 'e.g. key moments, specific topics discussed' },
-    ],
-  },
-  document: {
-    key: 'document',
-    label: 'Paste Document',
-    emoji: '📄',
-    description: 'Paste text from a PDF, article, or notes',
-    mode: 'paste-assisted',
-    fields: [
-      { name: 'title', label: 'Document Title', type: 'text', placeholder: 'e.g. Chapter 5 — The Renaissance', required: true },
-      { name: 'content', label: 'Paste Content', type: 'textarea', placeholder: 'Paste the document text here...', required: true },
-    ],
-  },
-  data: {
-    key: 'data',
-    label: 'Data / Stats',
-    emoji: '📊',
-    description: 'Paste tables, stats, or structured data',
-    mode: 'paste-assisted',
-    fields: [
-      { name: 'title', label: 'Data Source Title', type: 'text', placeholder: 'e.g. 2024 NFL Season Stats', required: true },
-      { name: 'content', label: 'Paste Data', type: 'textarea', placeholder: 'Paste CSV, table, or stats here...', required: true },
-    ],
-  },
-  custom: {
-    key: 'custom',
-    label: 'Custom Prompt',
-    emoji: '📝',
-    description: 'Write your own instructions for the AI',
-    mode: 'ai-accessible',
-    fields: [
-      { name: 'instructions', label: 'Your Instructions', type: 'textarea', placeholder: 'Describe exactly what kind of questions you want...', required: true },
-    ],
-  },
-  social: {
-    key: 'social',
-    label: 'Social / Trending',
-    emoji: '📱',
-    description: 'Current events, memes, and trending topics',
-    mode: 'ai-accessible',
-    fields: [
-      { name: 'topic', label: 'Topic or Trend', type: 'text', placeholder: 'e.g. viral TikTok trends, recent Grammy winners', required: true },
-      { name: 'timeframe', label: 'Timeframe (optional)', type: 'text', placeholder: 'e.g. last 30 days, February 2026' },
-    ],
-  },
-};
+const SOURCES = [
+  { id: 'web-search', icon: '\u{1F310}', label: 'Web Search', description: 'Generate from any topic using AI web search', mode: 'ai-accessible' },
+  { id: 'website', icon: '\u{1F517}', label: 'Website URL', description: 'Generate from a specific webpage', mode: 'ai-accessible' },
+  { id: 'youtube', icon: '\u{1F3A5}', label: 'YouTube Video', description: 'Generate from video transcripts', mode: 'ai-accessible' },
+  { id: 'document', icon: '\u{1F4C4}', label: 'Document / Text', description: 'Generate from pasted or uploaded document content', mode: 'paste-assisted' },
+  { id: 'data-file', icon: '\u{1F4CA}', label: 'Spreadsheet / CSV', description: 'Transform existing data into questions', mode: 'paste-assisted' },
+  { id: 'study-notes', icon: '\u{1F4DD}', label: 'Study Notes', description: 'Create questions from notes or outlines', mode: 'paste-assisted' },
+  { id: 'social-media', icon: '\u{1F4F1}', label: 'Social Media', description: 'Generate from social media posts', mode: 'paste-assisted' },
+];
+
+function getSourceById(id) {
+  return SOURCES.find(s => s.id === id) || null;
+}
 
 /**
- * Build difficulty instruction string.
- * @param {'equal'|'custom'} difficultyMode
- * @param {{ easy: number, medium: number, hard: number }} customSplit
- * @param {number} count
+ * Compute equal difficulty split: remainder to easy first, then medium.
  */
-function buildDifficultyString(difficultyMode, customSplit, count) {
-  if (difficultyMode === 'custom') {
-    return `Difficulty distribution: ${customSplit.easy} easy, ${customSplit.medium} medium, ${customSplit.hard} hard.`;
-  }
-  // Equal split
+function computeEqualSplit(count) {
   const base = Math.floor(count / 3);
   let remainder = count - base * 3;
-  let easy = base;
-  let medium = base;
-  let hard = base;
+  let easy = base, medium = base, hard = base;
   if (remainder > 0) { easy++; remainder--; }
   if (remainder > 0) { medium++; }
-  return `Difficulty distribution: ${easy} easy, ${medium} medium, ${hard} hard.`;
+  return { easy, medium, hard };
 }
 
 /**
- * Build the CSV format instruction block.
+ * Build the complete prompt.
+ * @param {string} source - source id
+ * @param {object} sourceInput - field values from SourceInput
+ * @param {object} settings - from QuestionSettings
+ * @returns {{ prompt: string, instructions: string[], postSteps: string[], sourceMode: string }}
  */
-function buildFormatBlock() {
-  return [
-    'Format each question as a CSV row with these columns:',
-    'question,correct_answer,wrong1,wrong2,wrong3,category,difficulty',
-    '',
-    'Rules:',
-    '- One question per line, no header row',
-    '- Wrap any field containing commas in double quotes',
-    '- difficulty must be: easy, medium, or hard',
-    '- category should be a short label (e.g. "History", "Science", "Pop Culture")',
-    '- All 3 wrong answers must be plausible but clearly incorrect',
-    '- Do not number the questions',
-  ].join('\n');
-}
+function buildPrompt(source, sourceInput, settings) {
+  const src = getSourceById(source);
+  if (!src) return { prompt: '', instructions: [], postSteps: [], sourceMode: 'ai-accessible' };
 
-/**
- * Main prompt builder.
- * @param {object} params
- * @param {string} params.sourceType - key from SOURCE_TYPES
- * @param {object} params.sourceInput - field values from SourceInput
- * @param {number} params.count - question count
- * @param {string} params.category - optional category override
- * @param {'equal'|'custom'} params.difficultyMode
- * @param {{ easy: number, medium: number, hard: number }} params.customSplit
- * @param {string} params.extras - optional extra instructions
- * @param {'commissioner'|'admin'} [params.mode='commissioner']
- */
-function buildPrompt(params) {
   const {
-    sourceType,
-    sourceInput = {},
-    count = 10,
-    category = '',
-    difficultyMode = 'equal',
-    customSplit = { easy: 0, medium: 0, hard: 0 },
-    extras = '',
-  } = params;
+    category = 'General Knowledge',
+    customCategory = '',
+    questionCount = 20,
+    difficultySplit = 'equal',
+    easyCount = 0,
+    mediumCount = 0,
+    hardCount = 0,
+    includeExplanations = true,
+    additionalInstructions = '',
+  } = settings;
 
-  const src = SOURCE_TYPES[sourceType];
-  if (!src) return { prompt: '', instructions: [], postSteps: [] };
+  const count = questionCount;
+  const categoryLabel = category === 'Custom' ? customCategory : category;
+
+  // Compute difficulty counts
+  let easy, medium, hard;
+  if (difficultySplit === 'custom') {
+    easy = easyCount;
+    medium = mediumCount;
+    hard = hardCount;
+  } else {
+    const split = computeEqualSplit(count);
+    easy = split.easy;
+    medium = split.medium;
+    hard = split.hard;
+  }
 
   const lines = [];
-  const instructions = [];
-  const postSteps = [];
 
-  // Header
-  lines.push(`Generate ${count} multiple-choice trivia questions.`);
-  lines.push('');
+  // Prepend pasted content for paste-assisted sources that have content
+  const hasPastedContent = src.mode === 'paste-assisted' && sourceInput.content && sourceInput.content.trim();
+  if (hasPastedContent) {
+    lines.push('--- BEGIN CONTENT ---');
+    lines.push(sourceInput.content.trim());
+    lines.push('--- END CONTENT ---');
+    lines.push('');
+  }
 
-  // Source-specific section
-  switch (sourceType) {
-    case 'general':
-      lines.push(`Topic: ${sourceInput.topic || 'General Knowledge'}`);
-      if (sourceInput.focusArea) lines.push(`Focus area: ${sourceInput.focusArea}`);
+  // Source-specific opening
+  switch (source) {
+    case 'web-search':
+      lines.push(`Search the web thoroughly on the topic of "${sourceInput.topic || ''}"${sourceInput.focusArea ? ` and focus specifically on: ${sourceInput.focusArea}` : ''}. Generate exactly ${count} multiple-choice trivia questions.`);
       break;
-    case 'url':
-      lines.push(`Source URL: ${sourceInput.url || ''}`);
-      if (sourceInput.focusArea) lines.push(`Focus area: ${sourceInput.focusArea}`);
-      instructions.push('Paste this prompt into your AI tool — it will read the URL directly.');
+    case 'website':
+      lines.push(`Go to this webpage and read its content: ${sourceInput.url || ''}`);
+      if (sourceInput.focusArea) lines.push(`Focus specifically on: ${sourceInput.focusArea}`);
+      lines.push(`Using the information from that page, generate exactly ${count} multiple-choice trivia questions.`);
       break;
-    case 'video':
-      lines.push(`YouTube video: ${sourceInput.url || ''}`);
-      if (sourceInput.focusArea) lines.push(`Focus area: ${sourceInput.focusArea}`);
-      instructions.push('Paste this prompt into an AI tool that supports YouTube (e.g. ChatGPT, Gemini).');
+    case 'youtube':
+      lines.push(`Access this YouTube video and get its transcript: ${sourceInput.url || ''}`);
+      if (sourceInput.focusArea) lines.push(`Focus specifically on: ${sourceInput.focusArea}`);
+      lines.push(`Using the content from the video, generate exactly ${count} multiple-choice trivia questions.`);
       break;
     case 'document':
-      lines.push(`Source document: "${sourceInput.title || 'Untitled'}"`);
-      lines.push('Base all questions on the content provided below.');
+      lines.push(`Using the document content I have provided above, generate exactly ${count} multiple-choice trivia questions.`);
+      if (sourceInput.contextHint) lines.push(`Context: This document is about ${sourceInput.contextHint}.`);
       break;
-    case 'data':
-      lines.push(`Data source: "${sourceInput.title || 'Untitled'}"`);
-      lines.push('Base all questions on the data/statistics provided below.');
+    case 'data-file':
+      lines.push(`Using the spreadsheet/CSV data I have provided above${sourceInput.dataDescription ? ` (which contains: ${sourceInput.dataDescription})` : ''}, transform this information into exactly ${count} multiple-choice trivia questions. Create questions that test knowledge of the data's contents \u2014 don't just ask to recall specific cells, but create meaningful questions about patterns, facts, and relationships in the data.`);
       break;
-    case 'custom':
-      lines.push('Custom instructions:');
-      lines.push(sourceInput.instructions || '');
+    case 'study-notes':
+      lines.push(`Using the study notes/outline I have provided above${sourceInput.contextHint ? ` for ${sourceInput.contextHint}` : ''}, create exactly ${count} multiple-choice trivia questions that effectively test understanding of this material. Easy questions should test basic recall. Medium questions should test understanding and application. Hard questions should test analysis, edge cases, and deeper concepts.`);
       break;
-    case 'social':
-      lines.push(`Trending topic: ${sourceInput.topic || ''}`);
-      if (sourceInput.timeframe) lines.push(`Timeframe: ${sourceInput.timeframe}`);
-      instructions.push('Best with AI tools that have internet access for current information.');
+    case 'social-media':
+      lines.push(`Using the ${sourceInput.platform || 'social media'} posts I have provided above from ${sourceInput.accountName || 'the account'}, generate exactly ${count} multiple-choice trivia questions based on the content, themes, and information shared in these posts.`);
       break;
     default:
       break;
@@ -195,52 +114,84 @@ function buildPrompt(params) {
 
   lines.push('');
 
-  // Category override
-  if (category) {
-    lines.push(`Use "${category}" as the category for all questions.`);
-  }
-
-  // Difficulty
-  lines.push(buildDifficultyString(difficultyMode, customSplit, count));
+  // Difficulty line
+  lines.push(`Difficulty distribution: ${easy} easy, ${medium} medium, ${hard} hard.`);
   lines.push('');
 
-  // Format block
-  lines.push(buildFormatBlock());
+  // Category line
+  lines.push(`Category for all questions: "${categoryLabel}".`);
+  lines.push('');
 
-  // Extra instructions
-  if (extras && extras.trim()) {
+  // Additional instructions
+  if (additionalInstructions && additionalInstructions.trim()) {
+    lines.push(`Additional requirements: ${additionalInstructions.trim()}`);
     lines.push('');
-    lines.push(`Additional instructions: ${extras.trim()}`);
   }
 
-  // Paste-assisted content appended at the end
-  if (src.mode === 'paste-assisted' && sourceInput.content) {
-    lines.push('');
-    lines.push('--- BEGIN CONTENT ---');
-    lines.push(sourceInput.content);
-    lines.push('--- END CONTENT ---');
+  // CSV format block
+  const csvHeaders = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty${includeExplanations ? ',explanation' : ''}`;
+  lines.push('**Output format:**');
+  lines.push(`Generate the results as a CSV with these exact headers:`);
+  lines.push(csvHeaders);
+  lines.push('');
+  lines.push('Rules for the CSV:');
+  lines.push('- Wrap ALL field values in double quotes');
+  lines.push('- Escape any internal double quotes with two double quotes ("")');
+  lines.push('- One question per line');
+  lines.push('- No blank lines between questions');
+  lines.push('- Output ONLY the CSV data (header row + data rows) with no other text, commentary, or markdown formatting before or after the CSV');
+  if (includeExplanations) {
+    lines.push('- The explanation should be 1-2 sentences explaining why the correct answer is right');
   }
+  lines.push('');
 
-  // Build instructions and post-steps based on source mode
+  // Quality block
+  lines.push('**Quality requirements:**');
+  lines.push('- Questions must be factually accurate and unambiguous');
+  lines.push('- Each question must have exactly ONE clearly correct answer');
+  lines.push('- All three wrong answers must be plausible and the same type/format as the correct answer');
+  lines.push('- No "all of the above" or "none of the above" answers');
+  lines.push('- Cover diverse subtopics within the source material');
+  lines.push('- Easy = common knowledge, surface-level facts anyone familiar with the topic would know');
+  lines.push('- Medium = requires solid familiarity with the topic');
+  lines.push('- Hard = requires deep knowledge, specific details, or nuanced understanding');
+
+  // Build instructions
+  const instructions = [];
   if (src.mode === 'ai-accessible') {
-    if (!instructions.length) {
-      instructions.push('Copy the prompt below and paste it into your preferred AI tool (ChatGPT, Claude, Gemini, etc.).');
-    }
-    postSteps.push('Copy the CSV output from the AI response.');
-    postSteps.push('Go to Questions → Import CSV and paste the data.');
-    postSteps.push('Review the preview and confirm the import.');
+    instructions.push('Open your preferred AI chat tool (Claude.ai, ChatGPT, Gemini, etc.)');
+    instructions.push('Make sure web search or browsing is enabled if available');
+    instructions.push('Paste the prompt below into the chat');
+    instructions.push('Wait for the AI to generate all questions');
+    instructions.push('Copy the CSV output from the response');
+  } else if (hasPastedContent) {
+    instructions.push('Open your preferred AI chat tool (Claude.ai, ChatGPT, Gemini, etc.)');
+    instructions.push('Paste the prompt below \u2014 your content is already included');
+    instructions.push('Wait for the AI to generate all questions');
+    instructions.push('Copy the CSV output from the response');
   } else {
-    instructions.push('This prompt includes your pasted content. Copy the entire prompt (including the content at the bottom) and paste it into your AI tool.');
-    postSteps.push('Copy the CSV output from the AI response.');
-    postSteps.push('Go to Questions → Import CSV and paste the data.');
-    postSteps.push('Review the preview and confirm the import.');
+    instructions.push('Open your preferred AI chat tool (Claude.ai, ChatGPT, Gemini, etc.)');
+    instructions.push('Upload your file or paste your content into the chat first');
+    instructions.push('Then paste the prompt below into the same chat');
+    instructions.push('Wait for the AI to generate all questions');
+    instructions.push('Copy the CSV output from the response');
   }
+
+  // Post-steps (same for all)
+  const postSteps = [
+    'Copy the CSV output from the AI\'s response',
+    'Save it as a .csv file, or keep it copied',
+    'Go to the Questions tab and click Import CSV',
+    'Upload or paste the CSV \u2014 questions will be validated and imported',
+    'Review imported questions and add tags as needed',
+  ];
 
   return {
     prompt: lines.join('\n'),
     instructions,
     postSteps,
+    sourceMode: src.mode,
   };
 }
 
-export { SOURCE_TYPES, buildPrompt };
+export { SOURCES, getSourceById, computeEqualSplit, buildPrompt };

@@ -198,53 +198,58 @@ Click **Delete** on any template. This only removes the template, not any questi
 
 ## Question Generator (Generate with AI)
 
-Click **Generate with AI** in the Questions tab action bar to open the Question Generator wizard. This tool builds optimized AI prompts that you copy into your preferred AI chat tool (ChatGPT, Claude, Gemini, etc.) to generate CSV-formatted questions ready for bulk import.
+Click **Generate with AI** in the Questions tab action bar to open the Question Generator wizard. This tool builds optimized AI prompts that you copy into your preferred AI chat tool (ChatGPT, Claude, Gemini, etc.) to generate CSV-formatted questions ready for bulk import. The generator makes zero API calls — it only builds prompt strings.
 
 ### Step 1: Choose a Source
 
-Select one of 7 source types:
+Select one of 7 source types. Each card shows a badge indicating its mode:
 
-| Source | Description |
-|--------|-------------|
-| 🌐 **General Knowledge** | Any topic — AI picks the best sources |
-| 🔗 **Webpage / Article** | Generate from a specific URL |
-| 🎥 **YouTube Video** | Questions from a YouTube video |
-| 📄 **Paste Document** | Paste text from a PDF, article, or notes |
-| 📊 **Data / Stats** | Paste tables, stats, or structured data |
-| 📝 **Custom Prompt** | Write your own instructions for the AI |
-| 📱 **Social / Trending** | Current events, memes, and trending topics |
+| Source | Mode | Description |
+|--------|------|-------------|
+| **Web Search** | AI-accessible | Generate from any topic using AI web search |
+| **Website URL** | AI-accessible | Generate from a specific webpage |
+| **YouTube Video** | AI-accessible | Generate from video transcripts |
+| **Document / Text** | Paste-assisted | Generate from pasted or uploaded document content |
+| **Spreadsheet / CSV** | Paste-assisted | Transform existing data into questions |
+| **Study Notes** | Paste-assisted | Create questions from notes or outlines |
+| **Social Media** | Paste-assisted | Generate from social media posts |
+
+- **AI-accessible** sources — the AI will access the content directly from the prompt
+- **Paste-assisted** sources — upload your content to the AI chat first, or paste it into the generator
 
 Clicking a source card automatically advances to Step 2.
 
 ### Step 2: Source Details
 
-Fill in the source-specific fields (topic, URL, pasted content, etc.). Required fields are marked with an asterisk. Click **Next** to continue.
+A mode-specific tip appears at the top explaining whether to paste content directly or upload to the AI chat separately. Fill in the source-specific fields (topic, URL, pasted content, platform, etc.). Required fields are marked with an asterisk. Click **Next** to continue.
 
 ### Step 3: Question Settings
 
 Configure your generation parameters:
 
-- **Number of Questions** — choose 10, 20, 30, or 60
-- **Category Override** — optionally force all questions into one category (leave blank to let the AI assign)
-- **Difficulty Distribution** — toggle between **Equal Split** (auto-balanced across easy/medium/hard) and **Custom** (set exact counts per difficulty level)
+- **Category** — dropdown with preset categories (General Knowledge, Film, Music, Geography, History, Sports, Science & Nature, Arts & Literature) or choose **Custom** to enter your own
+- **Number of Questions** — pill-shaped button group: 10, 20, 30, or 60
+- **Difficulty Distribution** — toggle between **Equal** (auto-balanced across easy/medium/hard with remainder to easy first) and **Custom** (set exact counts per difficulty level; must sum to total)
+- **Include Explanations** — toggle on/off (default: on); adds a 1-2 sentence explanation column to the CSV output
 - **Additional Instructions** — optional free-text for extra guidance (e.g., "avoid date questions", "include humor")
 
 Click **Generate Prompt** to build the prompt.
 
-### Step 4: Copy & Use
+### Step 4: Your Prompt is Ready
 
-The final step shows:
-1. **How to use** instructions specific to your source type
-2. **The generated prompt** in a copyable code block — click **Copy** to copy to clipboard
-3. **After you get the AI response** — step-by-step instructions to import the CSV output
+The final step shows three sections:
+1. **How to Use This Prompt** — numbered instructions specific to your source type and mode
+2. **Your Generated Prompt** — displayed in a monospace code block with a **Copy** button (shows "Copied!" for 2 seconds)
+3. **After You Get Results** — step-by-step instructions to import the CSV output into your question bank
 
-Paste the prompt into your AI tool, copy the CSV output, then use **Import CSV** in the Questions tab to add the questions to your bank.
+The generated prompt includes CSV format rules, quality requirements, and difficulty definitions to ensure high-quality output from any AI tool.
 
 ### Navigation
 
-- Use **← Back** buttons to return to previous steps and adjust settings
-- **Generate Another** resets the wizard to start fresh
-- **← Back to Questions** closes the generator and returns to the normal Questions tab
+- Use **Back** buttons to return to previous steps and adjust settings without losing your choices
+- **Generate Another** resets the wizard to start fresh from Step 1
+- **Back to Settings** returns to Step 3 to tweak parameters
+- **Back to Questions** (top of page) closes the generator and returns to the normal Questions tab
 
 ---
 

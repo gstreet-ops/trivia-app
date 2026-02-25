@@ -1,5 +1,6 @@
 /* QuestionGeneratorCore.css — All styles for the Question Generator */
 /* Prefix: qg- to avoid conflicts */
+/* Georgetown palette: navy #041E42, gray #54585A, light #8B9DC3, pale #E8ECF0 */
 
 :root {
   --qg-navy: #041E42;
@@ -8,32 +9,47 @@
   --qg-gray-light: #8B9DC3;
   --qg-pale: #E8ECF0;
   --qg-white: #FFFFFF;
+  --qg-bg: #f0f2f5;
+  --qg-accent-bg: #f0f4f8;
   --qg-border: #DEE2E6;
   --qg-success: #2D6A4F;
+  --qg-red: #C41E3A;
   --qg-radius: 8px;
 }
 
-/* Container */
-.qg-container {
+/* ============================================================
+   Container
+   ============================================================ */
+.commissioner-generator {
   max-width: 820px;
   margin: 0 auto;
   padding: 0 4px;
 }
 
-/* Header bar */
-.qg-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+.qg-container {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* ============================================================
+   Generator Header (CommissionerGenerator wrapper)
+   ============================================================ */
+.qg-generator-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--qg-border);
 }
 
 .qg-header-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--qg-navy);
+  margin: 8px 0 4px 0;
+}
+
+.qg-generator-subtitle {
+  font-size: 14px;
+  color: var(--qg-gray);
   margin: 0;
 }
 
@@ -43,40 +59,92 @@
   color: var(--qg-gray-light);
   font-size: 14px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
+  padding: 4px 0;
+  transition: color 0.15s;
 }
 
 .qg-back-link:hover {
   color: var(--qg-navy);
-  background: var(--qg-pale);
 }
 
-/* Step indicator */
+/* ============================================================
+   Step Indicator — Circles with numbers, labels, connecting lines
+   ============================================================ */
 .qg-steps-indicator {
   display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 28px;
+  padding: 0 16px;
 }
 
-.qg-step-dot {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--qg-border);
-  transition: background 0.2s, flex 0.3s;
+.qg-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.qg-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  border: 2px solid var(--qg-border);
+  color: var(--qg-gray);
+  background: var(--qg-white);
+  transition: all 0.2s;
+}
+
+.qg-step-circle--active {
+  border-color: var(--qg-navy);
+  background: var(--qg-navy);
+  color: var(--qg-white);
+}
+
+.qg-step-circle--done {
+  border-color: var(--qg-navy);
+  background: var(--qg-navy);
+  color: var(--qg-white);
+}
+
+.qg-step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--qg-gray);
+  white-space: nowrap;
+}
+
+.qg-step-label--active {
+  color: var(--qg-navy);
+  font-weight: 700;
+}
+
+.qg-step-label--done {
+  color: var(--qg-navy);
+}
+
+.qg-step-line {
   flex: 1;
+  height: 2px;
+  background: var(--qg-border);
+  margin-top: 16px; /* vertically center with circle */
+  min-width: 40px;
 }
 
-.qg-step-dot--active {
+.qg-step-line--done {
   background: var(--qg-navy);
 }
 
-.qg-step-dot--done {
-  background: var(--qg-gray-light);
-}
-
-/* Step content */
+/* ============================================================
+   Step Content
+   ============================================================ */
 .qg-step {
   animation: qgFadeIn 0.2s ease;
 }
@@ -87,7 +155,7 @@
 }
 
 .qg-step-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--qg-navy);
   margin: 0 0 4px 0;
@@ -96,39 +164,73 @@
 .qg-step-desc {
   font-size: 13px;
   color: var(--qg-gray);
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
 }
 
-/* Source cards */
+/* ============================================================
+   Source Cards Grid
+   ============================================================ */
+.qg-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
 .qg-source-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 16px 12px;
-  border: 2px solid var(--qg-border);
+  padding: 20px 12px 16px;
+  border: 1px solid #ddd;
   border-radius: var(--qg-radius);
   background: var(--qg-white);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
   text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
 .qg-source-card:hover {
-  border-color: var(--qg-gray-light);
-  box-shadow: 0 2px 8px rgba(4, 30, 66, 0.08);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  border-color: var(--qg-gray);
+  box-shadow: 0 2px 8px rgba(4, 30, 66, 0.10);
 }
 
 .qg-source-card--active {
-  border-color: var(--qg-navy);
+  border: 2px solid var(--qg-navy);
   background: #f0f3f8;
   box-shadow: 0 2px 8px rgba(4, 30, 66, 0.12);
 }
 
+/* Source card badge */
+.qg-source-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.qg-source-badge--ai {
+  background: #e8f0fe;
+  color: #1a56db;
+}
+
+.qg-source-badge--paste {
+  background: #f0f0f0;
+  color: #666;
+}
+
 .qg-source-emoji {
-  font-size: 28px;
+  font-size: 32px;
   line-height: 1;
+  margin-bottom: 2px;
 }
 
 .qg-source-label {
@@ -143,12 +245,38 @@
   line-height: 1.3;
 }
 
-/* Form fields */
+/* ============================================================
+   Mode Tip (SourceInput)
+   ============================================================ */
+.qg-mode-tip {
+  padding: 10px 14px;
+  background: var(--qg-accent-bg);
+  border-left: 4px solid var(--qg-navy);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--qg-gray);
+  margin-bottom: 16px;
+}
+
+/* Info block inside source input forms */
+.qg-info-block {
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px solid var(--qg-border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--qg-gray);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Form Fields
+   ============================================================ */
 .qg-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .qg-field {
@@ -160,28 +288,32 @@
 .qg-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--qg-navy);
+  color: #333;
 }
 
 .qg-required {
-  color: #C41E3A;
+  color: var(--qg-red);
   margin-left: 2px;
 }
 
-.qg-input {
-  padding: 8px 12px;
-  border: 1px solid var(--qg-border);
+.qg-input,
+.qg-select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   color: var(--qg-navy);
   background: var(--qg-white);
   transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.qg-input:focus {
+.qg-input:focus,
+.qg-select:focus {
   outline: none;
-  border-color: var(--qg-gray-light);
-  box-shadow: 0 0 0 2px rgba(139, 157, 195, 0.2);
+  border-color: var(--qg-navy);
+  box-shadow: 0 0 0 2px rgba(4, 30, 66, 0.12);
 }
 
 .qg-input--small {
@@ -191,8 +323,8 @@
 }
 
 .qg-textarea {
-  padding: 8px 12px;
-  border: 1px solid var(--qg-border);
+  padding: 10px 12px;
+  border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   color: var(--qg-navy);
@@ -200,44 +332,62 @@
   resize: vertical;
   font-family: inherit;
   transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .qg-textarea:focus {
   outline: none;
-  border-color: var(--qg-gray-light);
-  box-shadow: 0 0 0 2px rgba(139, 157, 195, 0.2);
+  border-color: var(--qg-navy);
+  box-shadow: 0 0 0 2px rgba(4, 30, 66, 0.12);
 }
 
 .qg-hint {
-  font-size: 11px;
-  color: var(--qg-gray);
+  font-size: 12px;
+  color: #666;
 }
 
-/* Count buttons */
-.qg-count-btn {
+/* ============================================================
+   Pill Button Group (Question Count)
+   ============================================================ */
+.qg-pill-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qg-pill {
   min-width: 56px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border: 2px solid var(--qg-border);
-  border-radius: 6px;
+  border-radius: 20px;
   background: var(--qg-white);
   font-size: 14px;
   font-weight: 600;
   color: var(--qg-navy);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.qg-count-btn:hover {
+.qg-pill:hover {
   border-color: var(--qg-gray-light);
 }
 
-.qg-count-btn--active {
+.qg-pill--active {
   border-color: var(--qg-navy);
   background: var(--qg-navy);
   color: var(--qg-white);
 }
 
-/* Toggle buttons (Equal Split / Custom) */
+/* ============================================================
+   Toggle Buttons (Difficulty, Explanations)
+   ============================================================ */
+.qg-toggle-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .qg-toggle-btn {
   padding: 6px 16px;
   border: 2px solid var(--qg-border);
@@ -260,13 +410,23 @@
   color: var(--qg-white);
 }
 
+/* Equal split display */
+.qg-equal-split-display {
+  padding: 10px 14px;
+  background: var(--qg-pale);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qg-gray);
+}
+
 /* Custom difficulty split */
 .qg-custom-split {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 10px;
+  padding: 10px 14px;
   background: var(--qg-pale);
   border-radius: 6px;
 }
@@ -292,17 +452,19 @@
 }
 
 .qg-split-total--error {
-  color: #C41E3A;
+  color: var(--qg-red);
 }
 
-/* Nav buttons */
+/* ============================================================
+   Navigation Buttons (Bottom Bar)
+   ============================================================ */
 .qg-nav-buttons {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--qg-border);
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 }
 
 .qg-btn {
@@ -338,11 +500,71 @@
   background: #dde1e7;
 }
 
+/* ============================================================
+   Prompt Output
+   ============================================================ */
+
+/* Instructions & Post-steps sections */
+.qg-instructions,
+.qg-post-steps {
+  margin: 16px 0;
+  padding: 14px 18px;
+  background: var(--qg-accent-bg);
+  border-radius: var(--qg-radius);
+  border-left: 4px solid var(--qg-navy);
+}
+
+.qg-instructions-title,
+.qg-post-steps-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--qg-navy);
+  margin: 0 0 8px 0;
+}
+
+.qg-instructions-list,
+.qg-post-steps-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--qg-gray);
+  line-height: 1.7;
+}
+
+/* Prompt display card */
+.qg-prompt-box {
+  margin: 16px 0;
+  border: 1px solid var(--qg-border);
+  border-radius: var(--qg-radius);
+  overflow: hidden;
+  background: var(--qg-white);
+}
+
+.qg-prompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--qg-pale);
+  border-bottom: 1px solid var(--qg-border);
+}
+
+.qg-prompt-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--qg-navy);
+}
+
 .qg-btn--copy {
-  padding: 4px 14px;
+  padding: 5px 14px;
   font-size: 12px;
   background: var(--qg-navy);
   color: var(--qg-white);
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
 .qg-btn--copy:hover {
@@ -353,60 +575,9 @@
   background: var(--qg-success) !important;
 }
 
-/* Prompt output */
-.qg-instructions,
-.qg-post-steps {
-  margin: 12px 0;
-  padding: 12px 16px;
-  background: #f8f9fb;
-  border-radius: var(--qg-radius);
-  border-left: 3px solid var(--qg-gray-light);
-}
-
-.qg-instructions-title,
-.qg-post-steps-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--qg-navy);
-  margin: 0 0 6px 0;
-}
-
-.qg-instructions-list,
-.qg-post-steps-list {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 13px;
-  color: var(--qg-gray);
-  line-height: 1.6;
-}
-
-.qg-prompt-box {
-  margin: 16px 0;
-  border: 1px solid var(--qg-border);
-  border-radius: var(--qg-radius);
-  overflow: hidden;
-}
-
-.qg-prompt-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--qg-pale);
-  border-bottom: 1px solid var(--qg-border);
-}
-
-.qg-prompt-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--qg-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 .qg-prompt-text {
   margin: 0;
-  padding: 14px;
+  padding: 16px;
   font-size: 13px;
   line-height: 1.6;
   color: var(--qg-navy);
@@ -414,46 +585,43 @@
   word-break: break-word;
   max-height: 400px;
   overflow-y: auto;
-  background: var(--qg-white);
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background: #f8f9fa;
+  font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
-/* Responsive */
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (max-width: 768px) {
-  .qg-container {
+  .commissioner-generator {
     padding: 0;
+  }
+
+  .qg-source-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .qg-step-label {
+    display: none;
   }
 
   .qg-prompt-text {
     max-height: 300px;
     font-size: 12px;
   }
-
-  .qg-nav-buttons {
-    flex-direction: column;
-  }
-
-  .qg-nav-buttons .qg-btn {
-    width: 100%;
-    text-align: center;
-  }
 }
 
 @media (max-width: 480px) {
+  .qg-source-grid {
+    grid-template-columns: 1fr;
+  }
+
   .qg-source-card {
-    padding: 12px 8px;
+    padding: 14px 10px;
   }
 
   .qg-source-emoji {
-    font-size: 22px;
-  }
-
-  .qg-source-label {
-    font-size: 12px;
-  }
-
-  .qg-source-desc {
-    font-size: 10px;
+    font-size: 24px;
   }
 
   .qg-custom-split {
@@ -463,5 +631,14 @@
 
   .qg-split-total {
     margin-left: 0;
+  }
+
+  .qg-nav-buttons {
+    flex-direction: column;
+  }
+
+  .qg-nav-buttons .qg-btn {
+    width: 100%;
+    text-align: center;
   }
 }

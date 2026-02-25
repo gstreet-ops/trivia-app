@@ -3,140 +3,118 @@ import SourceSelector from './SourceSelector';
 import SourceInput from './SourceInput';
 import QuestionSettings from './QuestionSettings';
 import PromptOutput from './PromptOutput';
-import { buildPrompt } from './PromptBuilder';
+import { buildPrompt, computeEqualSplit } from './PromptBuilder';
 import './QuestionGeneratorCore.css';
 
-const TOTAL_STEPS = 4;
+const STEP_LABELS = ['Source', 'Details', 'Settings', 'Generate'];
 
-function QuestionGeneratorCore({ mode = 'commissioner', onClose }) {
-  // Step tracking
-  const [step, setStep] = useState(1);
+const INITIAL_SETTINGS = {
+  category: 'General Knowledge',
+  customCategory: '',
+  questionCount: 20,
+  difficultySplit: 'equal',
+  easyCount: 7,
+  mediumCount: 7,
+  hardCount: 6,
+  includeExplanations: true,
+  additionalInstructions: '',
+};
 
-  // Step 1: Source
-  const [sourceType, setSourceType] = useState(null);
-
-  // Step 2: Source input values
+function QuestionGeneratorCore({ mode = 'commissioner' }) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [source, setSource] = useState(null);
   const [sourceInput, setSourceInput] = useState({});
-
-  // Step 3: Settings
-  const [count, setCount] = useState(10);
-  const [category, setCategory] = useState('');
-  const [difficultyMode, setDifficultyMode] = useState('equal');
-  const [customSplit, setCustomSplit] = useState({ easy: 4, medium: 3, hard: 3 });
-  const [extras, setExtras] = useState('');
-
-  // Step 4: Generated output
+  const [settings, setSettings] = useState(INITIAL_SETTINGS);
   const [output, setOutput] = useState(null);
 
-  // Auto-advance from Step 1 to Step 2
-  const handleSourceSelect = useCallback((key) => {
-    setSourceType(key);
+  // Auto-advance from Step 1 to Step 2 on source select
+  const handleSourceSelect = useCallback((id) => {
+    setSource(id);
     setSourceInput({});
-    setStep(2);
+    setCurrentStep(2);
   }, []);
 
-  // Generate prompt (Step 3 → Step 4)
+  // Generate prompt (Step 3 -> Step 4)
   const handleGenerate = useCallback(() => {
-    const result = buildPrompt({
-      sourceType,
-      sourceInput,
-      count,
-      category,
-      difficultyMode,
-      customSplit,
-      extras,
-      mode,
-    });
+    const result = buildPrompt(source, sourceInput, settings);
     setOutput(result);
-    setStep(4);
-  }, [sourceType, sourceInput, count, category, difficultyMode, customSplit, extras, mode]);
+    setCurrentStep(4);
+  }, [source, sourceInput, settings]);
 
-  // Reset for "Generate Another"
+  // Reset everything for "Generate Another"
   const handleReset = useCallback(() => {
-    setStep(1);
-    setSourceType(null);
+    setCurrentStep(1);
+    setSource(null);
     setSourceInput({});
-    setCount(10);
-    setCategory('');
-    setDifficultyMode('equal');
-    setCustomSplit({ easy: 4, medium: 3, hard: 3 });
-    setExtras('');
+    const split = computeEqualSplit(20);
+    setSettings({
+      ...INITIAL_SETTINGS,
+      easyCount: split.easy,
+      mediumCount: split.medium,
+      hardCount: split.hard,
+    });
     setOutput(null);
   }, []);
 
-  // Recompute custom split when count changes
-  const handleCountChange = useCallback((newCount) => {
-    setCount(newCount);
-    if (difficultyMode === 'custom') {
-      const base = Math.floor(newCount / 3);
-      let remainder = newCount - base * 3;
-      let easy = base, medium = base, hard = base;
-      if (remainder > 0) { easy++; remainder--; }
-      if (remainder > 0) { medium++; }
-      setCustomSplit({ easy, medium, hard });
-    }
-  }, [difficultyMode]);
-
   return (
     <div className="qg-container">
-      {/* Header */}
-      <div className="qg-header">
-        <h2 className="qg-header-title">Question Generator</h2>
-        <button className="qg-back-link" onClick={onClose} type="button">
-          ← Back to Questions
-        </button>
-      </div>
-
       {/* Step indicator */}
       <div className="qg-steps-indicator">
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+        {STEP_LABELS.map((label, i) => {
           const stepNum = i + 1;
-          let cls = 'qg-step-dot';
-          if (stepNum === step) cls += ' qg-step-dot--active';
-          else if (stepNum < step) cls += ' qg-step-dot--done';
-          return <div key={stepNum} className={cls} />;
+          const isActive = stepNum === currentStep;
+          const isDone = stepNum < currentStep;
+          return (
+            <React.Fragment key={stepNum}>
+              {i > 0 && (
+                <div className={`qg-step-line${isDone ? ' qg-step-line--done' : ''}`} />
+              )}
+              <div className="qg-step-item">
+                <div
+                  className={`qg-step-circle${isActive ? ' qg-step-circle--active' : ''}${isDone ? ' qg-step-circle--done' : ''}`}
+                >
+                  {isDone ? '\u2713' : stepNum}
+                </div>
+                <span className={`qg-step-label${isActive ? ' qg-step-label--active' : ''}${isDone ? ' qg-step-label--done' : ''}`}>
+                  {label}
+                </span>
+              </div>
+            </React.Fragment>
+          );
         })}
       </div>
 
-      {/* Steps */}
-      {step === 1 && (
-        <SourceSelector selected={sourceType} onSelect={handleSourceSelect} />
+      {/* Step content */}
+      {currentStep === 1 && (
+        <SourceSelector selected={source} onSelect={handleSourceSelect} />
       )}
 
-      {step === 2 && (
+      {currentStep === 2 && (
         <SourceInput
-          sourceType={sourceType}
+          sourceType={source}
           values={sourceInput}
           onChange={setSourceInput}
-          onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
+          onBack={() => setCurrentStep(1)}
+          onNext={() => setCurrentStep(3)}
         />
       )}
 
-      {step === 3 && (
+      {currentStep === 3 && (
         <QuestionSettings
-          count={count}
-          onCountChange={handleCountChange}
-          category={category}
-          onCategoryChange={setCategory}
-          difficultyMode={difficultyMode}
-          onDifficultyModeChange={setDifficultyMode}
-          customSplit={customSplit}
-          onCustomSplitChange={setCustomSplit}
-          extras={extras}
-          onExtrasChange={setExtras}
-          onBack={() => setStep(2)}
+          settings={settings}
+          onSettingsChange={setSettings}
+          onBack={() => setCurrentStep(2)}
           onNext={handleGenerate}
         />
       )}
 
-      {step === 4 && output && (
+      {currentStep === 4 && output && (
         <PromptOutput
           prompt={output.prompt}
           instructions={output.instructions}
           postSteps={output.postSteps}
           onGenerateAnother={handleReset}
-          onBackToSettings={() => setStep(3)}
+          onBackToSettings={() => setCurrentStep(3)}
         />
       )}
     </div>

@@ -25,12 +25,12 @@ function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBa
 
   return (
     <div className="qg-step">
-      <h3 className="qg-step-title">Step 4: Your Prompt is Ready</h3>
+      <h3 className="qg-step-title">Your Prompt is Ready</h3>
 
-      {/* Instructions */}
+      {/* Section 1 — How to Use This Prompt */}
       {instructions.length > 0 && (
         <div className="qg-instructions">
-          <h4 className="qg-instructions-title">How to use:</h4>
+          <h4 className="qg-instructions-title">How to Use This Prompt</h4>
           <ol className="qg-instructions-list">
             {instructions.map((inst, i) => (
               <li key={i}>{inst}</li>
@@ -39,25 +39,25 @@ function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBa
         </div>
       )}
 
-      {/* Prompt display */}
+      {/* Section 2 — Your Generated Prompt */}
       <div className="qg-prompt-box">
         <div className="qg-prompt-header">
-          <span className="qg-prompt-label">Prompt</span>
+          <span className="qg-prompt-label">Your Generated Prompt</span>
           <button
-            className={`qg-btn qg-btn--copy ${copied ? 'qg-btn--copied' : ''}`}
+            className={`qg-btn qg-btn--copy${copied ? ' qg-btn--copied' : ''}`}
             onClick={handleCopy}
             type="button"
           >
-            {copied ? '✓ Copied!' : 'Copy'}
+            {copied ? '\u2713 Copied!' : 'Copy'}
           </button>
         </div>
         <pre className="qg-prompt-text">{prompt}</pre>
       </div>
 
-      {/* Post steps */}
+      {/* Section 3 — After You Get Results */}
       {postSteps.length > 0 && (
         <div className="qg-post-steps">
-          <h4 className="qg-post-steps-title">After you get the AI response:</h4>
+          <h4 className="qg-post-steps-title">After You Get Results</h4>
           <ol className="qg-post-steps-list">
             {postSteps.map((step, i) => (
               <li key={i}>{step}</li>
@@ -66,13 +66,13 @@ function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBa
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* Bottom actions */}
       <div className="qg-nav-buttons">
         <button className="qg-btn qg-btn--secondary" onClick={onBackToSettings} type="button">
-          ← Back to Settings
+          {'\u2190'} Back to Settings
         </button>
-        <button className="qg-btn qg-btn--primary" onClick={onGenerateAnother} type="button">
-          Generate Another
+        <button className="qg-btn qg-btn--secondary" onClick={onGenerateAnother} type="button">
+          {'\u2190'} Generate Another
         </button>
       </div>
     </div>

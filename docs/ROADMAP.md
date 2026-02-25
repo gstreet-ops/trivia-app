@@ -183,11 +183,11 @@
 - [x] Click notification to navigate to relevant screen
 
 ### Question Generator Tool (Phase 1)
-- [x] Commissioner prompt builder wizard — 4-step flow (source → input → settings → output)
-- [x] 7 source types — General Knowledge, Webpage/Article, YouTube Video, Paste Document, Data/Stats, Custom Prompt, Social/Trending
-- [x] Configurable question count (10/20/30/60), difficulty distribution (equal split or custom), category override, extra instructions
-- [x] AI-optimized prompt output with copy-to-clipboard, source-specific usage instructions, and CSV import post-steps
-- [x] Modular architecture — PromptBuilder utility, QuestionGeneratorCore shell, CommissionerGenerator wrapper (ready for Phase 2 admin version)
+- [x] Commissioner prompt builder wizard — 4-step flow (Source → Details → Settings → Generate) with step indicator circles
+- [x] 7 source types with mode badges — Web Search, Website URL, YouTube Video (AI-accessible); Document/Text, Spreadsheet/CSV, Study Notes, Social Media (Paste-assisted)
+- [x] Category dropdown (8 presets + Custom), question count pills (10/20/30/60), difficulty split (Equal/Custom), include explanations toggle
+- [x] AI-optimized prompt output with CSV format rules, quality requirements, source-specific instructions, and copy-to-clipboard
+- [x] Modular architecture — PromptBuilder utility, SourceSelector, SourceInput, QuestionSettings, PromptOutput, QuestionGeneratorCore shell, CommissionerGenerator wrapper
 
 ### Role System (Phase 1 — Foundation)
 - [x] `platform_role` column on profiles — unified `user`/`admin`/`super_admin` role with migration from legacy `role`+`super_admin` columns
