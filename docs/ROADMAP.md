@@ -155,6 +155,10 @@
 - [x] QuizScreen — "💡 Why?" panel with fade-in animation after answering (community questions)
 - [x] MultiplayerLobby — explanation panel after answering
 - [x] GameReview — always-visible explanation below correct answer
+- [x] game_answers.explanation column — stores explanation snapshot per answered question for review
+
+### Star Wars Community
+- [x] Pre-built Star Wars Trivia community — 60 curated questions (20 easy, 20 medium, 20 hard) covering Characters, Planets, Ships, Battles, Quotes, and Lore categories with detailed explanations
 
 ### Multiplayer Quiz (Phase 1 — Lobby)
 - [x] Create Room — room name, question source (API/community), category, difficulty, question count, timer, speed bonus, max players
