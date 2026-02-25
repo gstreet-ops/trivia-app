@@ -50,6 +50,7 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 | `tos_accepted_at` | `timestamptz` | When user accepted Terms of Service (nullable) |
 | `privacy_accepted_at` | `timestamptz` | When user accepted Privacy Policy (nullable) |
 | `tos_version` | `text` | Version of ToS accepted (e.g., `'1.0'`) (nullable) |
+| `bot_flags` | `jsonb` | Bot detection flags: `{flagged, reasons[], flagged_at}` (default unflagged) |
 | `created_at` | `timestamptz` | Row creation timestamp |
 
 **Notes:**
@@ -122,6 +123,8 @@ Stores each individual answer from a game. Enables the per-game review screen.
 | `explanation` | `text` | Explanation of the correct answer (nullable) |
 | `image_url` | `text` | URL to question image (nullable) |
 | `video_url` | `text` | YouTube URL for video questions (nullable) |
+| `answered_at` | `timestamptz` | When the answer was submitted (nullable) |
+| `time_taken_ms` | `integer` | Milliseconds from question display to answer (nullable) |
 
 **Relationships:**
 - `game_id` → `games.id`
@@ -702,6 +705,30 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 ```
+
+### Game rate limit trigger
+
+Prevents bot-like game submission rates. Fires BEFORE INSERT on `games`.
+
+- Max 20 games per user per hour
+- Max 60 games per user per day
+- Raises exception if exceeded
+
+**Function:** `check_game_rate_limit()` (SECURITY DEFINER)
+**Trigger:** `enforce_game_rate_limit` on `games` BEFORE INSERT
+
+### Bot flag trigger
+
+Automatically flags suspicious accounts after game completion. Fires AFTER INSERT on `games`.
+
+Checks:
+- Average `time_taken_ms` across all answers < 500ms → flag `"impossibly_fast_answers"`
+- 10+ consecutive perfect scores → flag `"consecutive_perfect_scores"`
+
+Updates `profiles.bot_flags` JSONB with flagged status, reasons array, and timestamp.
+
+**Function:** `check_bot_flags()` (SECURITY DEFINER)
+**Trigger:** `check_bot_after_game` on `games` AFTER INSERT
 
 ---
 

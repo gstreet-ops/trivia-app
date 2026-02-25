@@ -17,6 +17,7 @@ function QuizScreen({ config, onEnd }) {
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
   const [answersLog, setAnswersLog] = useState([]);
   const [timedOutCount, setTimedOutCount] = useState(0);
+  const questionDisplayedAtRef = useRef(null);
 
   // Timer state
   const timerEnabled = timerSettings?.enabled === true;
@@ -46,6 +47,9 @@ function QuizScreen({ config, onEnd }) {
     const q = questions[currentQuestionIndex];
     if (!q) return;
 
+    const now = Date.now();
+    const timeTaken = questionDisplayedAtRef.current ? now - questionDisplayedAtRef.current : null;
+
     setSelectedAnswer(null);
     setShowResult(true);
     setTimedOutCount(prev => prev + 1);
@@ -56,7 +60,9 @@ function QuizScreen({ config, onEnd }) {
       is_correct: false,
       explanation: q.explanation || null,
       image_url: q.image_url || null,
-      video_url: q.video_url || null
+      video_url: q.video_url || null,
+      answered_at: new Date(now).toISOString(),
+      time_taken_ms: timeTaken
     }]);
   }, [stopTimer, showResult, questions, currentQuestionIndex]);
 
@@ -86,10 +92,13 @@ function QuizScreen({ config, onEnd }) {
     }
   }, [timeRemaining, timerEnabled, showResult, questions.length, handleTimeout]);
 
-  // Start timer when question changes
+  // Start timer when question changes + record display time for answer tracking
   useEffect(() => {
-    if (timerEnabled && questions.length > 0 && !showResult) {
-      startTimer();
+    if (questions.length > 0 && !showResult) {
+      questionDisplayedAtRef.current = Date.now();
+      if (timerEnabled) {
+        startTimer();
+      }
     }
     return () => stopTimer();
   }, [currentQuestionIndex, questions.length, timerEnabled, showResult, startTimer, stopTimer]);
@@ -219,6 +228,9 @@ function QuizScreen({ config, onEnd }) {
   const handleAnswerClick = (answer) => {
     if (showResult) return;
 
+    const now = Date.now();
+    const timeTaken = questionDisplayedAtRef.current ? now - questionDisplayedAtRef.current : null;
+
     stopTimer();
     setSelectedAnswer(answer);
     setShowResult(true);
@@ -233,7 +245,9 @@ function QuizScreen({ config, onEnd }) {
       is_correct: isCorrect,
       explanation: q.explanation || null,
       image_url: q.image_url || null,
-      video_url: q.video_url || null
+      video_url: q.video_url || null,
+      answered_at: new Date(now).toISOString(),
+      time_taken_ms: timeTaken
     }]);
   };
 
