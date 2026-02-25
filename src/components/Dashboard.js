@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Achievements from './Achievements';
 import { checkAchievements } from '../utils/achievementChecker';
+import decodeHtml from '../utils/decodeHtml';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
   const [stats, setStats] = useState({ totalGames: 0, avgScore: 0, bestScore: 0 });
@@ -10,6 +11,8 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [username, setUsername] = useState('');
+  const [expandedGameId, setExpandedGameId] = useState(null);
+  const [gameAnswersCache, setGameAnswersCache] = useState({});
 
   useEffect(() => {
     fetchStats();
@@ -59,6 +62,18 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       setLeaderboard(leaderboardArray);
     }
   };
+
+  const toggleExpand = useCallback(async (gameId) => {
+    if (expandedGameId === gameId) {
+      setExpandedGameId(null);
+      return;
+    }
+    setExpandedGameId(gameId);
+    if (!gameAnswersCache[gameId]) {
+      const { data } = await supabase.from('game_answers').select('*').eq('game_id', gameId).order('id', { ascending: true });
+      setGameAnswersCache(prev => ({ ...prev, [gameId]: data || [] }));
+    }
+  }, [expandedGameId, gameAnswersCache]);
 
   return (
     <div className="dashboard">
@@ -129,16 +144,45 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
             </thead>
             <tbody>
               {recentGames.map(game => (
-                <tr key={game.id} className="recent-game-row">
-                  <td><span className="cat-badge-sm">{game.category}</span></td>
-                  <td><span className={`diff-badge-sm ${game.difficulty}`}>{game.difficulty}</span></td>
-                  <td className="score-cell">
-                    <strong>{game.score}/{game.total_questions}</strong>
-                    <span className="score-pct">{game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0}%</span>
-                  </td>
-                  <td className="date-cell">{new Date(game.created_at).toLocaleDateString()}</td>
-                  <td><button className="review-btn-sm" onClick={() => onReviewGame(game.id)}>Review</button></td>
-                </tr>
+                <React.Fragment key={game.id}>
+                  <tr className={`recent-game-row ${expandedGameId === game.id ? 'expanded' : ''}`} onClick={(e) => { if (!e.target.closest('.review-btn-sm')) toggleExpand(game.id); }} style={{ cursor: 'pointer' }}>
+                    <td>
+                      <span className={`expand-chevron ${expandedGameId === game.id ? 'expanded' : ''}`}>&#9658;</span>
+                      <span className="cat-badge-sm">{game.category}</span>
+                    </td>
+                    <td><span className={`diff-badge-sm ${game.difficulty}`}>{game.difficulty}</span></td>
+                    <td className="score-cell">
+                      <strong>{game.score}/{game.total_questions}</strong>
+                      <span className="score-pct">{game.total_questions > 0 ? Math.round(game.score / game.total_questions * 100) : 0}%</span>
+                    </td>
+                    <td className="date-cell">{new Date(game.created_at).toLocaleDateString()}</td>
+                    <td><button className="review-btn-sm" onClick={() => onReviewGame(game.id)}>Review</button></td>
+                  </tr>
+                  {expandedGameId === game.id && (
+                    <tr className="game-expand-row">
+                      <td colSpan="5" style={{ padding: 0 }}>
+                        <div className="game-expand-panel">
+                          {!gameAnswersCache[game.id] ? (
+                            <div style={{ padding: '8px 0', color: 'var(--text-muted)', fontSize: '13px' }}>Loading...</div>
+                          ) : gameAnswersCache[game.id].length === 0 ? (
+                            <div style={{ padding: '8px 0', color: 'var(--text-muted)', fontSize: '13px' }}>No answer data available.</div>
+                          ) : (
+                            gameAnswersCache[game.id].map((answer, idx) => (
+                              <div key={idx} className="qa-item">
+                                <div className="qa-question">Q{idx + 1}: {decodeHtml(answer.question_text)}</div>
+                                {answer.is_correct ? (
+                                  <div className="qa-correct">&#x2705; Your answer: {decodeHtml(answer.user_answer)} (correct)</div>
+                                ) : (
+                                  <div className="qa-wrong">&#x274C; Your answer: {decodeHtml(answer.user_answer)} &rarr; Correct: {decodeHtml(answer.correct_answer)}</div>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
