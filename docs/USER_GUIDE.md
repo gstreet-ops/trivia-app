@@ -51,6 +51,8 @@ After logging in you land on your personal Dashboard. It shows:
 The persistent top bar (visible on every screen) contains:
 - **Your avatar and username** (left side)
 - **Your active community** (if you belong to one) — click it to jump directly to that community. If you belong to multiple communities, this becomes a dropdown: click to open, select a different community to switch your active one, or click the current one to view its detail page. Your active community persists across sessions.
+- **Dark mode toggle** — sun/moon icon to switch between light and dark themes
+- **Notification bell** — shows unread count badge; click to open notification dropdown
 - **Menu button** (right side) — opens a dropdown with:
   - My Stats
   - My Leagues
@@ -81,11 +83,14 @@ The persistent top bar (visible on every screen) contains:
 ### During the Quiz
 
 - Each question shows 4 answer choices in a grid
+- If the question has an **image** or **YouTube video**, it appears above the question text
+- A **countdown timer** bar runs at the top of each question (if enabled by the community commissioner). When time runs out, your answer is auto-submitted. The bar pulses red when 5 seconds or fewer remain.
 - Click your answer to submit it
 - After answering:
   - Your selected answer shows **red** if wrong, **green** if correct
   - The correct answer is always highlighted green
-- **Hint (50/50)** button: available once per question before you answer. Clicking it removes 2 incorrect answers from the grid
+  - If an **explanation** is available (community questions), a "Why?" panel fades in below the answers
+- **Hint (50/50)** button: available once per question before you answer. Clicking it removes 2 incorrect answers from the grid and adds 3 bonus seconds to the timer.
 - After answering, click **Next Question** to proceed (or **See Results** on the last question)
 
 ### Quiz Results
@@ -102,6 +107,7 @@ On the Dashboard, click any game in the **Recent Games** section to open the Gam
 - Which answer you selected (highlighted)
 - The correct answer
 - Whether you got it right or wrong
+- The explanation (if available for community questions)
 
 ---
 
@@ -176,20 +182,108 @@ You are automatically added as the commissioner and a member. An 8-character inv
 ### Community Detail Page
 
 Click any league card to open its detail page, which shows:
-- Commissioner name
-- Season dates
-- Invite code
-- Member count
-- Community leaderboard (top 10 members by average score)
-- Question bank count
+- Commissioner name, season dates, member count, question bank count
+- Invite code (visible to commissioner only)
+- Community theming (custom color, logo, banner, welcome message — set by commissioner)
+- **Community Leaderboard** — top 10 members by average score (filtered to current season)
+- **Announcements** — pinned and recent posts from the commissioner; "New" badge for posts less than 48 hours old
+- **Community Chat** — real-time chat with all community members (see below)
+- **Season History** — past season leaderboards (if the commissioner has reset seasons)
 - **Start Quiz** button (to play community questions)
 - **Manage Community** button (commissioners only)
+
+### Community Chat
+
+Each community has a real-time chat visible on the community detail page:
+- Messages appear as bubbles (your messages on the right in navy, others on the left in gray)
+- Messages are limited to 500 characters
+- Click **Load Older** to see message history
+- The commissioner can delete inappropriate messages (shown as "[Message removed by commissioner]")
 
 ---
 
 ## Community Feed
 
 **Menu → Community Feed** shows a public activity feed of recent games from all users who have set their games to public visibility. You can click on games or players to explore their results.
+
+---
+
+## Community Marketplace
+
+The **Community Marketplace** lets you discover and join public communities without needing an invite code.
+
+1. Go to **My Leagues**
+2. Click **Browse Marketplace**
+3. Browse communities with filters by category and sorting options
+4. Click **Join** on any public community to join instantly
+
+Commissioners control whether their community appears in the marketplace via a public/private visibility toggle in Settings.
+
+---
+
+## Multiplayer Quiz
+
+Play trivia in real time with other users.
+
+### Creating a Room
+
+1. Click **Multiplayer** from the Dashboard or menu
+2. Click **Create Room**
+3. Configure:
+   - **Room Name** — display name for your room
+   - **Question Source** — Trivia API or Community Questions
+   - **Category**, **Difficulty**, **Question Count**
+   - **Timer** — seconds per question (default 20)
+   - **Speed Bonus** — faster correct answers earn more points
+   - **Max Players** — maximum participants (default 12)
+4. Click **Create Room**
+5. Share the 6-character room code with other players
+
+### Joining a Room
+
+- **By Code**: Click **Join Room**, enter the 6-character room code
+- **Open Rooms**: Click **Open Rooms** to browse all waiting rooms (auto-refreshes every 10 seconds) and join directly
+
+### In the Lobby
+
+- See all players and their ready status in real time
+- Toggle **Ready/Unready**
+- Host can **Start Game** when at least 2 players are present
+- Host can **Cancel Room** to close it
+
+### During Multiplayer
+
+- All players answer the same questions simultaneously
+- A countdown timer bar shows time remaining per question
+- Answer grid highlights correct/wrong after selection
+- Player dots at the bottom show who has answered
+- After each question, a round scoreboard shows points and rankings
+- **Scoring:** 100 points per correct answer + up to 100 speed bonus points (if enabled)
+- The host clicks **Next Question** to advance everyone
+
+### Final Results
+
+After the last question, a final leaderboard shows all players ranked by total points with medal indicators for the top 3.
+
+---
+
+## Notifications
+
+The **notification bell** in the top bar shows a badge with your unread count. Click it to open the notification dropdown.
+
+Notifications are sent when:
+- Your submitted custom question is approved or rejected by an admin
+- Your AI generation request (submitted through your commissioner) is approved or rejected
+
+Click any notification to navigate to the relevant screen. Use **Mark All Read** to clear the unread badge.
+
+Notifications are checked automatically every 30 seconds.
+
+---
+
+## Dark Mode
+
+Toggle dark mode using the **sun/moon icon** in the top bar or from **Settings**. Your preference is saved to your account and persists across sessions and devices.
 
 ---
 

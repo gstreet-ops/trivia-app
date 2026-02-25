@@ -19,10 +19,13 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `community_messages` | Real-time chat messages per community |
 | `custom_questions` | User-submitted questions awaiting admin review |
 | `question_templates` | Reusable question templates per community |
+| `generation_requests` | AI question generation requests (commissioner → admin approval) |
+| `notifications` | In-app notifications for users |
+| `season_archives` | Archived season leaderboards per community |
 | `multiplayer_rooms` | Multiplayer game rooms (lobby) |
 | `multiplayer_participants` | Players in a multiplayer room |
 | `multiplayer_questions` | Questions assigned to a multiplayer game |
-| `multiplayer_answers` | Per-player answers in a multiplayer game (Phase 2) |
+| `multiplayer_answers` | Per-player answers in a multiplayer game |
 
 ---
 
@@ -40,6 +43,7 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 | `super_admin` | `boolean` | Platform super-admin flag |
 | `profile_visibility` | `boolean` | If false, profile hidden from other users |
 | `leaderboard_visibility` | `boolean` | If false, excluded from leaderboards |
+| `theme` | `text` | `'light'` or `'dark'` — user's preferred color theme |
 | `created_at` | `timestamptz` | Row creation timestamp |
 
 **Notes:**
@@ -130,14 +134,28 @@ A community (league) groups members and maintains a shared question bank.
 | `season_end` | `timestamptz` | Season end date |
 | `visibility` | `text` | `'public'` or `'private'` — controls marketplace listing |
 | `description` | `text` | Community description shown in marketplace (nullable) |
-| `settings` | `jsonb` | Flexible settings; e.g. `{ max_members, timer_enabled, timer_seconds, theme_color, logo_url, banner_url, welcome_message }` |
+| `current_season` | `integer` | Current season number (increments on season reset) |
+| `settings` | `jsonb` | Flexible settings (see below) |
 | `created_at` | `timestamptz` | Creation timestamp |
+
+**`settings` JSONB shape:**
+```json
+{
+  "max_members": 50,
+  "timer_enabled": true,
+  "timer_seconds": 30,
+  "theme_color": "#041E42",
+  "logo_url": "https://...",
+  "banner_url": "https://...",
+  "welcome_message": "Welcome to our community!"
+}
+```
 
 **Relationships:**
 - `commissioner_id` → `profiles.id`
 
 **Notes:**
-- `invite_code` is generated via `generate_invite_code` RPC or `Math.random().toString(36).substring(2, 10).toUpperCase()`
+- `invite_code` is generated via `generate_invite_code` RPC or `crypto.getRandomValues()` with an unambiguous character set
 - `slug` is generated as `name.toLowerCase().replace(/[^a-z0-9]+/g, '-')`
 - Default season length at creation: 30 days
 - `visibility = 'public'` makes the community appear in the Community Marketplace
@@ -174,6 +192,13 @@ Question bank owned by a specific community. Used when quiz source is "Community
 | `category` | `text` | Category label |
 | `difficulty` | `text` | `'easy'`, `'medium'`, or `'hard'` |
 | `tags` | `text[]` | Custom tags (nullable) |
+| `explanation` | `text` | Optional explanation of the correct answer |
+| `image_url` | `text` | URL to question image in Supabase Storage (nullable) |
+| `video_url` | `text` | YouTube URL for video questions (nullable) |
+| `source` | `text` | `'manual'`, `'ai_generated'`, or `'imported'` |
+| `ai_request_id` | `uuid` | FK → `generation_requests.id` (nullable; set for AI-generated questions) |
+| `ai_model` | `text` | AI model name if generated (nullable) |
+| `ai_theme` | `text` | Theme used for AI generation (nullable) |
 | `version_number` | `integer` | Current version number |
 | `version_history` | `jsonb[]` | Array of up to 10 version snapshots |
 | `imported_by` | `uuid` | FK → `profiles.id` (nullable; set on CSV import) |
@@ -250,6 +275,82 @@ Saved question templates within a community. Commissioners can create questions 
 | `tags` | `text[]` | Tags to apply when creating from template |
 | `created_by` | `uuid` | FK → `profiles.id` |
 | `created_at` | `timestamptz` | Creation timestamp |
+
+---
+
+### `generation_requests`
+
+AI question generation requests. Commissioners submit requests; admins approve or reject; approved requests trigger AI generation.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `uuid` | FK → `communities.id` |
+| `requested_by` | `uuid` | FK → `profiles.id` (commissioner who submitted) |
+| `theme` | `text` | Topic/theme for question generation |
+| `difficulty` | `text` | `'easy'`, `'medium'`, or `'hard'` |
+| `question_count` | `integer` | Number of questions requested (5–25) |
+| `special_instructions` | `text` | Optional additional instructions (nullable) |
+| `status` | `text` | `'pending'`, `'approved'`, `'generating'`, `'completed'`, `'failed'`, or `'rejected'` |
+| `reviewed_by` | `uuid` | FK → `profiles.id` (admin who reviewed, nullable) |
+| `reviewed_at` | `timestamptz` | Timestamp of admin review (nullable) |
+| `admin_notes` | `text` | Optional notes from admin on rejection (nullable) |
+| `generated_questions` | `jsonb` | Array of generated question objects (nullable; populated by Edge Function) |
+| `questions_accepted` | `integer` | Count of questions accepted into the community bank (nullable) |
+| `created_at` | `timestamptz` | Submission timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+- `requested_by` → `profiles.id`
+- `reviewed_by` → `profiles.id`
+
+---
+
+### `notifications`
+
+In-app notifications for users. Triggered by admin actions (question/AI request approve/reject).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `user_id` | `uuid` | FK → `profiles.id` (recipient) |
+| `type` | `text` | Notification type (see below) |
+| `title` | `text` | Notification title |
+| `message` | `text` | Notification body text |
+| `link_screen` | `text` | Screen name to navigate to when clicked (nullable) |
+| `read` | `boolean` | Whether notification has been read (default false) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Notification types:**
+- `question_approved` — custom question was approved by admin
+- `question_rejected` — custom question was rejected by admin
+- `ai_request_approved` — AI generation request was approved
+- `ai_request_rejected` — AI generation request was rejected
+
+**RLS Policies:**
+- SELECT: own rows only (`user_id = auth.uid()`)
+- UPDATE: own rows only (for marking as read)
+
+---
+
+### `season_archives`
+
+Archived season leaderboards. Created when a commissioner resets a season.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `uuid` | FK → `communities.id` |
+| `season_number` | `integer` | The archived season number |
+| `leaderboard_data` | `jsonb` | Frozen leaderboard snapshot (array of player rankings) |
+| `created_at` | `timestamptz` | Archive timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+
+**Notes:**
+- Created automatically by the `reset_season` RPC function
+- Viewable by all community members on the community detail page
 
 ---
 
@@ -373,15 +474,18 @@ Questions assigned to a multiplayer game. Populated when the host starts the gam
 |--------|------|-------------|
 | `id` | `uuid` | Primary key |
 | `room_id` | `uuid` | FK → `multiplayer_rooms.id` (CASCADE delete) |
-| `question_index` | `integer` | 0-based order within the game |
+| `question_order` | `integer` | 0-based order within the game |
 | `question_text` | `text` | The question |
 | `correct_answer` | `text` | Correct answer |
 | `incorrect_answers` | `jsonb` | Array of incorrect answers |
 | `category` | `text` | Category label |
 | `difficulty` | `text` | Difficulty level |
+| `image_url` | `text` | URL to question image (nullable) |
+| `video_url` | `text` | YouTube URL for video questions (nullable) |
+| `explanation` | `text` | Explanation of correct answer (nullable) |
 
 **Constraints:**
-- Unique on `(room_id, question_index)`
+- Unique on `(room_id, question_order)`
 
 **RLS:** Authenticated read all; insert by host only
 
@@ -389,7 +493,7 @@ Questions assigned to a multiplayer game. Populated when the host starts the gam
 
 ### `multiplayer_answers`
 
-Per-player answers for each question in a multiplayer game. *(Phase 2 — not yet implemented)*
+Per-player answers for each question in a multiplayer game.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -420,13 +524,17 @@ auth.users
             │
             ├── community_members (user_id)
             │
+            ├── notifications (user_id)
+            │
             ├── communities (commissioner_id)
             │       ├── community_members (community_id)
             │       ├── community_questions (community_id)
             │       ├── community_leaderboards (community_id)
             │       ├── community_announcements (community_id)
             │       ├── community_messages (community_id)
-            │       └── question_templates (community_id)
+            │       ├── question_templates (community_id)
+            │       ├── generation_requests (community_id, requested_by)
+            │       └── season_archives (community_id)
             │
             ├── custom_questions (creator_id)
             │
@@ -435,6 +543,17 @@ auth.users
                     ├── multiplayer_questions (room_id)
                     └── multiplayer_answers (room_id, user_id)
 ```
+
+---
+
+## Storage Buckets
+
+| Bucket | Purpose |
+|--------|---------|
+| `question-images` | Images uploaded for community questions (commissioner media editor) |
+| `community-images` | Community logos and banner images (commissioner theming) |
+
+Both buckets use RLS policies scoped to authenticated users. Public URLs are generated via `supabase.storage.from(bucket).getPublicUrl(path)`.
 
 ---
 
@@ -457,6 +576,9 @@ RLS (Row Level Security) is enabled on all tables. Policies are managed in Supab
 | `community_messages` | Members of community | Members (insert); commissioner (soft-delete) |
 | `multiplayer_rooms` | All authenticated users | Host (insert/update) |
 | `multiplayer_participants` | All authenticated users | Own rows (insert/update/delete) |
+| `generation_requests` | Commissioner of community; admins see all | Commissioner (insert); admin (update status) |
+| `notifications` | Own rows only | System (insert); own rows (update read status) |
+| `season_archives` | Members of community | System/RPC (insert) |
 | `multiplayer_questions` | All authenticated users | Host only (insert) |
 | `multiplayer_answers` | All authenticated users | Own rows (insert) |
 
@@ -509,10 +631,18 @@ Used by the Commissioner Dashboard to import questions into `community_questions
 | `category` | Category label | `Geography` |
 | `difficulty` | `easy`, `medium`, or `hard` | `easy` |
 
+**Optional columns:**
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `explanation` | Explanation of the correct answer | `Paris has been the capital since 987 AD` |
+| `image_url` | URL to an image for the question | `https://example.com/image.jpg` |
+| `video_url` | YouTube URL for a video question | `https://youtube.com/watch?v=...` |
+
 **Sample CSV:**
 ```csv
-question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty
-"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy"
-"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium"
-"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy"
+question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,explanation
+"What is the capital of France?","Paris","London","Berlin","Madrid","Geography","easy","Paris has been the capital since 987 AD"
+"Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium",""
+"What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy","Au comes from the Latin word aurum"
 ```

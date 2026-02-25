@@ -80,7 +80,15 @@ Only one question can be expanded at a time — clicking another row collapses t
 
 ### Adding a Single Question
 
-Click **➕ Add** in the action bar to open the Add Question modal. Fill in all required fields and click "Add Question". On success, the modal closes and the question appears in the list.
+Click **➕ Add** in the action bar to open the Add Question modal. Fill in:
+- **Question text**, **Correct answer**, **3 incorrect answers** (required)
+- **Category** and **Difficulty** (required)
+- **Tags** (optional)
+- **Explanation** — optional text explaining why the correct answer is right (shown to players after answering)
+- **Image** — upload an image to display above the question
+- **Video** — paste a YouTube URL to embed above the question
+
+Click "Add Question". On success, the modal closes and the question appears in the list.
 
 ### Bulk CSV Upload
 
@@ -101,6 +109,8 @@ Click **📥 Import CSV** in the action bar to open the import modal:
 
    - `difficulty` must be exactly `easy`, `medium`, or `hard` (lowercase)
    - All 7 columns are required; rows with missing fields will be flagged as errors
+
+   Optional columns: `explanation`, `image_url`, `video_url`
 
 3. Save as `.csv` format
 4. Click **Upload CSV** and select your file
@@ -186,6 +196,66 @@ Click **Delete** on any template. This only removes the template, not any questi
 
 ---
 
+## AI Question Generation
+
+Click **AI Generate** in the action bar to open the AI generation modal. This uses a request/approval flow:
+
+### Submitting a Request
+
+1. Fill in the request form:
+   - **Theme** — the topic for generated questions (e.g., "90s pop culture", "European capitals")
+   - **Difficulty** — Easy, Medium, or Hard
+   - **Question Count** — 5 to 25 questions
+   - **Special Instructions** — optional notes for the AI (e.g., "avoid questions about...")
+2. Click **Submit Request**
+
+Your request enters a pending queue for platform admin approval.
+
+### Request Lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| **Pending** | Awaiting admin review |
+| **Approved / Generating** | Admin approved; AI is generating questions |
+| **Completed** | Questions generated and ready for review |
+| **Failed** | Generation encountered an error (you can retry) |
+| **Rejected** | Admin rejected the request (admin notes shown) |
+
+When requests are in the **Generating** state, the modal auto-polls every 5 seconds and shows a toast when generation completes or fails.
+
+### Reviewing Generated Questions
+
+Once a request is **Completed**:
+1. Click the request in the modal to expand it
+2. Review each generated question
+3. Click **Add to Bank** to accept individual questions, or **Discard** to skip them
+4. Accepted questions appear in your question bank with source "AI Generated"
+
+### Request History
+
+The modal also shows your past requests with status badges, dates, and admin notes on rejections.
+
+---
+
+## Media Questions
+
+You can attach images and YouTube videos to questions. Media appears above the question text during quizzes and multiplayer.
+
+### Adding Media to a Question
+
+1. Expand a question in the Questions tab
+2. Click **Media**
+3. **Image**: Click **Upload Image** to select a file. The image is uploaded to Supabase Storage and a thumbnail preview appears.
+4. **Video**: Paste a YouTube URL. A thumbnail preview appears.
+
+Media indicators (image and video icons) are shown on compact question rows so you can see at a glance which questions have media.
+
+### Removing Media
+
+In the media editor, click **Remove** next to the image or video to remove it from the question.
+
+---
+
 ## Members Tab
 
 Shows a table of all current community members with their username and join date.
@@ -211,10 +281,40 @@ Edit community configuration:
 | **Season Start** | Season start date (date picker) |
 | **Season End** | Season end date (date picker) |
 | **Max Members** | Member cap (default: 50) |
+| **Timer** | Enable/disable per-question countdown timer and set duration (15–120 seconds) |
+| **Marketplace Visibility** | Toggle between public (listed in Marketplace) and private (invite-only) |
+| **Description** | Community description shown in the Marketplace |
 
 Click **Save Settings** to apply. Changes take effect immediately for all members.
 
-> The **Invite Code** is generated at creation and cannot be changed through the UI.
+### Invite Code
+
+The invite code is shown in Settings. Click **Regenerate** to generate a new 8-character invite code. The old code immediately stops working.
+
+### Community Theming
+
+Customize your community's appearance:
+
+- **Theme Color** — pick a color from the color picker or select a preset. Applied to the community detail page header, marketplace card, and communities list card.
+- **Logo** — upload a logo image displayed on the community detail page and cards
+- **Banner** — upload a banner image shown at the top of the community detail page
+- **Welcome Message** — custom text displayed to members on the community detail page
+
+### Season Management
+
+Commissioners can reset seasons to start fresh leaderboard rankings:
+
+1. Go to the **Settings** tab
+2. Click **Reset Season**
+3. Confirm in the dialog
+
+This:
+- Archives the current season's leaderboard (viewable in Season History on the community detail page)
+- Increments the season number
+- Resets the season start/end dates
+- The community leaderboard starts fresh — only games from the new season count
+
+Past season leaderboards are preserved and viewable by all community members.
 
 ---
 
@@ -235,6 +335,8 @@ Analytics include:
 
 ## Sharing Your Community
 
-Share the **Invite Code** shown on the community detail page with anyone you want to invite. It's an 8-character uppercase code (e.g., `XK7P2QMN`). Members enter it on the **Join Community** screen.
+Share the **Invite Code** with anyone you want to invite. It's an 8-character uppercase code (e.g., `XK7P2QMN`). Members enter it on the **Join Community** screen.
 
-The invite code cannot be changed once the community is created. Keep it secure — anyone with the code can join.
+The invite code is only visible to the commissioner. Other members see "Ask your commissioner for the invite code." You can regenerate the invite code from Settings if needed — the old code immediately stops working.
+
+Alternatively, set your community to **public** visibility in Settings so it appears in the Community Marketplace, where users can join directly without a code.

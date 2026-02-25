@@ -97,6 +97,57 @@ Rejected questions remain in the database with `status = 'rejected'` but are not
 
 ---
 
+## AI Generation Requests
+
+The **AI Requests** tab shows all AI question generation requests submitted by commissioners.
+
+### Pending Requests
+
+Each pending request card shows:
+- Community name
+- Requester username
+- Theme, difficulty, and question count
+- Special instructions (if any)
+- **Approve** and **Reject** buttons
+
+### Approving a Request
+
+Click **Approve** on a pending request. This:
+1. Updates the request status to `'approved'`
+2. Records the reviewing admin and timestamp
+3. Triggers an Edge Function (fire-and-forget) to generate questions via AI
+4. Sends a notification to the requesting commissioner
+
+The request transitions to "Generating" status. Once the Edge Function completes, it moves to "Completed" (with generated questions) or "Failed."
+
+### Rejecting a Request
+
+Click **Reject** on a pending request. This:
+1. Opens a dialog where you can optionally add admin notes explaining the rejection
+2. Updates the request status to `'rejected'`
+3. Records the reviewing admin, timestamp, and notes
+4. Sends a notification to the requesting commissioner
+
+### Simulate Generation (Super Admin)
+
+Super admins see a **Simulate** button on approved requests for testing the review flow without invoking the Edge Function.
+
+---
+
+## User Management
+
+The **Users** tab provides comprehensive user management:
+
+- **Search** — filter users by username
+- **Sort** — by username, role, join date, or game count
+- **Pagination** — navigate through all users
+- **Role Management** — promote/demote users between `user` and `admin` roles
+- **Super Admin Toggle** — grant or revoke super admin access
+- **View Activity** — see a user's recent games and community memberships
+- **Delete User** — permanently remove a user account (see below)
+
+---
+
 ## Recent Users
 
 The **Recent Users** table shows the 10 most recently created user accounts:
@@ -181,6 +232,19 @@ The cascade deletes all user data in this order:
 
 ---
 
+## Notifications
+
+Admin actions that affect users automatically send in-app notifications:
+
+| Action | Notification Sent To |
+|--------|---------------------|
+| Approve custom question | Question submitter |
+| Reject custom question | Question submitter |
+| Approve AI generation request | Requesting commissioner |
+| Reject AI generation request | Requesting commissioner |
+
+---
+
 ## What Admins Cannot Currently Do
 
 The following actions are not yet available in the Admin Dashboard UI and must be done directly in Supabase:
@@ -188,5 +252,5 @@ The following actions are not yet available in the Admin Dashboard UI and must b
 - Ban or suspend a user
 - Edit or delete another user's games
 - Edit approved/rejected custom questions
+- Undo a custom question approval or rejection
 - View or manage specific communities
-- View all pending questions from a specific user

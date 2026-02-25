@@ -25,6 +25,9 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 - Game history with per-game answer review
 - Community leaderboard with clickable player profiles
 - Privacy controls (profile visibility, leaderboard opt-out)
+- In-app notifications with unread badge, auto-polling, and click-to-navigate
+- Dark mode with toggle in top bar and Settings — persists to localStorage and Supabase profile
+- Multiple community support — top bar dropdown for switching active community
 
 ### Multiplayer Quiz
 - Create or join real-time multiplayer rooms with configurable settings
@@ -39,28 +42,46 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 - Join leagues via invite code
 - Community Marketplace — browse public communities with category filters, sorting, and direct join
 - Community announcements — commissioner posts with pin/unpin, edit, delete; "New" badge for recent posts
+- Real-time community chat — Supabase Realtime powered messaging, commissioner message deletion
 - Invite code regeneration — commissioner can reset the invite code from Settings
+- Community theming — custom color, logo, banner image, welcome message
+- Season management — archive leaderboard, reset season, view past season history
+- Season-filtered leaderboard — rankings count only games from the current season
 - View league leaderboard, members, and question bank count
 - Commissioner dashboard for league management
 
 ### Commissioner Tools
-- Tabbed dashboard: Overview, Questions, Members, Settings, Analytics
+- Tabbed dashboard: Overview, Announcements, Questions, Members, Settings, Analytics
+- Compact table-row question list with inline expand panels and pagination (25/50/100 per page)
 - Bulk CSV question upload with validation and row-level error reporting
 - Download CSV template for bulk upload
 - Export full question bank to CSV
-- Question search + filter by category, difficulty, and custom tags
-- Bulk tag operations across multiple selected questions
+- AI question generation (request/approval flow with admin review)
+- Question search + filter by category, difficulty, tags, and source
+- Bulk operations: tag add/remove, delete — floating action bar with select-all-pages support
+- Media questions — upload images or embed YouTube videos per question
+- Question explanations — optional text shown to players after answering
 - Per-question version history (up to 10 versions) with restore
 - Save questions as reusable templates; create questions from templates
 - Remove members from the league
-- Edit community name, season dates, and member cap
+- Edit community name, season dates, member cap, timer, theming, and marketplace visibility
 
 ### Admin Tools
 - Platform-wide stats: total users, games, public games, avg games/user, most popular category
 - Pending custom question review queue (approve / reject)
+- AI generation request management (approve / reject with notes)
 - User management — search/filter/sort users, promote/demote roles, toggle super admin, view activity with pagination
+- Delete user account — full cascade deletion with confirmation modal (super admin only)
 - Recent users table
 - Recent games table with visibility status
+- Auto-notifications to users on approve/reject actions
+
+### Infrastructure
+- Progressive Web App (PWA) with service worker and install prompt
+- Hash-based URL routing — browser back/forward and refresh preserve screen state
+- SVG icon system — 30+ inline SVG components replacing all emoji icons
+- Sentry error monitoring (optional, via `REACT_APP_SENTRY_DSN` env var)
+- Georgetown-themed color palette with full dark mode support
 
 ---
 
@@ -69,7 +90,7 @@ A full-featured trivia quiz platform with community leagues, custom questions, a
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18 |
-| Backend / DB | Supabase (PostgreSQL + Auth + RLS) |
+| Backend / DB | Supabase (PostgreSQL + Auth + RLS + Realtime + Storage + Edge Functions) |
 | Charts | Recharts 3 |
 | CSV Parsing | PapaParse 5 |
 | Hosting | GitHub Pages |
@@ -94,23 +115,24 @@ trivia-app/
 │   │   ├── StartScreen.js/css           # Login / sign-up / password reset
 │   │   ├── Dashboard.js/css             # Home: stats, achievements, charts, leaderboard
 │   │   ├── QuizSourceSelector.js/css    # Quiz configuration (source, category, difficulty, count)
-│   │   ├── QuizScreen.js/css            # Active quiz with 50/50 hint
-│   │   ├── ResultsScreen.js/css         # Post-quiz score summary
+│   │   ├── QuizScreen.js/css            # Active quiz with 50/50 hint + timer
 │   │   ├── GameReview.js/css            # Per-game answer review
 │   │   ├── Achievements.js/css          # Achievement badge grid
 │   │   ├── PerformanceCharts.js/css     # Recharts score trend + category charts
-│   │   ├── Settings.js/css              # Profile + privacy settings + logout
+│   │   ├── Settings.js/css              # Profile + privacy + theme settings + logout
 │   │   ├── CommunityFeed.js/css         # Public game activity feed
 │   │   ├── CommunitiesList.js/css       # League browser + create/join modals
-│   │   ├── CommunityDetail.js/css       # League overview + leaderboard + quiz entry
+│   │   ├── CommunityDetail.js/css       # League overview + leaderboard + chat + quiz entry
 │   │   ├── CommissionerDashboard.js/css # Full commissioner tools (tabbed)
 │   │   ├── CommunityMarketplace.js/css  # Browse and join public communities
-│   │   ├── MultiplayerLobby.js/css     # Multiplayer room creation, join, lobby
+│   │   ├── MultiplayerLobby.js/css      # Multiplayer room creation, join, lobby, live game
 │   │   ├── AdminDashboard.js/css        # Platform admin panel + user management
 │   │   ├── QuestionCreator.js/css       # Submit custom question for review
 │   │   ├── MyStats.js/css               # Score trend + category performance charts
 │   │   ├── HelpCenter.js/css            # In-app help with guides, FAQ, search
-│   │   └── UserProfile.js/css           # View another user's public stats
+│   │   ├── UserProfile.js/css           # View another user's public stats
+│   │   ├── NotificationBell.js/css      # Notification dropdown with unread badge
+│   │   └── Icons.js                     # 30+ inline SVG icon components
 │   └── utils/
 │       └── achievementChecker.js        # Badge unlock logic
 ├── docs/
@@ -218,20 +240,24 @@ See [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) for full schema.
 
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User profile, roles, privacy settings |
+| `profiles` | User profile, roles, privacy settings, theme |
 | `games` | Game records with score and metadata |
 | `game_answers` | Per-answer records for game review |
-| `communities` | League definitions (with marketplace visibility) |
+| `communities` | League definitions (with marketplace visibility, theming, seasons) |
 | `community_members` | League membership |
-| `community_questions` | Community-owned question bank |
+| `community_questions` | Community-owned question bank (with media, explanations, AI source) |
 | `community_leaderboards` | Community ranking view |
 | `community_announcements` | Commissioner announcements per community |
+| `community_messages` | Real-time chat messages per community |
 | `custom_questions` | User-submitted questions (pending admin review) |
 | `question_templates` | Reusable question templates per community |
+| `generation_requests` | AI question generation requests (commissioner → admin) |
+| `notifications` | In-app notifications for users |
+| `season_archives` | Archived season leaderboards per community |
 | `multiplayer_rooms` | Multiplayer game rooms |
 | `multiplayer_participants` | Players in multiplayer rooms |
-| `multiplayer_questions` | Questions for multiplayer games |
-| `multiplayer_answers` | Per-player answers in multiplayer (Phase 2) |
+| `multiplayer_questions` | Questions for multiplayer games (with media, explanations) |
+| `multiplayer_answers` | Per-player answers in multiplayer games |
 
 ---
 
