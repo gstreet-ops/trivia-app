@@ -13,7 +13,7 @@ export const checkAchievements = async (userId, supabase) => {
   // Category master: 3 perfect scores in the same category (any question count)
   const categoryPerfects = {};
   games.forEach(g => {
-    if (g.total_questions > 0 && g.score === g.total_questions) {
+    if (g.category && g.total_questions > 0 && g.score === g.total_questions) {
       categoryPerfects[g.category] = (categoryPerfects[g.category] || 0) + 1;
     }
   });

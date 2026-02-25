@@ -457,11 +457,12 @@ function MultiplayerLobby({ user, username, onBack }) {
 
   const handleLeaveRoom = async () => {
     if (!room) return;
-    await supabase
+    const { error } = await supabase
       .from('multiplayer_participants')
       .delete()
       .eq('room_id', room.id)
       .eq('user_id', user.id);
+    if (error) { setError('Failed to leave room: ' + error.message); return; }
     cleanup();
     setRoom(null);
     setParticipants([]);
@@ -470,10 +471,11 @@ function MultiplayerLobby({ user, username, onBack }) {
 
   const handleCancelRoom = async () => {
     if (!window.confirm('Cancel this room? All players will be removed.')) return;
-    await supabase
+    const { error } = await supabase
       .from('multiplayer_rooms')
       .update({ status: 'cancelled' })
       .eq('id', room.id);
+    if (error) { setError('Failed to cancel room: ' + error.message); return; }
     cleanup();
     setRoom(null);
     setParticipants([]);

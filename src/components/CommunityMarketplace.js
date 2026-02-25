@@ -135,6 +135,7 @@ function CommunityMarketplace({ user, onBack }) {
     if (activeCategory !== 'All') {
       result = result.filter(c => c.category === activeCategory);
     }
+    result = [...result];
     switch (sortBy) {
       case 'members': result.sort((a, b) => b.memberCount - a.memberCount); break;
       case 'questions': result.sort((a, b) => b.questionCount - a.questionCount); break;

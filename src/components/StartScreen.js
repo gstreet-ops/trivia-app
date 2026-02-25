@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import './StartScreen.css';
 
-function StartScreen({ onStart, onBack }) {
+function StartScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +64,11 @@ function StartScreen({ onStart, onBack }) {
         setTimeout(() => { setIsLogin(true); setSignupSuccess(false); }, 2000);
       }
     } catch (error) {
-      setError(error.message);
+      const msg = error.message;
+      if (msg === 'Invalid login credentials') setError('Incorrect email or password.');
+      else if (msg.includes('Email rate limit')) setError('Too many attempts. Please wait a few minutes.');
+      else if (msg.includes('already registered')) setError('An account with this email already exists.');
+      else setError(msg);
     }
     setLoading(false);
   };

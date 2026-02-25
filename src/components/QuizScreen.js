@@ -311,7 +311,7 @@ function QuizScreen({ config, onEnd }) {
       <div className="question-container">
         {currentQuestion.image_url && (
           <div className="question-media">
-            <img src={currentQuestion.image_url} alt="Question" className="question-media-img" />
+            <img src={currentQuestion.image_url} alt="Question media" className="question-media-img" />
           </div>
         )}
         {currentQuestion.video_url && (() => {
@@ -319,7 +319,7 @@ function QuizScreen({ config, onEnd }) {
           return vidMatch ? (
             <div className="question-media">
               <div className="question-media-video">
-                <iframe src={`https://www.youtube.com/embed/${vidMatch[1]}`} title="Question video" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                <iframe src={`https://www.youtube.com/embed/${vidMatch[1]}`} title="Question video" style={{border: 0}} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
               </div>
             </div>
           ) : null;

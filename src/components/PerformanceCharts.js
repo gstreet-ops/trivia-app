@@ -6,10 +6,10 @@ function PerformanceCharts({ games }) {
   if (!games || games.length === 0) {
     return (<div className="performance-charts"><h3>Performance Over Time</h3><p className="no-data">Play more games to see your performance charts!</p></div>);
   }
-  const scoreData = games.slice().reverse().map((game, index) => ({ game: index + 1, score: Math.round((game.score / game.total_questions) * 100), date: new Date(game.created_at).toLocaleDateString() }));
+  const scoreData = games.slice().reverse().map((game, index) => ({ game: index + 1, score: game.total_questions > 0 ? Math.round((game.score / game.total_questions) * 100) : 0, date: new Date(game.created_at).toLocaleDateString() }));
   const categoryStats = {};
-  games.forEach(game => { if (!categoryStats[game.category]) categoryStats[game.category] = { total: 0, correct: 0 }; categoryStats[game.category].total += game.total_questions; categoryStats[game.category].correct += game.score; });
-  const categoryData = Object.keys(categoryStats).map(category => ({ category: category.length > 15 ? category.substring(0, 15) + '...' : category, percentage: Math.round((categoryStats[category].correct / categoryStats[category].total) * 100) }));
+  games.forEach(game => { if (!game.category) return; if (!categoryStats[game.category]) categoryStats[game.category] = { total: 0, correct: 0 }; categoryStats[game.category].total += game.total_questions; categoryStats[game.category].correct += game.score; });
+  const categoryData = Object.keys(categoryStats).map(category => ({ category: category.length > 15 ? category.substring(0, 15) + '...' : category, percentage: categoryStats[category].total > 0 ? Math.round((categoryStats[category].correct / categoryStats[category].total) * 100) : 0 }));
   return (
     <div className="performance-charts">
       <h3>Performance Over Time</h3>

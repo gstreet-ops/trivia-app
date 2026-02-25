@@ -231,6 +231,17 @@
 | ~~CSV whitespace-only answers pass validation~~ | **Fixed** — Incorrect answers trimmed before truthiness check in CSV import. |
 | ~~Clickable divs/spans missing keyboard support~~ | **Fixed** — Added `role="button"`, `tabIndex={0}`, `onKeyDown` to community cards and feed usernames. |
 | ~~Room code generation proceeds after 5 failures~~ | **Fixed** — After 5 failed attempts, shows error and aborts instead of using a potentially duplicate code. |
+| ~~Stale state on sign-out~~ | **Fixed** — App.js clears userRole, appIsAdmin, appUsername, viewCommunityId, appCommunityName on sign-out. |
+| ~~Raw Supabase errors shown to users~~ | **Fixed** — StartScreen maps auth errors to user-friendly messages; Settings and CommunityDetail show error states. |
+| ~~Season end date could be before start~~ | **Fixed** — CommissionerDashboard validates season_end > season_start before saving. |
+| ~~CSV filename not sanitized~~ | **Fixed** — CommissionerDashboard sanitizes CSV export filename (replaces non-alphanumeric chars). |
+| ~~Accepted count race condition~~ | **Fixed** — CommissionerDashboard computes accepted count from local variable before setState to avoid stale closures. |
+| ~~Sort mutation in CommunityMarketplace~~ | **Fixed** — Array spread before `.sort()` to avoid mutating state. |
+| ~~MultiplayerLobby leave/cancel errors silenced~~ | **Fixed** — handleLeaveRoom and handleCancelRoom now surface errors to the user. |
+| ~~QuestionCreator missing explicit status~~ | **Fixed** — Custom question insert now includes `status: 'pending'` explicitly. |
+| ~~QuizScreen frameBorder deprecation~~ | **Fixed** — Replaced `frameBorder="0"` with `style={{border: 0}}` on YouTube iframe. |
+| ~~PerformanceCharts division by zero~~ | **Fixed** — Guards added for `game.total_questions === 0` and `categoryStats[cat].total === 0`; null categories skipped. |
+| ~~achievementChecker null categories~~ | **Fixed** — Category master check filters out games with null/undefined category. |
 
 ---
 

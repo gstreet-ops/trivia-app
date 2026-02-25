@@ -14,6 +14,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
   const [seasonArchives, setSeasonArchives] = useState([]);
   const [expandedArchive, setExpandedArchive] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
     fetchCommunityData();
@@ -110,6 +111,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
       }
     } catch (error) {
       console.error('Error fetching community:', error);
+      setFetchError('Failed to load community data. Please try again.');
     }
     setLoading(false);
   };
@@ -141,6 +143,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
   const welcomeMsg = community?.settings?.welcome_message || null;
 
   if (loading) return <div className="community-detail"><p>Loading...</p></div>;
+  if (fetchError) return <div className="community-detail"><button className="back-btn" onClick={onBack}>← Back</button><p style={{color:'var(--incorrect-text)', textAlign:'center', padding:'40px 0'}}>{fetchError}</p></div>;
   if (!community) return <div className="community-detail"><p>Community not found</p></div>;
 
   return (

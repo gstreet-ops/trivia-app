@@ -18,8 +18,14 @@ function Settings({ user, onBack }) {
   }, [user]);
 
   const fetchProfile = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (data) setProfile(data);
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (error) throw error;
+      if (data) setProfile(data);
+    } catch (err) {
+      console.error('Failed to load profile:', err.message);
+      setMessage('Failed to load profile settings.');
+    }
   };
 
   const saveSettings = async () => {
@@ -39,7 +45,8 @@ function Settings({ user, onBack }) {
     const newTheme = darkMode ? 'light' : 'dark';
     setDarkMode(!darkMode);
     applyTheme(newTheme);
-    await supabase.from('profiles').update({ theme: newTheme }).eq('id', user.id);
+    const { error } = await supabase.from('profiles').update({ theme: newTheme }).eq('id', user.id);
+    if (error) console.error('Failed to save theme preference:', error.message);
   };
 
   const handleChangePassword = async () => {

@@ -205,6 +205,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const handleSaveSettings = async () => {
+    if (editForm.season_start && editForm.season_end && editForm.season_end <= editForm.season_start) {
+      showToast('Season end date must be after start date', 'error');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('communities')
@@ -666,7 +670,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${community.name}_questions_${new Date().toISOString().split('T')[0]}.csv`;
+    const safeName = community.name.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'community';
+    a.download = `${safeName}_questions_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -1077,13 +1082,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { error } = await supabase.from('community_questions').insert([row]);
       if (error) throw error;
       // Track accepted count
+      const prevAccepted = genAccepted[requestId] || [];
+      const newAccepted = [...prevAccepted, question.question_text];
       setGenAccepted(prev => ({
         ...prev,
-        [requestId]: [...(prev[requestId] || []), question.question_text]
+        [requestId]: newAccepted
       }));
-      // Update questions_accepted on the request
-      const accepted = (genAccepted[requestId]?.length || 0) + 1;
-      await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', requestId);
+      // Update questions_accepted on the request (use local count, not stale state)
+      await supabase.from('generation_requests').update({ questions_accepted: newAccepted.length }).eq('id', requestId);
       fetchCommissionerData();
     } catch (err) {
       showToast('Failed to add question: ' + err.message, 'error');
@@ -1123,12 +1129,13 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { error } = await supabase.from('community_questions').insert(rows);
       if (error) throw error;
       const addedTexts = toAdd.map(q => q.question_text);
+      const prevAccepted = genAccepted[req.id] || [];
+      const newAccepted = [...prevAccepted, ...addedTexts];
       setGenAccepted(prev => ({
         ...prev,
-        [req.id]: [...(prev[req.id] || []), ...addedTexts]
+        [req.id]: newAccepted
       }));
-      const accepted = (genAccepted[req.id]?.length || 0) + addedTexts.length;
-      await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', req.id);
+      await supabase.from('generation_requests').update({ questions_accepted: newAccepted.length }).eq('id', req.id);
       fetchCommissionerData();
     } catch (err) {
       showToast('Failed to add questions: ' + err.message, 'error');

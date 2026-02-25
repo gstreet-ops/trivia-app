@@ -17,7 +17,7 @@ function QuestionCreator({ user, onBack, onSuccess }) {
     if (!formData.question_text.trim() || !formData.correct_answer.trim() || !formData.incorrect_answer1.trim() || !formData.incorrect_answer2.trim() || !formData.incorrect_answer3.trim()) { setError('All fields required'); return; }
     setSubmitting(true);
     try {
-      const { error: insertError } = await supabase.from('custom_questions').insert([{ creator_id: user.id, category: formData.category, difficulty: formData.difficulty, question_text: formData.question_text.trim(), correct_answer: formData.correct_answer.trim(), incorrect_answers: [formData.incorrect_answer1.trim(), formData.incorrect_answer2.trim(), formData.incorrect_answer3.trim()] }]);
+      const { error: insertError } = await supabase.from('custom_questions').insert([{ creator_id: user.id, category: formData.category, difficulty: formData.difficulty, question_text: formData.question_text.trim(), correct_answer: formData.correct_answer.trim(), incorrect_answers: [formData.incorrect_answer1.trim(), formData.incorrect_answer2.trim(), formData.incorrect_answer3.trim()], status: 'pending' }]);
       if (insertError) throw insertError;
       setFormData({ category: 'General Knowledge', difficulty: 'medium', question_text: '', correct_answer: '', incorrect_answer1: '', incorrect_answer2: '', incorrect_answer3: '' });
       if (onSuccess) onSuccess();

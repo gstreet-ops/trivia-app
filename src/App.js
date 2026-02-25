@@ -138,7 +138,9 @@ function App() {
     applyTheme(newTheme);
     // Persist to profile if logged in
     if (session?.user?.id) {
-      supabase.from('profiles').update({ theme: newTheme }).eq('id', session.user.id).then(() => {});
+      supabase.from('profiles').update({ theme: newTheme }).eq('id', session.user.id).then(({ error }) => {
+        if (error) console.error('Failed to save theme preference:', error.message);
+      });
     }
   }, [currentTheme, session]);
 
@@ -192,6 +194,16 @@ function App() {
 
       if (_event === 'TOKEN_REFRESHED') {
         // Don't re-navigate on token refresh
+        return;
+      }
+
+      // Clear stale state on sign-out
+      if (!session) {
+        setUserRole('user');
+        setAppIsAdmin(false);
+        setAppUsername('');
+        setViewCommunityId(null);
+        setAppCommunityName('');
         return;
       }
 
