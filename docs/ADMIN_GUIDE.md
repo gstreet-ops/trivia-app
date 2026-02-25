@@ -170,6 +170,33 @@ Below the pending queue, a history table shows all previously approved and rejec
 
 ---
 
+## Flagged Users
+
+The **Flagged** tab shows users automatically flagged for suspicious bot-like activity.
+
+### How Flagging Works
+
+Users are automatically flagged by database triggers after game completion if:
+- **Impossibly fast answers** — average answer time under 500ms
+- **Suspicious perfect streak** — 10+ consecutive perfect scores on hard difficulty
+- **Excessive play rate** — 15+ games submitted in the last hour
+
+Flagged users can still play normally but are **excluded from all public leaderboards** (Dashboard and community leaderboards).
+
+### Flagged Users Table
+
+Each row shows:
+- Username
+- Flag reasons (color-coded badges)
+- Total games played
+- Date flagged
+
+### Unflagging
+
+Click **Unflag** to reset a user's bot flags (e.g., for false positives). This restores them to leaderboards immediately. If the same suspicious behavior continues, the trigger will re-flag them automatically.
+
+---
+
 ## User Management
 
 The **Users** tab provides comprehensive user management:

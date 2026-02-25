@@ -47,11 +47,12 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       setStats({ totalGames, avgScore: Math.min(avgScore, 100), bestScore: Math.min(bestGame, 100).toFixed(1) });
       setRecentGames(games.slice(0, 5));
     }
-    const { data: leaderboardData } = await supabase.from('games').select('user_id, score, total_questions, profiles(username, leaderboard_visibility)').eq('visibility', 'public');
+    const { data: leaderboardData } = await supabase.from('games').select('user_id, score, total_questions, profiles(username, leaderboard_visibility, bot_flags)').eq('visibility', 'public');
     if (leaderboardData) {
       const userScores = {};
       leaderboardData.forEach(game => {
         if (game.profiles?.leaderboard_visibility === false && game.user_id !== user.id) return;
+        if (game.profiles?.bot_flags?.flagged === true && game.user_id !== user.id) return;
         if (!userScores[game.user_id]) {
           userScores[game.user_id] = { userId: game.user_id, username: game.profiles?.username, totalScore: 0, totalQuestions: 0, games: 0 };
         }

@@ -43,7 +43,11 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [crRejectingId, setCrRejectingId] = useState(null);
   const [crProcessingId, setCrProcessingId] = useState(null);
 
-  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); fetchCommunityRequests(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Flagged Users tab state
+  const [flaggedUsers, setFlaggedUsers] = useState([]);
+  const [unflaggingId, setUnflaggingId] = useState(null);
+
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); fetchCommunityRequests(); fetchFlaggedUsers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCurrentProfile = async () => {
     const { data } = await supabase.from('profiles').select('id, platform_role, super_admin, role').eq('id', currentUserId).single();
@@ -289,6 +293,51 @@ function AdminDashboard({ onBack, currentUserId }) {
     setCrProcessingId(null);
   };
 
+  // Flagged Users handlers
+  const fetchFlaggedUsers = async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, bot_flags, created_at')
+        .eq('bot_flags->>flagged', 'true')
+        .order('created_at', { ascending: false });
+
+      // Fetch game counts for flagged users
+      if (data && data.length > 0) {
+        const userIds = data.map(u => u.id);
+        const { data: games } = await supabase
+          .from('games')
+          .select('user_id')
+          .in('user_id', userIds);
+
+        const gameCounts = {};
+        (games || []).forEach(g => { gameCounts[g.user_id] = (gameCounts[g.user_id] || 0) + 1; });
+
+        setFlaggedUsers(data.map(u => ({ ...u, gameCount: gameCounts[u.id] || 0 })));
+      } else {
+        setFlaggedUsers([]);
+      }
+    } catch (err) {
+      console.error('Error fetching flagged users:', err);
+    }
+  };
+
+  const handleUnflagUser = async (userId, username) => {
+    if (!window.confirm(`Unflag ${username}? This will restore them to leaderboards.`)) return;
+    setUnflaggingId(userId);
+    try {
+      const { error } = await supabase.from('profiles').update({
+        bot_flags: { flagged: false, reasons: [], flagged_at: null }
+      }).eq('id', userId);
+      if (error) throw error;
+      showToast(`${username} has been unflagged`);
+      fetchFlaggedUsers();
+    } catch (err) {
+      showToast('Failed to unflag: ' + err.message, 'error');
+    }
+    setUnflaggingId(null);
+  };
+
   const handleApprove = async (questionId) => {
     const { data, error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
     if (error) {
@@ -512,6 +561,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         <button className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users ({allUsers.length})</button>
         <button className={`admin-tab ${activeTab === 'ai-requests' ? 'active' : ''}`} onClick={() => setActiveTab('ai-requests')}>AI Requests{aiRequests.length > 0 ? ` (${aiRequests.length})` : ''}</button>
         <button className={`admin-tab ${activeTab === 'community-requests' ? 'active' : ''}`} onClick={() => setActiveTab('community-requests')}>Communities{communityRequests.length > 0 ? ` (${communityRequests.length})` : ''}</button>
+        <button className={`admin-tab ${activeTab === 'flagged' ? 'active' : ''}`} onClick={() => setActiveTab('flagged')}>Flagged{flaggedUsers.length > 0 ? ` (${flaggedUsers.length})` : ''}</button>
       </div>
 
       {activeTab === 'overview' && (
@@ -988,6 +1038,61 @@ function AdminDashboard({ onBack, currentUserId }) {
                         </td>
                         <td>{req.reviewer?.username || '—'}</td>
                         <td>{req.reviewed_at ? new Date(req.reviewed_at).toLocaleDateString() : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'flagged' && (
+        <>
+          <div className="admin-section">
+            <h2>Flagged Users</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+              Users automatically flagged for suspicious activity. Flagged users can still play but are excluded from public leaderboards.
+            </p>
+            {flaggedUsers.length === 0 ? (
+              <div className="admin-empty">No flagged users</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Reasons</th>
+                      <th>Games</th>
+                      <th>Flagged</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flaggedUsers.map(u => (
+                      <tr key={u.id}>
+                        <td className="um-username">{u.username}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            {(u.bot_flags?.reasons || []).map((reason, i) => (
+                              <span key={i} className="flag-reason-badge">{reason.replace(/_/g, ' ')}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{u.gameCount}</td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          {u.bot_flags?.flagged_at ? new Date(u.bot_flags.flagged_at).toLocaleDateString() : '—'}
+                        </td>
+                        <td>
+                          <button
+                            className="um-action-btn um-view"
+                            onClick={() => handleUnflagUser(u.id, u.username)}
+                            disabled={unflaggingId === u.id}
+                          >
+                            {unflaggingId === u.id ? 'Unflagging...' : 'Unflag'}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

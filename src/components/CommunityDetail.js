@@ -48,12 +48,13 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
       if (communityData?.season_start) {
         const { data: seasonGames } = await supabase
           .from('games')
-          .select('user_id, score, total_questions, profiles(username)')
+          .select('user_id, score, total_questions, profiles(username, bot_flags)')
           .eq('community_id', communityId)
           .gte('created_at', communityData.season_start);
 
         const playerMap = {};
         (seasonGames || []).forEach(g => {
+          if (g.profiles?.bot_flags?.flagged === true) return;
           const uid = g.user_id;
           if (!playerMap[uid]) playerMap[uid] = { user_id: uid, username: g.profiles?.username || 'Unknown', total_score: 0, totalQ: 0, games_played: 0 };
           playerMap[uid].total_score += g.score;

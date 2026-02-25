@@ -870,6 +870,18 @@
 .status-approved { background: #2D6A4F; color: #fff; }
 .status-rejected { background: #DC3545; color: #fff; }
 
+/* ===== Flagged Users Tab ===== */
+.flag-reason-badge {
+  padding: 2px 8px;
+  background: var(--incorrect-bg);
+  color: #721c24;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
 /* ===== Delete User Button & Modal ===== */
 .um-delete {
   background: transparent;

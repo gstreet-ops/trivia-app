@@ -723,7 +723,8 @@ Automatically flags suspicious accounts after game completion. Fires AFTER INSER
 
 Checks:
 - Average `time_taken_ms` across all answers < 500ms → flag `"impossibly_fast_answers"`
-- 10+ consecutive perfect scores → flag `"consecutive_perfect_scores"`
+- 10+ consecutive perfect scores on hard difficulty → flag `"suspicious_perfect_streak"`
+- 15+ games in the last hour → flag `"excessive_play_rate"`
 
 Updates `profiles.bot_flags` JSONB with flagged status, reasons array, and timestamp.
 
