@@ -152,14 +152,41 @@ If the Admin Dashboard shows 0 users or 0 games, check that these policies are i
 
 ---
 
+## Delete User Account
+
+Super admins can permanently delete a user account from the **Users** tab. This is a destructive, irreversible action.
+
+### How to Delete a User
+
+1. Go to the **Users** tab in the Admin Dashboard
+2. Find the user and click the **Delete** button (red outline) in the Actions column
+   - The Delete button is hidden for yourself and other super admins
+3. A confirmation modal opens showing:
+   - User stats (username, games played, communities, join date)
+   - A warning if the user is commissioner of any communities (those communities and all their data will also be deleted)
+4. Type the user's exact username to confirm
+5. Click **Delete Permanently**
+
+### What Gets Deleted
+
+The cascade deletes all user data in this order:
+1. Game answers, games, community memberships
+2. Custom questions, notifications
+3. Multiplayer answers, participants, messages
+4. Multiplayer rooms (hosted), AI generation requests
+5. If the user is a commissioner: all data for their communities (members, games, questions, announcements, archives, chat, multiplayer rooms), then the communities themselves
+6. The user's profile row
+
+> **Note:** The `auth.users` row in Supabase Auth is orphaned because the anon key cannot call `supabase.auth.admin.deleteUser()`. The orphaned auth row does not affect platform functionality but can be cleaned up manually in the Supabase dashboard if desired.
+
+---
+
 ## What Admins Cannot Currently Do
 
 The following actions are not yet available in the Admin Dashboard UI and must be done directly in Supabase:
 
-- Delete a user account
 - Ban or suspend a user
 - Edit or delete another user's games
 - Edit approved/rejected custom questions
 - View or manage specific communities
-- Change another user's role (must be done in SQL)
 - View all pending questions from a specific user

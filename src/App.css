@@ -254,3 +254,72 @@ body {
 .pwa-dismiss-btn:hover {
   background: rgba(255,255,255,0.1);
 }
+
+/* ===== Community Dropdown in Top Bar ===== */
+.app-community-selector {
+  position: relative;
+}
+.app-community-selector .app-user-bar-community {
+  gap: 4px;
+}
+.app-community-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+}
+.app-community-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px var(--shadow-strong);
+  z-index: 300;
+  overflow: hidden;
+}
+.app-community-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  border-bottom: 1px solid var(--border-light);
+}
+.app-community-item:last-child { border-bottom: none; }
+.app-community-item:hover { background: var(--bg-hover); }
+.app-community-item.active {
+  background: var(--section-bg);
+  font-weight: 700;
+}
+.app-community-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-community-commissioner-badge {
+  padding: 1px 5px;
+  background: var(--navy);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.app-community-check {
+  flex-shrink: 0;
+  opacity: 0.7;
+}

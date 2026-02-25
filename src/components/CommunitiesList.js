@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunitiesList.css';
 
-function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMarketplace }) {
+function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMarketplace, onMembershipChange }) {
   const [myCommunities, setMyCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -32,6 +32,7 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
       setShowJoinModal(false);
       setInviteCode('');
       fetchMyCommunities();
+      onMembershipChange?.();
     } catch (err) { setError(err.message); }
   };
 
@@ -51,6 +52,7 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
       setShowCreateModal(false);
       setNewCommunityName('');
       fetchMyCommunities();
+      onMembershipChange?.();
     } catch (err) { setError(err.message); }
   };
 

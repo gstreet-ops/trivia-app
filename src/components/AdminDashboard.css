@@ -810,3 +810,124 @@
 }
 
 .ai-sim-btn:hover { background: var(--border-color); }
+
+/* ===== Delete User Button & Modal ===== */
+.um-delete {
+  background: transparent;
+  color: #DC3545;
+  border: 1px solid #DC3545;
+}
+.um-delete:hover:not(:disabled) {
+  background: #DC3545;
+  color: white;
+}
+
+.um-delete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+}
+
+.um-delete-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 8px 32px var(--shadow-strong);
+}
+
+.um-delete-warning {
+  background: var(--incorrect-bg);
+  color: var(--incorrect-text);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.um-delete-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.um-delete-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--section-bg);
+  border-radius: 6px;
+}
+
+.um-delete-stats-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.um-delete-stats-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.um-delete-commissioner-warning {
+  background: var(--warning-bg);
+  color: #856404;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.um-delete-confirm-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.um-delete-confirm-input:focus {
+  outline: none;
+  border-color: #DC3545;
+}
+
+.um-delete-confirm-btn {
+  padding: 8px 18px;
+  background: #DC3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.um-delete-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.um-delete-confirm-btn:hover:not(:disabled) {
+  background: #BB2D3B;
+}

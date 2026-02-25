@@ -33,7 +33,7 @@ function getCategory(slug) {
   return CATEGORY_MAP[slug] || 'General';
 }
 
-function CommunityMarketplace({ user, onBack }) {
+function CommunityMarketplace({ user, onBack, onMembershipChange }) {
   const [communities, setCommunities] = useState([]);
   const [myMemberships, setMyMemberships] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -122,6 +122,7 @@ function CommunityMarketplace({ user, onBack }) {
         setCommunities(prev => prev.map(c =>
           c.id === communityId ? { ...c, memberCount: c.memberCount + 1 } : c
         ));
+        onMembershipChange?.();
       }
     } catch (err) {
       alert('Failed to join community');

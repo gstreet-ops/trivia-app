@@ -50,7 +50,7 @@ After logging in you land on your personal Dashboard. It shows:
 
 The persistent top bar (visible on every screen) contains:
 - **Your avatar and username** (left side)
-- **Your active community** (if you belong to one) — click it to jump directly to that community
+- **Your active community** (if you belong to one) — click it to jump directly to that community. If you belong to multiple communities, this becomes a dropdown: click to open, select a different community to switch your active one, or click the current one to view its detail page. Your active community persists across sessions.
 - **Menu button** (right side) — opens a dropdown with:
   - My Stats
   - My Leagues

@@ -22,6 +22,10 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [expandedUser, setExpandedUser] = useState(null);
   const [expandedData, setExpandedData] = useState(null);
   const [toast, setToast] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteCommissioned, setDeleteCommissioned] = useState([]);
   const USERS_PER_PAGE = 20;
 
   // AI Requests tab state
@@ -256,6 +260,75 @@ function AdminDashboard({ onBack, currentUserId }) {
       console.error('Error fetching activity:', err);
       setExpandedData({ totalGames: 0, avgPct: 0, communities: [], lastGame: null, createdAt: null });
     }
+  };
+
+  const handleOpenDeleteModal = async (user) => {
+    setDeleteTarget(user);
+    setDeleteConfirmText('');
+    setDeleteLoading(false);
+    try {
+      const { data } = await supabase.from('communities').select('id, name').eq('commissioner_id', user.id);
+      setDeleteCommissioned(data || []);
+    } catch { setDeleteCommissioned([]); }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleteConfirmText !== deleteTarget.username) return;
+    setDeleteLoading(true);
+    const errors = [];
+    const userId = deleteTarget.id;
+
+    const tryDelete = async (label, queryFn) => {
+      try { const { error } = await queryFn(); if (error) errors.push(`${label}: ${error.message}`); }
+      catch (err) { errors.push(`${label}: ${err.message}`); }
+    };
+
+    // 1. Delete user's direct data
+    await tryDelete('game_answers', () => supabase.from('game_answers').delete().eq('user_id', userId));
+    await tryDelete('games', () => supabase.from('games').delete().eq('user_id', userId));
+    await tryDelete('community_members', () => supabase.from('community_members').delete().eq('user_id', userId));
+    await tryDelete('custom_questions', () => supabase.from('custom_questions').delete().eq('creator_id', userId));
+    await tryDelete('notifications', () => supabase.from('notifications').delete().eq('user_id', userId));
+    await tryDelete('multiplayer_answers', () => supabase.from('multiplayer_answers').delete().eq('user_id', userId));
+    await tryDelete('multiplayer_participants', () => supabase.from('multiplayer_participants').delete().eq('user_id', userId));
+    await tryDelete('community_messages', () => supabase.from('community_messages').delete().eq('user_id', userId));
+    await tryDelete('multiplayer_rooms', () => supabase.from('multiplayer_rooms').delete().eq('host_id', userId));
+    await tryDelete('generation_requests', () => supabase.from('generation_requests').delete().eq('requested_by', userId));
+
+    // 2. Delete commissioner-owned communities and their data
+    for (const comm of deleteCommissioned) {
+      const cid = comm.id;
+      await tryDelete(`community_members (${comm.name})`, () => supabase.from('community_members').delete().eq('community_id', cid));
+      // Delete game_answers for games in this community
+      const { data: communityGames } = await supabase.from('games').select('id').eq('community_id', cid);
+      if (communityGames?.length > 0) {
+        const gameIds = communityGames.map(g => g.id);
+        await tryDelete(`game_answers (${comm.name})`, () => supabase.from('game_answers').delete().in('game_id', gameIds));
+      }
+      await tryDelete(`games (${comm.name})`, () => supabase.from('games').delete().eq('community_id', cid));
+      await tryDelete(`generation_requests (${comm.name})`, () => supabase.from('generation_requests').delete().eq('community_id', cid));
+      await tryDelete(`question_templates (${comm.name})`, () => supabase.from('question_templates').delete().eq('community_id', cid));
+      await tryDelete(`community_questions (${comm.name})`, () => supabase.from('community_questions').delete().eq('community_id', cid));
+      await tryDelete(`community_announcements (${comm.name})`, () => supabase.from('community_announcements').delete().eq('community_id', cid));
+      await tryDelete(`season_archives (${comm.name})`, () => supabase.from('season_archives').delete().eq('community_id', cid));
+      await tryDelete(`community_messages (${comm.name})`, () => supabase.from('community_messages').delete().eq('community_id', cid));
+      await tryDelete(`multiplayer_rooms (${comm.name})`, () => supabase.from('multiplayer_rooms').delete().eq('community_id', cid));
+      await tryDelete(`community (${comm.name})`, () => supabase.from('communities').delete().eq('id', cid));
+    }
+
+    // 3. Delete profile
+    await tryDelete('profile', () => supabase.from('profiles').delete().eq('id', userId));
+
+    // Note: auth.users row is orphaned — anon key cannot call supabase.auth.admin.deleteUser()
+
+    setDeleteTarget(null);
+    setDeleteLoading(false);
+    if (errors.length > 0) {
+      showToast(`Deleted with ${errors.length} error(s): ${errors[0]}`, 'error');
+    } else {
+      showToast(`${deleteTarget.username} permanently deleted`);
+    }
+    fetchAdminData();
   };
 
   const getRoleLabel = (user) => {
@@ -526,6 +599,9 @@ function AdminDashboard({ onBack, currentUserId }) {
                             <button className="um-action-btn um-view" onClick={() => handleViewActivity(user.id)}>
                               {expandedUser === user.id ? 'Hide' : 'Activity'}
                             </button>
+                            {!isSelf && !user.super_admin && (
+                              <button className="um-action-btn um-delete" onClick={() => handleOpenDeleteModal(user)}>Delete</button>
+                            )}
                           </td>
                         </tr>
                         {expandedUser === user.id && expandedData && (
@@ -577,6 +653,56 @@ function AdminDashboard({ onBack, currentUserId }) {
             )}
           </div>
         </>
+      )}
+
+      {deleteTarget && (
+        <div className="um-delete-overlay" onClick={() => { if (!deleteLoading) setDeleteTarget(null); }}>
+          <div className="um-delete-modal" onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 12px', color: 'var(--navy)', fontSize: '1rem' }}>Delete User Account</h3>
+            <div className="um-delete-warning">
+              This will permanently delete all data for this user. This action cannot be undone.
+            </div>
+            <div className="um-delete-stats">
+              <div><span className="um-delete-stats-label">Username</span><span className="um-delete-stats-value">{deleteTarget.username}</span></div>
+              <div><span className="um-delete-stats-label">Games</span><span className="um-delete-stats-value">{userGameCounts[deleteTarget.id] || 0}</span></div>
+              <div><span className="um-delete-stats-label">Communities</span><span className="um-delete-stats-value">{userCommunityCounts[deleteTarget.id] || 0}</span></div>
+              <div><span className="um-delete-stats-label">Joined</span><span className="um-delete-stats-value">{new Date(deleteTarget.created_at).toLocaleDateString()}</span></div>
+            </div>
+            {deleteCommissioned.length > 0 && (
+              <div className="um-delete-commissioner-warning">
+                This user is commissioner of {deleteCommissioned.length} community(ies): {deleteCommissioned.map(c => c.name).join(', ')}. These communities and all their data will also be deleted.
+              </div>
+            )}
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Type <strong>{deleteTarget.username}</strong> to confirm:
+            </label>
+            <input
+              className="um-delete-confirm-input"
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder={deleteTarget.username}
+              disabled={deleteLoading}
+            />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', justifyContent: 'flex-end' }}>
+              <button
+                className="um-action-btn um-view"
+                style={{ padding: '8px 18px', fontSize: '0.82rem' }}
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="um-delete-confirm-btn"
+                disabled={deleteConfirmText !== deleteTarget.username || deleteLoading}
+                onClick={handleConfirmDelete}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === 'ai-requests' && (

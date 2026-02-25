@@ -20,7 +20,7 @@ import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
 import NotificationBell from './components/NotificationBell';
-import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon } from './components/Icons';
+import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon, ChevronDownIcon, CheckIcon } from './components/Icons';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
@@ -95,6 +95,9 @@ function App() {
   const [userProfileReturn, setUserProfileReturn] = useState('community');
   const [appIsAdmin, setAppIsAdmin] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [userCommunities, setUserCommunities] = useState([]);
+  const [activeCommunityId, setActiveCommunityId] = useState(() => localStorage.getItem('activeCommunityId'));
+  const [communityDropdownOpen, setCommunityDropdownOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(getSavedTheme);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -205,6 +208,9 @@ function App() {
         setAppUsername('');
         setViewCommunityId(null);
         setAppCommunityName('');
+        setUserCommunities([]);
+        setActiveCommunityId(null);
+        localStorage.removeItem('activeCommunityId');
         return;
       }
 
@@ -228,6 +234,13 @@ function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, [syncFromHash]);
 
+  // Close community dropdown on Escape
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Escape') setCommunityDropdownOpen(false); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const fetchUserRole = async (userId) => {
     try {
       const { data, error } = await supabase.from('profiles').select('role, super_admin, username, theme').eq('id', userId).single();
@@ -243,19 +256,75 @@ function App() {
         applyTheme(data.theme);
       }
 
-      // Pre-load community name if user belongs to exactly one community
+      // Pre-load all community memberships
       const { data: memberships } = await supabase
         .from('community_members')
-        .select('communities(id, name)')
+        .select('communities(id, name, commissioner_id)')
         .eq('user_id', userId);
-      if (memberships && memberships.length === 1) {
-        setAppCommunityName(memberships[0].communities?.name || '');
-        setViewCommunityId(memberships[0].communities?.id || null);
+      const communities = (memberships || []).map(m => m.communities).filter(Boolean);
+      setUserCommunities(communities);
+
+      if (communities.length > 0) {
+        const savedId = localStorage.getItem('activeCommunityId');
+        const savedValid = communities.find(c => c.id === savedId);
+        const active = savedValid || communities[0];
+        setActiveCommunityId(active.id);
+        setViewCommunityId(active.id);
+        setAppCommunityName(active.name);
+        localStorage.setItem('activeCommunityId', active.id);
+      } else {
+        setActiveCommunityId(null);
+        setViewCommunityId(null);
+        setAppCommunityName('');
+        localStorage.removeItem('activeCommunityId');
       }
     } catch (err) {
       console.error('fetchUserRole failed:', err);
       setUserRole('user');
       setAppUsername(session?.user?.email?.split('@')[0] || 'User');
+    }
+  };
+
+  const switchCommunity = (communityId) => {
+    setCommunityDropdownOpen(false);
+    if (communityId === activeCommunityId) {
+      // Clicking active community navigates to its detail
+      navigateTo('communityDetail', { communityId });
+      return;
+    }
+    const comm = userCommunities.find(c => c.id === communityId);
+    if (comm) {
+      setActiveCommunityId(comm.id);
+      setViewCommunityId(comm.id);
+      setAppCommunityName(comm.name);
+      localStorage.setItem('activeCommunityId', comm.id);
+    }
+  };
+
+  const refreshUserCommunities = async () => {
+    if (!session?.user?.id) return;
+    const { data: memberships } = await supabase
+      .from('community_members')
+      .select('communities(id, name, commissioner_id)')
+      .eq('user_id', session.user.id);
+    const communities = (memberships || []).map(m => m.communities).filter(Boolean);
+    setUserCommunities(communities);
+
+    // If active community was removed, fall back to first available
+    if (communities.length > 0) {
+      const stillValid = communities.find(c => c.id === activeCommunityId);
+      if (!stillValid) {
+        const first = communities[0];
+        setActiveCommunityId(first.id);
+        setViewCommunityId(first.id);
+        setAppCommunityName(first.name);
+        localStorage.setItem('activeCommunityId', first.id);
+      }
+    } else {
+      setActiveCommunityId(null);
+      setViewCommunityId(null);
+      setAppCommunityName('');
+      localStorage.removeItem('activeCommunityId');
     }
   };
 
@@ -319,15 +388,50 @@ function App() {
             <div className="app-user-bar-left">
               <div className="app-user-bar-avatar">{appUsername.charAt(0).toUpperCase()}</div>
               <span className="app-user-bar-name">{appUsername}</span>
-              {appCommunityName && (
+              {userCommunities.length === 1 && (
                 <>
                   <span className="app-user-bar-divider">|</span>
                   <button
                     className="app-user-bar-community"
-                    onClick={() => { if (viewCommunityId) navigateTo('communityDetail', { communityId: viewCommunityId }); }}
+                    onClick={() => { if (activeCommunityId) navigateTo('communityDetail', { communityId: activeCommunityId }); }}
                   >
                     <TrophyIcon size={12} /> {appCommunityName}
                   </button>
+                </>
+              )}
+              {userCommunities.length >= 2 && (
+                <>
+                  <span className="app-user-bar-divider">|</span>
+                  <div className="app-community-selector">
+                    <button
+                      className="app-user-bar-community"
+                      onClick={() => setCommunityDropdownOpen(p => !p)}
+                    >
+                      <TrophyIcon size={12} /> {appCommunityName} <ChevronDownIcon size={12} color="#fff" />
+                    </button>
+                    {communityDropdownOpen && (
+                      <>
+                        <div className="app-community-backdrop" onClick={() => setCommunityDropdownOpen(false)} />
+                        <div className="app-community-menu">
+                          {userCommunities.map(c => (
+                            <button
+                              key={c.id}
+                              className={`app-community-item${c.id === activeCommunityId ? ' active' : ''}`}
+                              onClick={() => switchCommunity(c.id)}
+                            >
+                              <span className="app-community-item-name">{c.name}</span>
+                              {c.commissioner_id === session.user.id && (
+                                <span className="app-community-commissioner-badge">Comm</span>
+                              )}
+                              {c.id === activeCommunityId && (
+                                <span className="app-community-check"><CheckIcon size={14} color="var(--navy)" /></span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
               <NotificationBell userId={session.user.id} onNavigate={(screen) => navigateTo(screen)} />
@@ -425,12 +529,14 @@ function App() {
           }}
           onBack={() => navigateTo('dashboard')}
           onBrowseMarketplace={() => navigateTo('marketplace')}
+          onMembershipChange={refreshUserCommunities}
         />
       )}
       {screen === 'marketplace' && (
         <CommunityMarketplace
           user={session.user}
           onBack={() => navigateTo('communities')}
+          onMembershipChange={refreshUserCommunities}
         />
       )}
       {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} currentUserId={session.user.id} />}

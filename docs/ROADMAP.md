@@ -264,12 +264,12 @@
 - [x] **Community Marketplace** — community discovery with public/private visibility toggle, marketplace browser page listing public communities with stats, direct join
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval (replaces removed platform-wide custom question flow)
 - [x] **Admin user management UI** — promote/demote users, toggle super admin, view activity, search/filter/sort with pagination
-- [ ] **Admin delete user** — remove a user account from the platform
+- [x] **Admin delete user** — super admins can permanently delete a user account with full cascade cleanup (games, memberships, questions, commissioner communities); confirmation modal with username-type-to-confirm
 - [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
 - [x] **Community announcements** — commissioner can post, edit, delete, pin/unpin announcements; members see them on community detail page with "New" badges
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
 - [x] **Season reset** — commissioner can archive current season leaderboard and start fresh rankings; season history with frozen leaderboards viewable by all members; leaderboard filtered to current season
-- [ ] **Multiple communities per user** — currently the top bar only shows one community; support multi-league users
+- [x] **Multiple communities per user** — top bar community pill becomes a dropdown when user belongs to 2+ communities; switch active community, localStorage persistence, commissioner badges in dropdown
 
 ### Longer-term
 
