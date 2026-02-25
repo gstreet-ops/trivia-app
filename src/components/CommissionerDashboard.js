@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
-import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon } from './Icons';
+import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon } from './Icons';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -41,6 +41,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [templates, setTemplates] = useState([]);
   const [showBulkTagging, setShowBulkTagging] = useState(false);
   const [bulkTagInput, setBulkTagInput] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [expandedQuestionId, setExpandedQuestionId] = useState(null);
+  const [selectAllPages, setSelectAllPages] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [username, setUsername] = useState('');
   const [navOpen, setNavOpen] = useState(false);
@@ -97,6 +101,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchGenRequests();
     fetchSeasonData();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterCategory, filterDifficulty, filterSource, selectedTags, pageSize]);
 
   // Poll for in-progress AI generation requests
   useEffect(() => {
@@ -691,17 +700,32 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const toggleQuestionSelection = (questionId) => {
+    setSelectAllPages(false);
     setSelectedQuestions(prev =>
       prev.includes(questionId) ? prev.filter(id => id !== questionId) : [...prev, questionId]
     );
   };
 
   const toggleSelectAll = () => {
-    if (selectedQuestions.length === filteredQuestions.length) {
-      setSelectedQuestions([]);
+    const pageIds = pagedQuestions.map(q => q.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedQuestions.includes(id));
+    if (allPageSelected) {
+      setSelectedQuestions(prev => prev.filter(id => !pageIds.includes(id)));
+      setSelectAllPages(false);
     } else {
-      setSelectedQuestions(filteredQuestions.map(q => q.id));
+      setSelectedQuestions(prev => [...new Set([...prev, ...pageIds])]);
     }
+  };
+
+  const handleSelectAllPages = () => {
+    setSelectAllPages(true);
+    setSelectedQuestions(filteredQuestions.map(q => q.id));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedQuestions([]);
+    setSelectAllPages(false);
+    setShowBulkTagging(false);
   };
 
   const handleBulkDelete = async () => {
@@ -713,6 +737,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         showToast('Failed to delete questions: ' + error.message, 'error');
       } else {
         setSelectedQuestions([]);
+        setSelectAllPages(false);
         fetchCommissionerData();
       }
     } catch (error) {
@@ -735,6 +760,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       || (filterSource === 'ai' && (q.source === 'ai_generated' || (q.tags && q.tags.includes('ai-generated'))));
     return categoryMatch && difficultyMatch && searchMatch && tagMatch && sourceMatch;
   });
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pagedQuestions = filteredQuestions.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
+  const pageStart = filteredQuestions.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
+  const pageEnd = Math.min(safeCurrentPage * pageSize, filteredQuestions.length);
+
+  const getSourceLabel = (q) => {
+    if (q.source === 'ai_generated' || (q.tags && q.tags.includes('ai-generated'))) return 'AI';
+    if (q.imported_at && q.source !== 'ai_generated') return 'CSV';
+    return 'Manual';
+  };
 
   const categories = [...new Set(questions.map(q => q.category))];
   const allTags = [...new Set(questions.flatMap(q => q.tags || []))];
@@ -1689,185 +1727,237 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     </div>
                   </div>
 
-                  <div className="bulk-controls">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={selectedQuestions.length === filteredQuestions.length && filteredQuestions.length > 0}
-                        onChange={toggleSelectAll}
-                      />
-                      Select All ({filteredQuestions.length})
-                    </label>
-                    {selectedQuestions.length > 0 && (
-                      <div className="bulk-actions-row">
-                        <button className="btn-secondary" onClick={() => setShowBulkTagging(!showBulkTagging)}>
-                          <TagIcon size={14} /> Bulk Tags
-                        </button>
-                        <button className="btn-danger" onClick={handleBulkDelete}>
-                          Delete Selected ({selectedQuestions.length})
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {showBulkTagging && selectedQuestions.length > 0 && (
-                    <div className="bulk-tagging-panel">
-                      <h3>Bulk Tag Operations ({selectedQuestions.length} questions selected)</h3>
-                      <div className="bulk-tag-add">
-                        <input
-                          type="text"
-                          className="bulk-tag-input"
-                          placeholder="Enter tag name..."
-                          value={bulkTagInput}
-                          onChange={(e) => setBulkTagInput(e.target.value)}
-                          onKeyPress={(e) => { if (e.key === 'Enter') handleBulkAddTag(); }}
-                        />
-                        <button className="btn-primary" onClick={handleBulkAddTag}>Add Tag to Selected</button>
-                      </div>
-                      {allTags.length > 0 && (
-                        <div className="bulk-tag-remove">
-                          <p>Remove existing tags from selected questions:</p>
-                          <div className="bulk-tag-list">
-                            {allTags.map(tag => (
-                              <button key={tag} className="bulk-tag-remove-btn" onClick={() => handleBulkRemoveTag(tag)}>
-                                {tag} ×
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </>
               )}
 
               {questions.length === 0 ? (
                 <p className="empty-message">No questions in the question bank yet. Use the buttons above to add questions.</p>
               ) : (
-                <div className="questions-list">
-                  {filteredQuestions.map(question => (
-                    <div key={question.id} className={`question-card ${selectedQuestions.includes(question.id) ? 'selected' : ''}`}>
-                      <div className="question-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={selectedQuestions.includes(question.id)}
-                          onChange={() => toggleQuestionSelection(question.id)}
-                        />
+                <div className="qt-container">
+                  {/* Table Header */}
+                  <div className="qt-header">
+                    <div className="qt-col-check">
+                      <input
+                        type="checkbox"
+                        checked={pagedQuestions.length > 0 && pagedQuestions.every(q => selectedQuestions.includes(q.id))}
+                        onChange={toggleSelectAll}
+                      />
+                    </div>
+                    <div className="qt-col-question">Question</div>
+                    <div className="qt-col-answer">Answer</div>
+                    <div className="qt-col-category">Category</div>
+                    <div className="qt-col-diff">Difficulty</div>
+                    <div className="qt-col-source">Source</div>
+                    <div className="qt-col-media">Media</div>
+                    <div className="qt-col-expand"></div>
+                  </div>
+
+                  {/* Select-all-pages banner */}
+                  {pagedQuestions.length > 0 && pagedQuestions.every(q => selectedQuestions.includes(q.id)) && !selectAllPages && filteredQuestions.length > pageSize && (
+                    <div className="qt-select-all-banner">
+                      All {pagedQuestions.length} on this page selected.{' '}
+                      <button className="qt-select-all-link" onClick={handleSelectAllPages}>
+                        Select all {filteredQuestions.length} questions across all pages
+                      </button>
+                    </div>
+                  )}
+                  {selectAllPages && (
+                    <div className="qt-select-all-banner">
+                      All {filteredQuestions.length} questions selected.{' '}
+                      <button className="qt-select-all-link" onClick={handleDeselectAll}>Clear selection</button>
+                    </div>
+                  )}
+
+                  {/* Compact Rows */}
+                  {pagedQuestions.map((question, idx) => {
+                    const isExpanded = expandedQuestionId === question.id;
+                    const isSelected = selectedQuestions.includes(question.id);
+                    const srcLabel = getSourceLabel(question);
+                    return (
+                      <React.Fragment key={question.id}>
+                        <div
+                          className={`qt-row${isSelected ? ' qt-row-selected' : ''}${idx % 2 === 1 ? ' qt-row-alt' : ''}${isExpanded ? ' qt-row-expanded' : ''}`}
+                          onClick={(e) => {
+                            if (e.target.closest('.qt-col-check') || e.target.tagName === 'INPUT') return;
+                            setExpandedQuestionId(isExpanded ? null : question.id);
+                          }}
+                        >
+                          <div className="qt-col-check" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleQuestionSelection(question.id)}
+                            />
+                          </div>
+                          <div className="qt-col-question qt-truncate">{question.question_text}</div>
+                          <div className="qt-col-answer qt-truncate">{question.correct_answer}</div>
+                          <div className="qt-col-category"><span className="qt-chip">{question.category}</span></div>
+                          <div className="qt-col-diff"><span className={`qt-chip qt-chip-${question.difficulty}`}>{question.difficulty}</span></div>
+                          <div className="qt-col-source"><span className={`qt-source-badge qt-source-${srcLabel.toLowerCase()}`}>{srcLabel}</span></div>
+                          <div className="qt-col-media">
+                            {question.image_url && <ImageIcon size={14} color="var(--gt-text-muted)" />}
+                            {question.video_url && <VideoIcon size={14} color="var(--gt-text-muted)" />}
+                          </div>
+                          <div className="qt-col-expand">
+                            <span className={`qt-chevron${isExpanded ? ' qt-chevron-open' : ''}`}>
+                              <ChevronDownIcon size={14} color="var(--gt-text-muted)" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Expanded panel */}
+                        <div className={`qt-expand-panel${isExpanded ? ' qt-expand-open' : ''}`}>
+                          {isExpanded && (
+                            <div className="qt-expand-content">
+                              {/* Full question text */}
+                              <div className="qt-expand-question">{question.question_text}</div>
+
+                              {/* All answers */}
+                              <div className="qt-expand-answers">
+                                <span className="qt-answer-pill qt-answer-correct">{question.correct_answer}</span>
+                                {question.incorrect_answers?.map((ans, i) => (
+                                  <span key={i} className="qt-answer-pill qt-answer-incorrect">{ans}</span>
+                                ))}
+                              </div>
+
+                              {/* Tags */}
+                              <div className="qt-expand-tags">
+                                {question.tags && question.tags.length > 0 && question.tags.map(tag => (
+                                  <span key={tag} className="question-tag">
+                                    {tag}
+                                    <button className="remove-tag" onClick={() => handleRemoveTag(question.id, tag)}>×</button>
+                                  </span>
+                                ))}
+                                {editingQuestionId === question.id ? (
+                                  <div className="tag-input-wrapper">
+                                    <input type="text" className="tag-input" placeholder="Add tag..." value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') handleAddTag(question.id, newTag); }} />
+                                    <button className="add-tag-btn" onClick={() => handleAddTag(question.id, newTag)}>Add</button>
+                                    <button className="cancel-tag-btn" onClick={() => { setEditingQuestionId(null); setNewTag(''); }}>Cancel</button>
+                                  </div>
+                                ) : (
+                                  <button className="add-tag-trigger" onClick={() => setEditingQuestionId(question.id)}>+ Add Tag</button>
+                                )}
+                              </div>
+
+                              {/* Explanation */}
+                              {question.explanation && (
+                                <div className="qt-expand-explanation">
+                                  <LightbulbIcon size={14} /> {question.explanation}
+                                </div>
+                              )}
+
+                              {/* Media thumbnails */}
+                              {(question.image_url || question.video_url) && (
+                                <div className="qt-expand-media">
+                                  {question.image_url && <img src={question.image_url} alt="Question" style={{ height: '80px', borderRadius: '6px', objectFit: 'cover' }} />}
+                                  {question.video_url && extractYouTubeId(question.video_url) && (
+                                    <img src={`https://img.youtube.com/vi/${extractYouTubeId(question.video_url)}/mqdefault.jpg`} alt="Video" style={{ height: '80px', borderRadius: '6px', objectFit: 'cover' }} />
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Media edit panel */}
+                              {editingMediaId === question.id && (
+                                <div className="media-edit-panel">
+                                  <div className="media-edit-section">
+                                    <label className="media-edit-label">Image</label>
+                                    {question.image_url ? (
+                                      <div className="media-preview-row">
+                                        <img src={question.image_url} alt="Question" className="media-preview-thumb" />
+                                        <button className="btn-danger-sm" onClick={() => handleRemoveImage(question.id)}>Remove Image</button>
+                                      </div>
+                                    ) : (
+                                      <div className="media-upload-row">
+                                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id={`img-upload-${question.id}`} style={{ display: 'none' }} onChange={(e) => { if (e.target.files[0]) handleImageUpload(question.id, e.target.files[0]); }} />
+                                        <label htmlFor={`img-upload-${question.id}`} className="btn-secondary media-upload-btn">{mediaUploading ? 'Uploading...' : 'Upload Image'}</label>
+                                        <span className="media-hint">PNG, JPEG, WebP, GIF — max 500KB</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="media-edit-section">
+                                    <label className="media-edit-label">YouTube Video</label>
+                                    {question.video_url ? (
+                                      <div className="media-preview-row">
+                                        <img src={`https://img.youtube.com/vi/${extractYouTubeId(question.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="media-preview-thumb" />
+                                        <span className="media-url-display">{question.video_url}</span>
+                                        <button className="btn-danger-sm" onClick={() => handleSaveVideoUrl(question.id, '')}>Remove Video</button>
+                                      </div>
+                                    ) : (
+                                      <div className="media-upload-row">
+                                        <input type="text" className="media-video-input" placeholder="https://www.youtube.com/watch?v=..." onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(question.id, e.target.value); }} />
+                                        <button className="btn-secondary" onClick={(e) => { const input = e.target.previousElementSibling; handleSaveVideoUrl(question.id, input.value); }}>Save</button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Metadata + Actions */}
+                              <div className="qt-expand-footer">
+                                <div className="qt-expand-meta">
+                                  <span>Added {new Date(question.created_at).toLocaleDateString()}</span>
+                                  <span>Source: {srcLabel}</span>
+                                  {question.version_number > 0 && <span>v{question.version_number}</span>}
+                                </div>
+                                <div className="qt-expand-actions">
+                                  <button className="btn-icon" onClick={() => setEditingMediaId(editingMediaId === question.id ? null : question.id)} title="Edit media"><ImageIcon size={13} /> Media</button>
+                                  <button className="btn-icon" onClick={() => saveAsTemplate(question.id)} title="Save as template"><FileIcon size={13} /> Template</button>
+                                  <button className="btn-icon" onClick={() => loadVersionHistory(question.id)} title="Version history"><FileIcon size={13} /> History</button>
+                                  <button className="btn-danger-sm" onClick={() => handleDeleteQuestion(question.id)}>Delete</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {/* Pagination */}
+                  {filteredQuestions.length > 0 && (
+                    <div className="qt-pagination">
+                      <div className="qt-pagination-info">
+                        Showing {pageStart}–{pageEnd} of {filteredQuestions.length} questions
                       </div>
-                      <div className="question-content">
-                        <div className="question-header">
-                          <span className="category-badge">{question.category}</span>
-                          <span className={`difficulty-badge ${question.difficulty}`}>{question.difficulty}</span>
-                          {question.version_number > 0 && <span className="version-badge">v{question.version_number}</span>}
-                          {question.imported_at && <span className="import-badge">Imported</span>}
-                          {(question.source === 'ai_generated' || (question.tags && question.tags.includes('ai-generated'))) && (
-                            <span className="ai-badge">AI</span>
-                          )}
-                          {question.image_url && <span className="media-indicator" title="Has image"><ImageIcon size={14} /></span>}
-                          {question.video_url && <span className="media-indicator" title="Has video"><VideoIcon size={14} /></span>}
-                        </div>
-                        <div className="question-text">{question.question_text}</div>
-                        <div className="answers-preview">
-                          <div className="answer correct">✓ {question.correct_answer}</div>
-                          {question.incorrect_answers?.slice(0, 2).map((ans, i) => (
-                            <div key={i} className="answer incorrect">✗ {ans}</div>
-                          ))}
-                          {question.incorrect_answers?.length > 2 && (
-                            <div className="answer-more">+{question.incorrect_answers.length - 2} more</div>
-                          )}
-                        </div>
-                        {question.explanation && (
-                          <div className="question-explanation-preview">
-                            <span className="explanation-icon"><LightbulbIcon size={14} /></span> {question.explanation}
-                          </div>
-                        )}
-                        <div className="question-tags">
-                          {question.tags && question.tags.length > 0 && (
-                            <div className="tags-list">
-                              {question.tags.map(tag => (
-                                <span key={tag} className="question-tag">
-                                  {tag}
-                                  <button className="remove-tag" onClick={() => handleRemoveTag(question.id, tag)}>×</button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {editingQuestionId === question.id ? (
-                            <div className="tag-input-wrapper">
-                              <input
-                                type="text"
-                                className="tag-input"
-                                placeholder="Add tag..."
-                                value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
-                                onKeyPress={(e) => { if (e.key === 'Enter') handleAddTag(question.id, newTag); }}
-                              />
-                              <button className="add-tag-btn" onClick={() => handleAddTag(question.id, newTag)}>Add</button>
-                              <button className="cancel-tag-btn" onClick={() => { setEditingQuestionId(null); setNewTag(''); }}>Cancel</button>
-                            </div>
-                          ) : (
-                            <button className="add-tag-trigger" onClick={() => setEditingQuestionId(question.id)}>+ Add Tag</button>
-                          )}
-                        </div>
-                        {editingMediaId === question.id && (
-                          <div className="media-edit-panel">
-                            <div className="media-edit-section">
-                              <label className="media-edit-label">Image</label>
-                              {question.image_url ? (
-                                <div className="media-preview-row">
-                                  <img src={question.image_url} alt="Question" className="media-preview-thumb" />
-                                  <button className="btn-danger-sm" onClick={() => handleRemoveImage(question.id)}>Remove Image</button>
-                                </div>
-                              ) : (
-                                <div className="media-upload-row">
-                                  <input
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/webp,image/gif"
-                                    id={`img-upload-${question.id}`}
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => { if (e.target.files[0]) handleImageUpload(question.id, e.target.files[0]); }}
-                                  />
-                                  <label htmlFor={`img-upload-${question.id}`} className="btn-secondary media-upload-btn">
-                                    {mediaUploading ? 'Uploading...' : 'Upload Image'}
-                                  </label>
-                                  <span className="media-hint">PNG, JPEG, WebP, GIF — max 500KB</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="media-edit-section">
-                              <label className="media-edit-label">YouTube Video</label>
-                              {question.video_url ? (
-                                <div className="media-preview-row">
-                                  <img src={`https://img.youtube.com/vi/${extractYouTubeId(question.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="media-preview-thumb" />
-                                  <span className="media-url-display">{question.video_url}</span>
-                                  <button className="btn-danger-sm" onClick={() => handleSaveVideoUrl(question.id, '')}>Remove Video</button>
-                                </div>
-                              ) : (
-                                <div className="media-upload-row">
-                                  <input
-                                    type="text"
-                                    className="media-video-input"
-                                    placeholder="https://www.youtube.com/watch?v=..."
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(question.id, e.target.value); }}
-                                  />
-                                  <button className="btn-secondary" onClick={(e) => { const input = e.target.previousElementSibling; handleSaveVideoUrl(question.id, input.value); }}>Save</button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        <div className="question-footer">
-                          <span className="created-date">Added {new Date(question.created_at).toLocaleDateString()}</span>
-                          <div className="question-actions-footer">
-                            <button className="btn-icon" onClick={() => setEditingMediaId(editingMediaId === question.id ? null : question.id)} title="Edit media"><ImageIcon size={13} /> Media</button>
-                            <button className="btn-icon" onClick={() => saveAsTemplate(question.id)} title="Save as template"><FileIcon size={13} /> Template</button>
-                            <button className="btn-icon" onClick={() => loadVersionHistory(question.id)} title="Version history"><FileIcon size={13} /> History</button>
-                            <button className="btn-danger-sm" onClick={() => handleDeleteQuestion(question.id)}>Delete</button>
-                          </div>
-                        </div>
+                      <div className="qt-pagination-controls">
+                        <button className="qt-page-btn" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</button>
+                        <span className="qt-page-num">Page {safeCurrentPage} of {totalPages}</span>
+                        <button className="qt-page-btn" disabled={safeCurrentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
+                      </div>
+                      <div className="qt-page-size">
+                        <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                          <option value={25}>25 per page</option>
+                          <option value={50}>50 per page</option>
+                          <option value={100}>100 per page</option>
+                        </select>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Floating bulk actions bar */}
+                  {selectedQuestions.length > 0 && (
+                    <div className="qt-bulk-bar">
+                      <span className="qt-bulk-count">{selectedQuestions.length} selected</span>
+                      <div className="qt-bulk-actions">
+                        <button className="qt-bulk-btn" onClick={() => setShowBulkTagging(!showBulkTagging)}><TagIcon size={13} color="#fff" /> Add Tag</button>
+                        {showBulkTagging && (
+                          <div className="qt-bulk-tag-input" onClick={(e) => e.stopPropagation()}>
+                            <input type="text" placeholder="Tag name..." value={bulkTagInput} onChange={(e) => setBulkTagInput(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') { handleBulkAddTag(); } }} />
+                            <button onClick={handleBulkAddTag}>Add</button>
+                          </div>
+                        )}
+                        {allTags.length > 0 && (
+                          <div className="qt-bulk-remove-tags">
+                            {allTags.slice(0, 5).map(tag => (
+                              <button key={tag} className="qt-bulk-remove-tag-btn" onClick={() => handleBulkRemoveTag(tag)} title={`Remove "${tag}" from selected`}>{tag} ×</button>
+                            ))}
+                          </div>
+                        )}
+                        <button className="qt-bulk-btn qt-bulk-btn-danger" onClick={handleBulkDelete}>Delete Selected</button>
+                        <button className="qt-bulk-btn qt-bulk-btn-ghost" onClick={handleDeselectAll}>Deselect All</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

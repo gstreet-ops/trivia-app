@@ -52,7 +52,7 @@ The Questions tab is the main question management area. At the top is an **actio
 - **🤖 AI Generate** — opens a modal to request AI-generated questions (submit request form + review completed requests)
 - **📤 Export** — exports all questions to CSV directly (no modal)
 
-Below the action bar is the question list with search, filters, and bulk operations.
+Below the action bar is the question list displayed as compact table rows. Each row shows the question text (truncated), correct answer, category, difficulty, source, and media indicators at a glance. Click any row to expand it and see full details.
 
 ### Viewing and Filtering Questions
 
@@ -61,8 +61,22 @@ Below the action bar is the question list with search, filters, and bulk operati
 - **Difficulty filter** — dropdown to filter by Easy / Medium / Hard
 - **Tag filter** — click any tag chip to filter to questions with that tag
 - **Source filter** — filter by Manual, CSV Import, or AI Generated
+- **Pagination** — results are paginated (25, 50, or 100 per page) with Previous/Next controls
 
-All filters can be combined.
+All filters can be combined. Changing any filter resets to page 1.
+
+### Expanding a Question
+
+Click any question row to expand it inline. The expanded panel shows:
+- Full question text (no truncation)
+- All 4 answers as colored pills (green = correct, pink = incorrect)
+- Tags with add/remove capability
+- Explanation (if present) in a highlighted box
+- Media thumbnails (images and YouTube videos)
+- Metadata row (date added, source, version number)
+- Action buttons: Media, Template, History, Delete
+
+Only one question can be expanded at a time — clicking another row collapses the previous one.
 
 ### Adding a Single Question
 
@@ -102,11 +116,14 @@ Click **Export to CSV** to download the full question bank as a CSV file. The fi
 
 ### Selecting Questions (Bulk Operations)
 
-- Check the checkbox on any question card to select it
-- Check **Select All** to select all visible (filtered) questions
-- When questions are selected, bulk action buttons appear:
+- Check the checkbox on any question row to select it
+- Check the header checkbox to select all questions on the current page
+- When all on the current page are selected, a banner offers to **select all questions across all pages**
+- When questions are selected, a floating action bar appears at the bottom with:
+  - **Add Tag** — type a tag name to add to all selected questions
+  - **Remove Tag** — click existing tag chips to remove from selected questions
   - **Delete Selected** — permanently deletes all selected questions (with confirmation)
-  - **Bulk Tag** — opens a panel to add or remove a tag across all selected questions
+  - **Deselect All** — clears the selection
 
 ### Editing a Question
 

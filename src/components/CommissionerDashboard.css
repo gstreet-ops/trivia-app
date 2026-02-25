@@ -914,6 +914,429 @@
 .question-actions-footer { display: flex; gap: 6px; align-items: center; }
 
 /* ============================================================
+   Compact Question Table
+   ============================================================ */
+.qt-container {
+  border: 1px solid var(--gt-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header row */
+.qt-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 16px;
+  background: var(--gt-bg);
+  border-bottom: 1px solid var(--gt-border);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--gt-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* Column widths */
+.qt-col-check   { width: 32px; flex-shrink: 0; display: flex; align-items: center; }
+.qt-col-question { flex: 1; min-width: 0; padding: 0 8px; }
+.qt-col-answer  { width: 150px; flex-shrink: 0; padding: 0 8px; }
+.qt-col-category { width: 90px; flex-shrink: 0; padding: 0 4px; }
+.qt-col-diff    { width: 80px; flex-shrink: 0; padding: 0 4px; }
+.qt-col-source  { width: 50px; flex-shrink: 0; padding: 0 4px; }
+.qt-col-media   { width: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
+.qt-col-expand  { width: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+.qt-col-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--gt-navy);
+}
+
+/* Data rows */
+.qt-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-light, #F0F0F0);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--gt-text);
+}
+.qt-row:hover { background: var(--bg-hover, #FAFAFA); }
+.qt-row-alt { background: var(--section-bg, #FAFCFD); }
+.qt-row-alt:hover { background: var(--bg-hover, #FAFAFA); }
+.qt-row-selected {
+  background: var(--info-bg, #E8EDF2);
+  border-left: 3px solid var(--gt-navy);
+  padding-left: 13px;
+}
+.qt-row-selected:hover { background: var(--info-bg, #E8EDF2); }
+.qt-row-expanded { border-bottom-color: transparent; }
+
+.qt-truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.qt-col-answer.qt-truncate {
+  color: var(--gt-success);
+  font-weight: 500;
+}
+
+/* Chips in rows */
+.qt-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  background: var(--gt-gray-pale);
+  color: var(--gt-navy);
+}
+.qt-chip-easy   { background: rgba(45, 106, 79, 0.1); color: var(--gt-success); }
+.qt-chip-medium { background: rgba(4, 30, 66, 0.1);   color: var(--gt-navy); }
+.qt-chip-hard   { background: rgba(196, 30, 58, 0.1); color: var(--gt-red); }
+
+.qt-source-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.qt-source-ai     { background: rgba(139, 157, 195, 0.2); color: var(--gt-gray-light); }
+.qt-source-csv    { background: rgba(45, 106, 79, 0.1);   color: var(--gt-success); }
+.qt-source-manual { background: var(--gt-gray-pale);       color: var(--gt-gray); }
+
+/* Expand chevron */
+.qt-chevron {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+.qt-chevron-open { transform: rotate(180deg); }
+
+/* ============================================================
+   Expand Panel
+   ============================================================ */
+.qt-expand-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  background: var(--bg-secondary, #FAFCFD);
+  border-left: 3px solid var(--gt-navy);
+}
+.qt-expand-open {
+  max-height: 600px;
+  border-bottom: 1px solid var(--gt-border);
+}
+.qt-expand-content {
+  padding: 16px 20px;
+  animation: qt-fade-in 0.2s ease;
+}
+@keyframes qt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qt-expand-question {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gt-text);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.qt-expand-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.qt-answer-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.qt-answer-correct {
+  background: rgba(45, 106, 79, 0.12);
+  color: var(--gt-success);
+  font-weight: 600;
+}
+.qt-answer-incorrect {
+  background: rgba(196, 30, 58, 0.08);
+  color: var(--gt-red);
+}
+
+.qt-expand-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.qt-expand-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--gt-text);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.qt-expand-media {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.qt-expand-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--gt-border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qt-expand-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--gt-text-muted);
+}
+.qt-expand-meta span { white-space: nowrap; }
+.qt-expand-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ============================================================
+   Pagination
+   ============================================================ */
+.qt-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--gt-border);
+  background: var(--gt-bg);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qt-pagination-info {
+  font-size: 12px;
+  color: var(--gt-text-muted);
+}
+.qt-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.qt-page-btn {
+  padding: 5px 12px;
+  background: var(--gt-white);
+  border: 1px solid var(--gt-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gt-navy);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.qt-page-btn:hover:not(:disabled) {
+  background: var(--gt-navy);
+  color: var(--gt-white);
+}
+.qt-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.qt-page-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gt-text);
+}
+.qt-page-size select {
+  padding: 4px 8px;
+  border: 1px solid var(--gt-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  background: var(--bg-input, #fff);
+  color: var(--gt-text);
+  cursor: pointer;
+}
+
+/* Select-all-pages banner */
+.qt-select-all-banner {
+  padding: 8px 16px;
+  background: var(--info-bg);
+  border-bottom: 1px solid var(--gt-border);
+  font-size: 12px;
+  color: var(--gt-text);
+  text-align: center;
+}
+.qt-select-all-link {
+  background: none;
+  border: none;
+  color: var(--gt-navy);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 12px;
+}
+
+/* ============================================================
+   Floating Bulk Actions Bar
+   ============================================================ */
+.qt-bulk-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--gt-navy);
+  color: #fff;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  animation: qt-bar-slide-up 0.2s ease;
+  gap: 12px;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+@keyframes qt-bar-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.qt-bulk-count {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qt-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qt-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.qt-bulk-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.qt-bulk-btn-danger {
+  border-color: #DC3545;
+  color: #ff8a94;
+}
+.qt-bulk-btn-danger:hover { background: rgba(220, 53, 69, 0.3); }
+.qt-bulk-btn-ghost {
+  border: none;
+  opacity: 0.7;
+}
+.qt-bulk-btn-ghost:hover { opacity: 1; }
+
+.qt-bulk-tag-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.qt-bulk-tag-input input {
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+  width: 120px;
+}
+.qt-bulk-tag-input input::placeholder { color: rgba(255, 255, 255, 0.5); }
+.qt-bulk-tag-input input:focus { outline: none; border-color: #fff; }
+.qt-bulk-tag-input button {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.qt-bulk-remove-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.qt-bulk-remove-tag-btn {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.qt-bulk-remove-tag-btn:hover { background: rgba(220, 53, 69, 0.4); color: #fff; }
+
+/* ============================================================
+   Compact Table Responsive
+   ============================================================ */
+@media (max-width: 700px) {
+  .qt-col-answer,
+  .qt-col-source,
+  .qt-col-media { display: none; }
+  .qt-col-category { width: 70px; }
+  .qt-col-diff { width: 60px; }
+  .qt-header .qt-col-answer,
+  .qt-header .qt-col-source,
+  .qt-header .qt-col-media { display: none; }
+  .qt-pagination {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* ============================================================
    Import History
    ============================================================ */
 .import-history-list { display: flex; flex-direction: column; gap: 8px; }

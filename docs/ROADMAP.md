@@ -88,6 +88,7 @@
 - [x] Season-filtered leaderboard — community leaderboard only counts games from current season
 - [x] Community theming — commissioner can set theme color (picker + presets), upload logo and banner images, add welcome message; theme applied on community detail page, marketplace cards, and communities list
 - [x] Questions tab action bar + modals — clean action bar with Add, Import CSV, AI Generate, Export buttons; Add Question, CSV Import, and AI Generate open as modals instead of inline sections; AI Generate tab removed as standalone tab
+- [x] Questions tab compact table redesign — compact ~50px table rows with truncated text, inline expand panel with full details, proper pagination (25/50/100 per page), floating bulk actions bar, select-all-pages support
 
 ### Admin Dashboard
 - [x] Platform-wide stats (users, games, public games, avg games/user, popular category)
