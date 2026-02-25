@@ -5,7 +5,7 @@
 -- Media library: tracks all uploaded images and saved video URLs per community
 CREATE TABLE IF NOT EXISTS public.media_library (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  community_id uuid NOT NULL REFERENCES public.communities(id) ON DELETE CASCADE,
+  community_id bigint NOT NULL REFERENCES public.communities(id) ON DELETE CASCADE,
   uploaded_by uuid NOT NULL REFERENCES public.profiles(id),
   file_url text NOT NULL,
   file_type text NOT NULL CHECK (file_type IN ('image', 'video')),

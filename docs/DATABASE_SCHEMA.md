@@ -578,7 +578,7 @@ Centralized media asset library per community. Commissioners upload images and s
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` | Primary key |
-| `community_id` | `uuid` | FK → `communities.id` (CASCADE delete) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE delete) |
 | `uploaded_by` | `uuid` | FK → `profiles.id` |
 | `file_url` | `text` | Public URL (Storage URL for images, YouTube URL for videos) |
 | `file_type` | `text` | `'image'` or `'video'` |

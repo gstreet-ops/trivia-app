@@ -17,7 +17,8 @@
         "test": "react-scripts test",
         "eject": "react-scripts eject",
         "predeploy": "npm run build",
-        "deploy": "gh-pages -d build"
+        "deploy": "gh-pages -d build",
+        "db:migrate": "node scripts/migrate.js"
     },
     "eslintConfig": {
         "extends": [
@@ -37,7 +38,10 @@
         ]
     },
     "devDependencies": {
-        "gh-pages": "^6.3.0"
+        "dotenv": "^17.3.1",
+        "gh-pages": "^6.3.0",
+        "pg": "^8.19.0",
+        "supabase": "^2.76.15"
     },
     "homepage": "https://gstreet-ops.github.io/trivia-app"
 }
