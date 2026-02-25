@@ -256,7 +256,7 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
-- [ ] **Progressive Web App (PWA)** — offline support and home screen install
+- [x] **Progressive Web App (PWA)** — manifest.json, service worker (network-first with cache fallback), app icons, install prompt banner, Apple mobile web app meta tags
 - [x] **Dark mode** — CSS custom properties for all colors, toggle in Settings and top bar, preference saved to localStorage and Supabase profile for cross-device persistence
 - [ ] **Mobile app** — React Native port
 - [ ] **Scheduled quizzes** — commissioner sets a quiz time; all members play the same questions simultaneously

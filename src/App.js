@@ -95,11 +95,42 @@ function App() {
   const [appIsAdmin, setAppIsAdmin] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(getSavedTheme);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   // Apply saved theme on mount
   useEffect(() => {
     applyTheme(getSavedTheme());
   }, []);
+
+  // PWA install prompt
+  useEffect(() => {
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    const handler = (e) => {
+      e.preventDefault();
+      if (!dismissed) {
+        setInstallPrompt(e);
+        setShowInstallBanner(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setShowInstallBanner(false);
+    }
+    setInstallPrompt(null);
+  };
+
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('pwa-install-dismissed', 'true');
+  };
 
   const toggleTheme = useCallback(() => {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -322,6 +353,15 @@ function App() {
           </div>
         );
       })()}
+      {showInstallBanner && (
+        <div className="pwa-install-banner">
+          <span>Install Trivia Quiz for quick access</span>
+          <div className="pwa-install-actions">
+            <button className="pwa-install-btn" onClick={handleInstallClick}>Install</button>
+            <button className="pwa-dismiss-btn" onClick={dismissInstallBanner}>Dismiss</button>
+          </div>
+        </div>
+      )}
       {screen === 'dashboard' && (
         <Dashboard
           user={session.user}
