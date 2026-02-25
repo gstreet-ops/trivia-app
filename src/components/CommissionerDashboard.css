@@ -1184,7 +1184,144 @@
 .correct-rate.easy { background: rgba(45, 106, 79, 0.1); color: var(--gt-success); }
 
 /* ============================================================
-   Modal
+   Questions Action Bar
+   ============================================================ */
+.q-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--gt-white);
+  border-bottom: 1px solid var(--gt-border);
+  padding: 16px 24px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin-bottom: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.q-action-bar-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gt-navy);
+  margin: 0;
+  white-space: nowrap;
+}
+.q-action-bar-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.q-action-btn {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--gt-navy);
+  color: var(--gt-navy);
+  background: var(--gt-white);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.q-action-btn:hover:not(:disabled) {
+  background: var(--gt-navy);
+  color: #fff;
+}
+.q-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+@media (max-width: 768px) {
+  .q-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
+  }
+  .q-action-bar-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .q-action-btn {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* Bulk actions row inside questions list */
+.bulk-actions-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Commissioner Dashboard Modals (Add / Import / AI)
+   ============================================================ */
+@keyframes cd-modal-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cd-modal {
+  background: var(--gt-white);
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  animation: cd-modal-in 0.2s ease;
+}
+.cd-modal.cd-modal-wide {
+  max-width: 720px;
+}
+.cd-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+.cd-modal-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gt-navy);
+  margin: 0;
+}
+.cd-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--gt-gray);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.cd-modal-close:hover { opacity: 1; }
+.cd-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ============================================================
+   Legacy Modal (Version History)
    ============================================================ */
 .modal-overlay {
   position: fixed;

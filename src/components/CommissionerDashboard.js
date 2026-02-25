@@ -43,6 +43,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [analytics, setAnalytics] = useState(null);
   const [username, setUsername] = useState('');
   const [navOpen, setNavOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'add' | 'import' | 'ai' | null
   const [announcements, setAnnouncements] = useState([]);
   const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
   const [annEditing, setAnnEditing] = useState(null);
@@ -81,7 +82,6 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [seasonStats, setSeasonStats] = useState({ gamesThisSeason: 0, activePlayers: 0, topPlayer: null });
 
   // Add Question form state
-  const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '', explanation: '' });
   const [addQErrors, setAddQErrors] = useState([]);
   const [addQSubmitting, setAddQSubmitting] = useState(false);
@@ -100,7 +100,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   // Poll for in-progress AI generation requests
   useEffect(() => {
     const hasInProgress = genRequests.some(r => r.status === 'approved' || r.status === 'generating');
-    if (!hasInProgress || activeTab !== 'ai-generate') return;
+    if (!hasInProgress) return;
 
     const interval = setInterval(async () => {
       const { data } = await supabase
@@ -131,7 +131,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [genRequests, activeTab, communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [genRequests, communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lock body scroll when modal is open; close on Escape
+  useEffect(() => {
+    if (activeModal) {
+      document.body.style.overflow = 'hidden';
+      const handleEsc = (e) => { if (e.key === 'Escape') setActiveModal(null); };
+      document.addEventListener('keydown', handleEsc);
+      return () => { document.body.style.overflow = ''; document.removeEventListener('keydown', handleEsc); };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [activeModal]);
 
   const fetchCommissionerData = async () => {
     try {
@@ -617,6 +629,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         setCsvData([]);
         setCsvPreview([]);
         setCsvErrors([]);
+        setActiveModal(null);
         fetchCommissionerData();
       }
     } catch (error) {
@@ -1190,7 +1203,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setAddQImageFile(null);
       setAddQImagePreview(null);
       setAddQErrors([]);
-      setShowAddQuestion(false);
+      setActiveModal(null);
+      showToast('Question added!');
       fetchCommissionerData();
     } catch (err) {
       showToast('Failed to add question: ' + err.message, 'error');
@@ -1372,8 +1386,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               questions: `Questions (${questions.length})`,
               members: `Members (${members.length})`,
               settings: 'Settings',
-              analytics: 'Analytics'
-            }[activeTab]}
+              analytics: 'Analytics',
+            }[activeTab] || activeTab}
           </span>
           <span className={`nav-chevron ${navOpen ? 'open' : ''}`}>▾</span>
         </button>
@@ -1388,8 +1402,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 { id: 'questions', label: `Questions (${questions.length})`, icon: '❓' },
                 { id: 'members', label: `Members (${members.length})`, icon: '👥' },
                 { id: 'settings', label: 'Settings', icon: '⚙️' },
-                { id: 'analytics', label: 'Analytics', icon: '📊' },
-                { id: 'ai-generate', label: 'AI Generate', icon: '🤖' }
+                { id: 'analytics', label: 'Analytics', icon: '📊' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -1585,166 +1598,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {/* QUESTIONS TAB */}
         {activeTab === 'questions' && (
           <div className="tab-pane">
-            {/* Add Question */}
-            <div className="commissioner-section">
-              <button className="add-q-toggle" onClick={() => setShowAddQuestion(!showAddQuestion)}>
-                {showAddQuestion ? '− Close Form' : '➕ Add Question'}
-              </button>
-              {showAddQuestion && (
-                <div className="add-q-form">
-                  {addQErrors.length > 0 && (
-                    <div className="add-q-errors">
-                      {addQErrors.map((e, i) => <p key={i}>{e}</p>)}
-                    </div>
-                  )}
-                  <div className="add-q-field">
-                    <label>Question Text <span className="required">*</span></label>
-                    <textarea rows={3} value={addQForm.question_text} onChange={e => setAddQForm(f => ({ ...f, question_text: e.target.value }))} placeholder="Enter your trivia question..." />
-                  </div>
-                  <div className="add-q-field">
-                    <label>Correct Answer <span className="required">*</span></label>
-                    <input type="text" value={addQForm.correct_answer} onChange={e => setAddQForm(f => ({ ...f, correct_answer: e.target.value }))} placeholder="The correct answer" />
-                  </div>
-                  <div className="add-q-row-3">
-                    <div className="add-q-field">
-                      <label>Incorrect Answer 1 <span className="required">*</span></label>
-                      <input type="text" value={addQForm.incorrect_1} onChange={e => setAddQForm(f => ({ ...f, incorrect_1: e.target.value }))} />
-                    </div>
-                    <div className="add-q-field">
-                      <label>Incorrect Answer 2 <span className="required">*</span></label>
-                      <input type="text" value={addQForm.incorrect_2} onChange={e => setAddQForm(f => ({ ...f, incorrect_2: e.target.value }))} />
-                    </div>
-                    <div className="add-q-field">
-                      <label>Incorrect Answer 3 <span className="required">*</span></label>
-                      <input type="text" value={addQForm.incorrect_3} onChange={e => setAddQForm(f => ({ ...f, incorrect_3: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="add-q-row-3">
-                    <div className="add-q-field">
-                      <label>Category <span className="required">*</span></label>
-                      <input type="text" value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Geography" />
-                    </div>
-                    <div className="add-q-field">
-                      <label>Difficulty <span className="required">*</span></label>
-                      <select value={addQForm.difficulty} onChange={e => setAddQForm(f => ({ ...f, difficulty: e.target.value }))}>
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                      </select>
-                    </div>
-                    <div className="add-q-field">
-                      <label>Tags (comma-separated)</label>
-                      <input type="text" value={addQForm.tags} onChange={e => setAddQForm(f => ({ ...f, tags: e.target.value }))} placeholder="e.g. history, europe" />
-                    </div>
-                  </div>
-                  <div className="add-q-row-2">
-                    <div className="add-q-field">
-                      <label>Image (optional, max 500KB)</label>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        onChange={e => {
-                          const file = e.target.files[0];
-                          setAddQImageFile(file || null);
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = ev => setAddQImagePreview(ev.target.result);
-                            reader.readAsDataURL(file);
-                          } else { setAddQImagePreview(null); }
-                        }}
-                      />
-                      {addQImagePreview && <img src={addQImagePreview} alt="Preview" className="add-q-img-preview" />}
-                    </div>
-                    <div className="add-q-field">
-                      <label>YouTube Video URL (optional)</label>
-                      <input type="text" value={addQForm.video_url} onChange={e => setAddQForm(f => ({ ...f, video_url: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." />
-                      {addQForm.video_url && extractYouTubeId(addQForm.video_url) && (
-                        <img src={`https://img.youtube.com/vi/${extractYouTubeId(addQForm.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="add-q-img-preview" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="add-q-field">
-                    <label>Explanation (optional)</label>
-                    <textarea rows={2} value={addQForm.explanation} onChange={e => setAddQForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Why is this the correct answer? Shown after the player answers." />
-                  </div>
-                  <button className="add-q-submit" onClick={handleAddQuestion} disabled={addQSubmitting}>
-                    {addQSubmitting ? 'Adding...' : 'Add Question'}
-                  </button>
-                </div>
-              )}
+            {/* Action Bar */}
+            <div className="q-action-bar">
+              <h2 className="q-action-bar-title">Questions ({questions.length})</h2>
+              <div className="q-action-bar-buttons">
+                <button className="q-action-btn" onClick={() => setActiveModal('add')}>➕ Add</button>
+                <button className="q-action-btn" onClick={() => setActiveModal('import')}>📥 Import CSV</button>
+                <button className="q-action-btn" onClick={() => setActiveModal('ai')}>🤖 AI Generate</button>
+                <button className="q-action-btn" onClick={exportToCSV} disabled={questions.length === 0}>📤 Export</button>
+              </div>
             </div>
 
-            {/* Bulk Upload */}
+            {/* Search + Filters + Question List */}
             <div className="commissioner-section">
-              <h2>Bulk Question Upload</h2>
-              <div className="upload-instructions">
-                <p>Upload a CSV file to bulk import questions. Required columns: <code>question_text</code>, <code>correct_answer</code>, <code>incorrect_answer_1</code>, <code>incorrect_answer_2</code>, <code>incorrect_answer_3</code>, <code>category</code>, <code>difficulty</code>. Optional: <code>image_url</code>, <code>video_url</code>, <code>explanation</code></p>
-                <button className="btn-secondary" onClick={downloadTemplate}>
-                  📥 Download CSV Template
-                </button>
-              </div>
-              <div className="file-upload-section">
-                <input type="file" accept=".csv" onChange={handleFileUpload} className="file-input" id="csv-upload" />
-                <label htmlFor="csv-upload" className="file-upload-label">Choose CSV File</label>
-              </div>
-
-              {csvErrors.length > 0 && (
-                <div className="csv-errors">
-                  <h3>⚠️ Validation Errors</h3>
-                  <ul>{csvErrors.map((error, index) => <li key={index}>{error}</li>)}</ul>
-                </div>
-              )}
-
-              {csvPreview.length > 0 && (
-                <div className="csv-preview">
-                  <div className="preview-header">
-                    <h3>Preview ({csvPreview.length} of {csvData.length} questions)</h3>
-                    {csvErrors.length === 0 && (
-                      <button className="btn-primary" onClick={handleBulkImport} disabled={uploading}>
-                        {uploading ? 'Importing...' : `Import ${csvData.length} Questions`}
-                      </button>
-                    )}
-                  </div>
-                  <div className="preview-table">
-                    <table>
-                      <thead>
-                        <tr><th>#</th><th>Question</th><th>Correct Answer</th><th>Incorrect Answers</th><th>Category</th><th>Difficulty</th></tr>
-                      </thead>
-                      <tbody>
-                        {csvPreview.map((q, index) => (
-                          <tr key={index}>
-                            <td>{index + 1}</td>
-                            <td>{q.question_text}</td>
-                            <td className="correct">{q.correct_answer}</td>
-                            <td>{q.incorrect_answers.join(', ')}</td>
-                            <td><span className="category-badge">{q.category}</span></td>
-                            <td><span className={`difficulty-badge ${q.difficulty}`}>{q.difficulty}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {csvData.length > 5 && <p className="preview-note">... and {csvData.length - 5} more questions</p>}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Manage Questions */}
-            <div className="commissioner-section">
-              <div className="section-header">
-                <h2>Manage Questions ({questions.length})</h2>
-                <div className="section-actions">
-                  <button className="btn-secondary" onClick={exportToCSV} disabled={questions.length === 0}>
-                    📥 Export CSV
-                  </button>
-                  {selectedQuestions.length > 0 && (
-                    <button className="btn-danger" onClick={handleBulkDelete}>
-                      Delete Selected ({selectedQuestions.length})
-                    </button>
-                  )}
-                </div>
-              </div>
-
               {questions.length > 0 && (
                 <>
                   <div className="search-section">
@@ -1832,9 +1698,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       Select All ({filteredQuestions.length})
                     </label>
                     {selectedQuestions.length > 0 && (
-                      <button className="btn-secondary" onClick={() => setShowBulkTagging(!showBulkTagging)}>
-                        🏷️ Bulk Tag Operations
-                      </button>
+                      <div className="bulk-actions-row">
+                        <button className="btn-secondary" onClick={() => setShowBulkTagging(!showBulkTagging)}>
+                          🏷️ Bulk Tags
+                        </button>
+                        <button className="btn-danger" onClick={handleBulkDelete}>
+                          Delete Selected ({selectedQuestions.length})
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -1870,7 +1741,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               )}
 
               {questions.length === 0 ? (
-                <p className="empty-message">No questions in the question bank. Upload a CSV to get started.</p>
+                <p className="empty-message">No questions in the question bank yet. Use the buttons above to add questions.</p>
               ) : (
                 <div className="questions-list">
                   {filteredQuestions.map(question => (
@@ -2001,12 +1872,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             </div>
 
             {/* Templates */}
-            <div className="commissioner-section">
-              <h2>Question Templates</h2>
-              <p className="section-desc">Save frequently used question structures as templates for quick reuse. Click "Template" on any question to save it.</p>
-              {templates.length === 0 ? (
-                <p className="empty-message">No templates saved yet.</p>
-              ) : (
+            {templates.length > 0 && (
+              <div className="commissioner-section">
+                <h2>Question Templates</h2>
+                <p className="section-desc">Save frequently used question structures as templates for quick reuse. Click "Template" on any question to save it.</p>
                 <div className="templates-grid">
                   {templates.map(template => (
                     <div key={template.id} className="template-card">
@@ -2034,8 +1903,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -2633,11 +2502,173 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           </div>
         )}
 
-        {/* AI GENERATE TAB */}
-        {activeTab === 'ai-generate' && (
-          <div className="tab-pane">
-            <div className="commissioner-section">
-              <h2 className="section-title">Request AI-Generated Questions</h2>
+      </div>
+
+      {/* ===== ADD QUESTION MODAL ===== */}
+      {activeModal === 'add' && (
+        <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cd-modal-header">
+              <h2>Add New Question</h2>
+              <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
+            </div>
+            <div className="cd-modal-body">
+              {addQErrors.length > 0 && (
+                <div className="add-q-errors">
+                  {addQErrors.map((e, i) => <p key={i}>{e}</p>)}
+                </div>
+              )}
+              <div className="add-q-field">
+                <label>Question Text <span className="required">*</span></label>
+                <textarea rows={3} value={addQForm.question_text} onChange={e => setAddQForm(f => ({ ...f, question_text: e.target.value }))} placeholder="Enter your trivia question..." />
+              </div>
+              <div className="add-q-field">
+                <label>Correct Answer <span className="required">*</span></label>
+                <input type="text" value={addQForm.correct_answer} onChange={e => setAddQForm(f => ({ ...f, correct_answer: e.target.value }))} placeholder="The correct answer" />
+              </div>
+              <div className="add-q-row-3">
+                <div className="add-q-field">
+                  <label>Incorrect 1 <span className="required">*</span></label>
+                  <input type="text" value={addQForm.incorrect_1} onChange={e => setAddQForm(f => ({ ...f, incorrect_1: e.target.value }))} />
+                </div>
+                <div className="add-q-field">
+                  <label>Incorrect 2 <span className="required">*</span></label>
+                  <input type="text" value={addQForm.incorrect_2} onChange={e => setAddQForm(f => ({ ...f, incorrect_2: e.target.value }))} />
+                </div>
+                <div className="add-q-field">
+                  <label>Incorrect 3 <span className="required">*</span></label>
+                  <input type="text" value={addQForm.incorrect_3} onChange={e => setAddQForm(f => ({ ...f, incorrect_3: e.target.value }))} />
+                </div>
+              </div>
+              <div className="add-q-row-3">
+                <div className="add-q-field">
+                  <label>Category <span className="required">*</span></label>
+                  <input type="text" value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Geography" />
+                </div>
+                <div className="add-q-field">
+                  <label>Difficulty <span className="required">*</span></label>
+                  <select value={addQForm.difficulty} onChange={e => setAddQForm(f => ({ ...f, difficulty: e.target.value }))}>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+                <div className="add-q-field">
+                  <label>Tags (comma-separated)</label>
+                  <input type="text" value={addQForm.tags} onChange={e => setAddQForm(f => ({ ...f, tags: e.target.value }))} placeholder="e.g. history, europe" />
+                </div>
+              </div>
+              <div className="add-q-row-2">
+                <div className="add-q-field">
+                  <label>Image (optional, max 500KB)</label>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      setAddQImageFile(file || null);
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = ev => setAddQImagePreview(ev.target.result);
+                        reader.readAsDataURL(file);
+                      } else { setAddQImagePreview(null); }
+                    }}
+                  />
+                  {addQImagePreview && <img src={addQImagePreview} alt="Preview" className="add-q-img-preview" />}
+                </div>
+                <div className="add-q-field">
+                  <label>YouTube Video URL (optional)</label>
+                  <input type="text" value={addQForm.video_url} onChange={e => setAddQForm(f => ({ ...f, video_url: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." />
+                  {addQForm.video_url && extractYouTubeId(addQForm.video_url) && (
+                    <img src={`https://img.youtube.com/vi/${extractYouTubeId(addQForm.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="add-q-img-preview" />
+                  )}
+                </div>
+              </div>
+              <div className="add-q-field">
+                <label>Explanation (optional)</label>
+                <textarea rows={2} value={addQForm.explanation} onChange={e => setAddQForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Why is this the correct answer? Shown after the player answers." />
+              </div>
+              <button className="add-q-submit" onClick={handleAddQuestion} disabled={addQSubmitting}>
+                {addQSubmitting ? 'Adding...' : 'Add Question'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== IMPORT CSV MODAL ===== */}
+      {activeModal === 'import' && (
+        <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cd-modal-header">
+              <h2>Import Questions from CSV</h2>
+              <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
+            </div>
+            <div className="cd-modal-body">
+              <div className="upload-instructions">
+                <p>Upload a CSV file to bulk import questions. Required columns: <code>question_text</code>, <code>correct_answer</code>, <code>incorrect_answer_1</code>, <code>incorrect_answer_2</code>, <code>incorrect_answer_3</code>, <code>category</code>, <code>difficulty</code>. Optional: <code>image_url</code>, <code>video_url</code>, <code>explanation</code></p>
+                <button className="btn-secondary" onClick={downloadTemplate}>
+                  📥 Download CSV Template
+                </button>
+              </div>
+              <div className="file-upload-section">
+                <input type="file" accept=".csv" onChange={handleFileUpload} className="file-input" id="csv-upload-modal" />
+                <label htmlFor="csv-upload-modal" className="file-upload-label">Choose CSV File</label>
+              </div>
+
+              {csvErrors.length > 0 && (
+                <div className="csv-errors">
+                  <h3>Validation Errors</h3>
+                  <ul>{csvErrors.map((error, index) => <li key={index}>{error}</li>)}</ul>
+                </div>
+              )}
+
+              {csvPreview.length > 0 && (
+                <div className="csv-preview">
+                  <div className="preview-header">
+                    <h3>Preview ({csvPreview.length} of {csvData.length} questions)</h3>
+                    {csvErrors.length === 0 && (
+                      <button className="btn-primary" onClick={handleBulkImport} disabled={uploading}>
+                        {uploading ? 'Importing...' : `Import ${csvData.length} Questions`}
+                      </button>
+                    )}
+                  </div>
+                  <div className="preview-table">
+                    <table>
+                      <thead>
+                        <tr><th>#</th><th>Question</th><th>Correct Answer</th><th>Incorrect Answers</th><th>Category</th><th>Difficulty</th></tr>
+                      </thead>
+                      <tbody>
+                        {csvPreview.map((q, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{q.question_text}</td>
+                            <td className="correct">{q.correct_answer}</td>
+                            <td>{q.incorrect_answers.join(', ')}</td>
+                            <td><span className="category-badge">{q.category}</span></td>
+                            <td><span className={`difficulty-badge ${q.difficulty}`}>{q.difficulty}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {csvData.length > 5 && <p className="preview-note">... and {csvData.length - 5} more questions</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== AI GENERATE MODAL ===== */}
+      {activeModal === 'ai' && (
+        <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="cd-modal cd-modal-wide" onClick={(e) => e.stopPropagation()}>
+            <div className="cd-modal-header">
+              <h2>AI Question Generator</h2>
+              <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
+            </div>
+            <div className="cd-modal-body">
               <div className="gen-form">
                 <div className="gen-form-group">
                   <label>Theme / Topic <span className="gen-required">*</span></label>
@@ -2691,165 +2722,162 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                   {genSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
-            </div>
 
-            <div className="commissioner-section">
-              <h2 className="section-title">Request History</h2>
-              {genRequests.length === 0 ? (
-                <p className="empty-message">No generation requests yet</p>
-              ) : (
-                <div className="gen-requests-list">
-                  {genRequests.map(req => {
-                    const statusClass = req.status === 'pending' ? 'gen-status-pending'
-                      : req.status === 'approved' ? 'gen-status-generating'
-                      : req.status === 'generating' ? 'gen-status-generating'
-                      : req.status === 'completed' ? 'gen-status-completed'
-                      : req.status === 'failed' ? 'gen-status-failed'
-                      : 'gen-status-rejected';
-                    const statusLabel = req.status === 'pending' ? '⏳ Pending approval'
-                      : (req.status === 'approved' || req.status === 'generating') ? '🔄 Generating...'
-                      : req.status === 'completed' ? '✅ Completed'
-                      : req.status === 'failed' ? '❌ Failed'
-                      : '❌ Rejected';
-                    const isReviewing = genReviewId === req.id;
-                    const generatedQs = req.generated_questions || [];
-                    const acceptedTexts = genAccepted[req.id] || [];
-                    return (
-                      <div key={req.id} className="gen-request-card">
-                        <div className="gen-request-top">
-                          <div className="gen-request-info">
-                            <span className="gen-request-theme">{req.theme}</span>
-                            <div className="gen-request-meta">
-                              <span className="gen-tag">{req.question_count} Qs</span>
-                              <span className="gen-tag">{req.difficulty}</span>
-                              <span className={`gen-status-badge ${statusClass}`}>{statusLabel}</span>
+              {genRequests.length > 0 && (
+                <div style={{marginTop: '24px', borderTop: '1px solid #eee', paddingTop: '20px'}}>
+                  <h3 style={{fontSize: '15px', fontWeight: 600, marginBottom: '12px'}}>Request History</h3>
+                  <div className="gen-requests-list">
+                    {genRequests.map(req => {
+                      const statusClass = req.status === 'pending' ? 'gen-status-pending'
+                        : req.status === 'approved' ? 'gen-status-generating'
+                        : req.status === 'generating' ? 'gen-status-generating'
+                        : req.status === 'completed' ? 'gen-status-completed'
+                        : req.status === 'failed' ? 'gen-status-failed'
+                        : 'gen-status-rejected';
+                      const statusLabel = req.status === 'pending' ? '⏳ Pending approval'
+                        : (req.status === 'approved' || req.status === 'generating') ? '🔄 Generating...'
+                        : req.status === 'completed' ? '✅ Completed'
+                        : req.status === 'failed' ? '❌ Failed'
+                        : '❌ Rejected';
+                      const isReviewing = genReviewId === req.id;
+                      const generatedQs = req.generated_questions || [];
+                      const acceptedTexts = genAccepted[req.id] || [];
+                      return (
+                        <div key={req.id} className="gen-request-card">
+                          <div className="gen-request-top">
+                            <div className="gen-request-info">
+                              <span className="gen-request-theme">{req.theme}</span>
+                              <div className="gen-request-meta">
+                                <span className="gen-tag">{req.question_count} Qs</span>
+                                <span className="gen-tag">{req.difficulty}</span>
+                                <span className={`gen-status-badge ${statusClass}`}>{statusLabel}</span>
+                              </div>
                             </div>
+                            <span className="gen-request-date">{new Date(req.created_at).toLocaleDateString()}</span>
                           </div>
-                          <span className="gen-request-date">{new Date(req.created_at).toLocaleDateString()}</span>
-                        </div>
-                        {req.special_instructions && (
-                          <p className="gen-request-instructions">"{req.special_instructions}"</p>
-                        )}
-                        {req.status === 'rejected' && req.admin_notes && (
-                          <div className="gen-admin-notes">
-                            <strong>Admin notes:</strong> {req.admin_notes}
-                          </div>
-                        )}
-                        {req.status === 'failed' && (
-                          <div className="gen-admin-notes" style={{borderLeftColor: '#d9534f'}}>
-                            <strong>Error:</strong> {req.generation_error || 'Unknown error during generation'}
-                            <button
-                              className="gen-review-btn"
-                              style={{marginTop:'8px', display:'block'}}
-                              onClick={() => handleRetryGenRequest(req.id)}
-                            >
-                              🔄 Retry Generation
-                            </button>
-                          </div>
-                        )}
-                        {req.status === 'completed' && generatedQs.length > 0 && (() => {
-                          const selectableIndices = generatedQs.map((q, i) => ({ q, i })).filter(({ q }) => !acceptedTexts.includes(q.question_text)).map(({ i }) => i);
-                          const currentSelected = genSelected[req.id] || new Set(selectableIndices);
-                          const selectedCount = [...currentSelected].filter(i => selectableIndices.includes(i)).length;
-                          const allSelected = selectedCount === selectableIndices.length && selectableIndices.length > 0;
-                          return (
-                          <>
-                            <button
-                              className="gen-review-btn"
-                              onClick={() => {
-                                if (!isReviewing && !genSelected[req.id]) {
-                                  setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
-                                }
-                                setGenReviewId(isReviewing ? null : req.id);
-                              }}
-                            >
-                              {isReviewing ? 'Hide Questions' : `Review Questions (${generatedQs.length})`}
-                            </button>
-                            {isReviewing && (
-                              <div className="gen-review-panel">
-                                {selectableIndices.length > 0 && (
-                                  <div className="gen-select-bar">
-                                    <button
-                                      className="gen-select-toggle"
-                                      onClick={() => {
-                                        if (allSelected) {
-                                          setGenSelected(prev => ({ ...prev, [req.id]: new Set() }));
-                                        } else {
-                                          setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
-                                        }
-                                      }}
-                                    >
-                                      {allSelected ? 'Deselect All' : 'Select All'}
-                                    </button>
-                                    <span className="gen-select-count">{selectedCount} of {selectableIndices.length} selected</span>
-                                  </div>
-                                )}
-                                {generatedQs.map((q, qi) => {
-                                  const alreadyAdded = acceptedTexts.includes(q.question_text);
-                                  const isChecked = currentSelected.has(qi);
-                                  return (
-                                    <div key={qi} className={`gen-q-card ${alreadyAdded ? 'gen-q-added' : ''}`}>
-                                      <div className="gen-q-row">
-                                        {!alreadyAdded && (
-                                          <input
-                                            type="checkbox"
-                                            className="gen-q-checkbox"
-                                            checked={isChecked}
-                                            onChange={() => {
-                                              setGenSelected(prev => {
-                                                const s = new Set(prev[req.id] || selectableIndices);
-                                                if (s.has(qi)) s.delete(qi); else s.add(qi);
-                                                return { ...prev, [req.id]: s };
-                                              });
-                                            }}
-                                          />
-                                        )}
-                                        <div className="gen-q-content">
-                                          <p className="gen-q-text">{q.question_text}</p>
-                                          <div className="gen-q-answers">
-                                            <span className="gen-q-correct">{q.correct_answer}</span>
-                                            {q.incorrect_answers?.map((a, ai) => (
-                                              <span key={ai} className="gen-q-wrong">{a}</span>
-                                            ))}
-                                          </div>
-                                          {q.explanation && (
-                                            <div style={{background:'#E8F4FD', border:'1px solid #B8D4E8', borderRadius:'6px', padding:'8px 12px', fontSize:'13px', color:'#333', marginTop:'6px', lineHeight:'1.45'}}>
-                                              💡 {q.explanation}
-                                            </div>
+                          {req.special_instructions && (
+                            <p className="gen-request-instructions">"{req.special_instructions}"</p>
+                          )}
+                          {req.status === 'rejected' && req.admin_notes && (
+                            <div className="gen-admin-notes">
+                              <strong>Admin notes:</strong> {req.admin_notes}
+                            </div>
+                          )}
+                          {req.status === 'failed' && (
+                            <div className="gen-admin-notes" style={{borderLeftColor: '#d9534f'}}>
+                              <strong>Error:</strong> {req.generation_error || 'Unknown error during generation'}
+                              <button
+                                className="gen-review-btn"
+                                style={{marginTop:'8px', display:'block'}}
+                                onClick={() => handleRetryGenRequest(req.id)}
+                              >
+                                🔄 Retry Generation
+                              </button>
+                            </div>
+                          )}
+                          {req.status === 'completed' && generatedQs.length > 0 && (() => {
+                            const selectableIndices = generatedQs.map((q, i) => ({ q, i })).filter(({ q }) => !acceptedTexts.includes(q.question_text)).map(({ i }) => i);
+                            const currentSelected = genSelected[req.id] || new Set(selectableIndices);
+                            const selectedCount = [...currentSelected].filter(i => selectableIndices.includes(i)).length;
+                            const allSelected = selectedCount === selectableIndices.length && selectableIndices.length > 0;
+                            return (
+                            <>
+                              <button
+                                className="gen-review-btn"
+                                onClick={() => {
+                                  if (!isReviewing && !genSelected[req.id]) {
+                                    setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
+                                  }
+                                  setGenReviewId(isReviewing ? null : req.id);
+                                }}
+                              >
+                                {isReviewing ? 'Hide Questions' : `Review Questions (${generatedQs.length})`}
+                              </button>
+                              {isReviewing && (
+                                <div className="gen-review-panel">
+                                  {selectableIndices.length > 0 && (
+                                    <div className="gen-select-bar">
+                                      <button
+                                        className="gen-select-toggle"
+                                        onClick={() => {
+                                          if (allSelected) {
+                                            setGenSelected(prev => ({ ...prev, [req.id]: new Set() }));
+                                          } else {
+                                            setGenSelected(prev => ({ ...prev, [req.id]: new Set(selectableIndices) }));
+                                          }
+                                        }}
+                                      >
+                                        {allSelected ? 'Deselect All' : 'Select All'}
+                                      </button>
+                                      <span className="gen-select-count">{selectedCount} of {selectableIndices.length} selected</span>
+                                    </div>
+                                  )}
+                                  {generatedQs.map((q, qi) => {
+                                    const alreadyAdded = acceptedTexts.includes(q.question_text);
+                                    const isChecked = currentSelected.has(qi);
+                                    return (
+                                      <div key={qi} className={`gen-q-card ${alreadyAdded ? 'gen-q-added' : ''}`}>
+                                        <div className="gen-q-row">
+                                          {!alreadyAdded && (
+                                            <input
+                                              type="checkbox"
+                                              className="gen-q-checkbox"
+                                              checked={isChecked}
+                                              onChange={() => {
+                                                setGenSelected(prev => {
+                                                  const s = new Set(prev[req.id] || selectableIndices);
+                                                  if (s.has(qi)) s.delete(qi); else s.add(qi);
+                                                  return { ...prev, [req.id]: s };
+                                                });
+                                              }}
+                                            />
                                           )}
-                                          <div className="gen-q-meta">
-                                            <span className="gen-tag">{q.category}</span>
-                                            <span className="gen-tag">{q.difficulty}</span>
+                                          <div className="gen-q-content">
+                                            <p className="gen-q-text">{q.question_text}</p>
+                                            <div className="gen-q-answers">
+                                              <span className="gen-q-correct">{q.correct_answer}</span>
+                                              {q.incorrect_answers?.map((a, ai) => (
+                                                <span key={ai} className="gen-q-wrong">{a}</span>
+                                              ))}
+                                            </div>
+                                            {q.explanation && (
+                                              <div style={{background:'#E8F4FD', border:'1px solid #B8D4E8', borderRadius:'6px', padding:'8px 12px', fontSize:'13px', color:'#333', marginTop:'6px', lineHeight:'1.45'}}>
+                                                💡 {q.explanation}
+                                              </div>
+                                            )}
+                                            <div className="gen-q-meta">
+                                              <span className="gen-tag">{q.category}</span>
+                                              <span className="gen-tag">{q.difficulty}</span>
+                                            </div>
+                                            {alreadyAdded && <span className="gen-q-added-label">Added</span>}
                                           </div>
-                                          {alreadyAdded && <span className="gen-q-added-label">Added</span>}
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                                {selectedCount > 0 && (
-                                  <button
-                                    className="gen-bulk-add-btn"
-                                    onClick={() => handleAddSelectedQuestions(req)}
-                                  >
-                                    Add Selected to Question Bank ({selectedCount})
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </>
-                          );
-                        })()}
-                      </div>
-                    );
-                  })}
+                                    );
+                                  })}
+                                  {selectedCount > 0 && (
+                                    <button
+                                      className="gen-bulk-add-btn"
+                                      onClick={() => handleAddSelectedQuestions(req)}
+                                    >
+                                      Add Selected to Question Bank ({selectedCount})
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
 
       {/* Version History Modal */}
       {showVersionHistory && (

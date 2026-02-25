@@ -18,14 +18,15 @@ Only the Commissioner of a community can access its Commissioner Dashboard.
 2. Click on your community card
 3. On the Community Detail page, click **Manage Community**
 
-The Commissioner Dashboard is organized into five tabs:
+The Commissioner Dashboard is organized into six tabs:
 
 | Tab | Contents |
 |-----|---------|
 | **Overview** | Stats summary + import history |
-| **Questions** | Full question bank management |
+| **Announcements** | Post, edit, pin/unpin, delete announcements |
+| **Questions** | Full question bank management (action bar with Add, Import CSV, AI Generate, Export) |
 | **Members** | Member list + remove member |
-| **Settings** | Edit community name, dates, member cap |
+| **Settings** | Edit community name, dates, member cap, appearance |
 | **Analytics** | Per-category and per-difficulty performance charts |
 
 ---
@@ -44,7 +45,14 @@ Also shows an **Import History** log of recent bulk CSV imports (timestamp and c
 
 ## Questions Tab
 
-The Questions tab is the main question management area.
+The Questions tab is the main question management area. At the top is an **action bar** with four buttons:
+
+- **➕ Add** — opens a modal to add a single question (question text, answers, category, difficulty, tags, image, video, explanation)
+- **📥 Import CSV** — opens a modal to upload a CSV file with bulk questions
+- **🤖 AI Generate** — opens a modal to request AI-generated questions (submit request form + review completed requests)
+- **📤 Export** — exports all questions to CSV directly (no modal)
+
+Below the action bar is the question list with search, filters, and bulk operations.
 
 ### Viewing and Filtering Questions
 
@@ -52,16 +60,17 @@ The Questions tab is the main question management area.
 - **Category filter** — dropdown to show only a specific category
 - **Difficulty filter** — dropdown to filter by Easy / Medium / Hard
 - **Tag filter** — click any tag chip to filter to questions with that tag
+- **Source filter** — filter by Manual, CSV Import, or AI Generated
 
 All filters can be combined.
 
 ### Adding a Single Question
 
-Questions can be added individually by creating from a template (see Templates section below). To add a raw single question, use the bulk upload with a 1-row CSV.
+Click **➕ Add** in the action bar to open the Add Question modal. Fill in all required fields and click "Add Question". On success, the modal closes and the question appears in the list.
 
 ### Bulk CSV Upload
 
-To import many questions at once:
+Click **📥 Import CSV** in the action bar to open the import modal:
 
 1. Click **Download Template** to get the correct CSV format
 2. Fill in your questions spreadsheet with these required columns:

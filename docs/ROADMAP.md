@@ -60,7 +60,7 @@
 - [x] Real-time community chat — Supabase Realtime powered chat on community detail page, message bubbles (own=navy, other=gray), commissioner message deletion, load older messages, 500-char limit, auto-scroll
 
 ### Commissioner Dashboard
-- [x] Tabbed navigation (Overview, Questions, Members, Settings, Analytics)
+- [x] Tabbed navigation (Overview, Announcements, Questions, Members, Settings, Analytics)
 - [x] Overview stats (total games, active members, question bank size)
 - [x] Import history log
 - [x] CSV bulk question upload with row-level validation
@@ -87,6 +87,7 @@
 - [x] Season reset — archive current season leaderboard, start new season, season history with frozen leaderboards
 - [x] Season-filtered leaderboard — community leaderboard only counts games from current season
 - [x] Community theming — commissioner can set theme color (picker + presets), upload logo and banner images, add welcome message; theme applied on community detail page, marketplace cards, and communities list
+- [x] Questions tab action bar + modals — clean action bar with Add, Import CSV, AI Generate, Export buttons; Add Question, CSV Import, and AI Generate open as modals instead of inline sections; AI Generate tab removed as standalone tab
 
 ### Admin Dashboard
 - [x] Platform-wide stats (users, games, public games, avg games/user, popular category)
