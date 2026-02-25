@@ -66,6 +66,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [editingMediaId, setEditingMediaId] = useState(null);
   const [mediaUploading, setMediaUploading] = useState(false);
 
+  // Theme / Appearance state
+  const [themeColor, setThemeColor] = useState('#041E42');
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+
   // Season management state
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmed, setResetConfirmed] = useState(false);
@@ -124,6 +130,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         timer_enabled: communityData.settings?.timer_enabled || false,
         timer_seconds: communityData.settings?.timer_seconds || 30
       });
+
+      // Initialize theme state
+      setThemeColor(communityData.settings?.theme_color || '#041E42');
+      setWelcomeMessage(communityData.settings?.welcome_message || '');
 
       const { data: membersData } = await supabase
         .from('community_members')
@@ -187,6 +197,99 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     } catch (error) {
       console.error('Error saving settings:', error);
       showToast('Failed to update settings', 'error');
+    }
+  };
+
+  const handleSaveTheme = async () => {
+    try {
+      const { error } = await supabase
+        .from('communities')
+        .update({
+          settings: {
+            ...community.settings,
+            theme_color: themeColor,
+            welcome_message: welcomeMessage || null
+          }
+        })
+        .eq('id', communityId);
+
+      if (error) {
+        showToast('Failed to save appearance: ' + error.message, 'error');
+      } else {
+        showToast('Appearance saved!');
+        fetchCommissionerData();
+      }
+    } catch (err) {
+      showToast('Failed to save appearance', 'error');
+    }
+  };
+
+  const handleThemeImageUpload = async (file, type) => {
+    if (!file) return;
+    const maxSize = type === 'logo' ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast(`File too large. Max ${type === 'logo' ? '2MB' : '5MB'}.`, 'error');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      showToast('Only image files are allowed', 'error');
+      return;
+    }
+
+    const setter = type === 'logo' ? setLogoUploading : setBannerUploading;
+    setter(true);
+
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${communityId}/${type}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('community-images')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('community-images')
+        .getPublicUrl(path);
+
+      const urlKey = type === 'logo' ? 'logo_url' : 'banner_url';
+      const { error: updateError } = await supabase
+        .from('communities')
+        .update({
+          settings: {
+            ...community.settings,
+            [urlKey]: urlData.publicUrl
+          }
+        })
+        .eq('id', communityId);
+
+      if (updateError) throw updateError;
+
+      showToast(`${type === 'logo' ? 'Logo' : 'Banner'} uploaded!`);
+      fetchCommissionerData();
+    } catch (err) {
+      showToast(`Failed to upload ${type}: ${err.message}`, 'error');
+    }
+    setter(false);
+  };
+
+  const handleRemoveThemeImage = async (type) => {
+    try {
+      const urlKey = type === 'logo' ? 'logo_url' : 'banner_url';
+      const newSettings = { ...community.settings };
+      delete newSettings[urlKey];
+
+      const { error } = await supabase
+        .from('communities')
+        .update({ settings: newSettings })
+        .eq('id', communityId);
+
+      if (error) throw error;
+      showToast(`${type === 'logo' ? 'Logo' : 'Banner'} removed`);
+      fetchCommissionerData();
+    } catch (err) {
+      showToast(`Failed to remove ${type}`, 'error');
     }
   };
 
@@ -2061,8 +2164,116 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         : 'Disabled'}
                     </span>
                   </div>
+                  <div className="setting-item">
+                    <span className="setting-label">Theme Color</span>
+                    <span className="setting-value" style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                      <span style={{width:'18px', height:'18px', borderRadius:'50%', background: community.settings?.theme_color || '#041E42', display:'inline-block', border:'1px solid var(--border-color)'}} />
+                      {community.settings?.theme_color || '#041E42'}
+                    </span>
+                  </div>
                 </div>
               )}
+            </div>
+
+            {/* Appearance */}
+            <div className="commissioner-section" style={{marginTop: '24px'}}>
+              <h2>Appearance</h2>
+              <p style={{fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:'16px'}}>Customize how your community looks to members.</p>
+
+              <div className="theme-section">
+                <div className="form-group">
+                  <label>Theme Color</label>
+                  <div style={{display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap'}}>
+                    <input
+                      type="color"
+                      value={themeColor}
+                      onChange={(e) => setThemeColor(e.target.value)}
+                      style={{width:'48px', height:'36px', padding:'2px', border:'2px solid var(--border-color)', borderRadius:'6px', cursor:'pointer', background:'transparent'}}
+                    />
+                    <div style={{display:'flex', gap:'6px', flexWrap:'wrap'}}>
+                      {['#041E42','#1a5276','#2E86C1','#27AE60','#8E44AD','#C0392B','#D4AC0D','#E67E22'].map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setThemeColor(c)}
+                          title={c}
+                          style={{
+                            width:'28px', height:'28px', borderRadius:'50%', border: themeColor === c ? '3px solid var(--text-primary)' : '2px solid var(--border-color)',
+                            background: c, cursor:'pointer', padding:0, transition:'transform 0.15s',
+                            transform: themeColor === c ? 'scale(1.15)' : 'scale(1)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span style={{fontSize:'0.82rem', color:'var(--text-muted)', fontFamily:'monospace'}}>{themeColor}</span>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{marginTop:'16px'}}>
+                  <label>Community Logo</label>
+                  <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'2px 0 8px'}}>Square image, max 2 MB. Shown on cards and header.</p>
+                  {community?.settings?.logo_url ? (
+                    <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                      <img src={community.settings.logo_url} alt="Logo" style={{width:'64px', height:'64px', borderRadius:'8px', objectFit:'cover', border:'2px solid var(--border-color)'}} />
+                      <div style={{display:'flex', flexDirection:'column', gap:'6px'}}>
+                        <label className="btn-secondary" style={{cursor:'pointer', padding:'6px 12px', fontSize:'0.82rem', textAlign:'center'}}>
+                          Replace
+                          <input type="file" accept="image/*" hidden onChange={(e) => handleThemeImageUpload(e.target.files[0], 'logo')} />
+                        </label>
+                        <button className="btn-danger-sm" onClick={() => handleRemoveThemeImage('logo')} style={{padding:'6px 12px', fontSize:'0.82rem'}}>Remove</button>
+                      </div>
+                      {logoUploading && <span style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>Uploading…</span>}
+                    </div>
+                  ) : (
+                    <label className="btn-secondary" style={{cursor:'pointer', display:'inline-block', padding:'8px 16px', fontSize:'0.85rem'}}>
+                      {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                      <input type="file" accept="image/*" hidden disabled={logoUploading} onChange={(e) => handleThemeImageUpload(e.target.files[0], 'logo')} />
+                    </label>
+                  )}
+                </div>
+
+                <div className="form-group" style={{marginTop:'16px'}}>
+                  <label>Banner Image</label>
+                  <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'2px 0 8px'}}>Wide image (e.g. 1200×300), max 5 MB. Shown at top of community page.</p>
+                  {community?.settings?.banner_url ? (
+                    <div>
+                      <img src={community.settings.banner_url} alt="Banner" style={{width:'100%', maxHeight:'120px', objectFit:'cover', borderRadius:'8px', border:'2px solid var(--border-color)', marginBottom:'8px'}} />
+                      <div style={{display:'flex', gap:'8px'}}>
+                        <label className="btn-secondary" style={{cursor:'pointer', padding:'6px 12px', fontSize:'0.82rem'}}>
+                          Replace
+                          <input type="file" accept="image/*" hidden onChange={(e) => handleThemeImageUpload(e.target.files[0], 'banner')} />
+                        </label>
+                        <button className="btn-danger-sm" onClick={() => handleRemoveThemeImage('banner')} style={{padding:'6px 12px', fontSize:'0.82rem'}}>Remove</button>
+                        {bannerUploading && <span style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>Uploading…</span>}
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="btn-secondary" style={{cursor:'pointer', display:'inline-block', padding:'8px 16px', fontSize:'0.85rem'}}>
+                      {bannerUploading ? 'Uploading…' : 'Upload Banner'}
+                      <input type="file" accept="image/*" hidden disabled={bannerUploading} onChange={(e) => handleThemeImageUpload(e.target.files[0], 'banner')} />
+                    </label>
+                  )}
+                </div>
+
+                <div className="form-group" style={{marginTop:'16px'}}>
+                  <label>Welcome Message</label>
+                  <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'2px 0 8px'}}>Shown to members on the community page. Max 300 characters.</p>
+                  <textarea
+                    value={welcomeMessage}
+                    onChange={(e) => { if (e.target.value.length <= 300) setWelcomeMessage(e.target.value); }}
+                    placeholder="Welcome to our community! Have fun and play fair."
+                    rows={3}
+                    maxLength={300}
+                    style={{width:'100%', padding:'10px 12px', border:'2px solid var(--border-color)', borderRadius:'6px', fontSize:'0.95rem', resize:'vertical', fontFamily:'inherit', background:'var(--bg-input)', color:'var(--text-primary)'}}
+                  />
+                  <span style={{fontSize:'0.8rem', color:'var(--text-muted)', textAlign:'right', display:'block', marginTop:'4px'}}>
+                    {welcomeMessage.length}/300
+                  </span>
+                </div>
+
+                <button className="btn-primary" onClick={handleSaveTheme} style={{marginTop:'8px'}}>
+                  Save Appearance
+                </button>
+              </div>
             </div>
 
             {/* Season Management */}

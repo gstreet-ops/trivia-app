@@ -130,7 +130,7 @@ A community (league) groups members and maintains a shared question bank.
 | `season_end` | `timestamptz` | Season end date |
 | `visibility` | `text` | `'public'` or `'private'` — controls marketplace listing |
 | `description` | `text` | Community description shown in marketplace (nullable) |
-| `settings` | `jsonb` | Flexible settings; e.g. `{ max_members, timer_enabled, timer_seconds }` |
+| `settings` | `jsonb` | Flexible settings; e.g. `{ max_members, timer_enabled, timer_seconds, theme_color, logo_url, banner_url, welcome_message }` |
 | `created_at` | `timestamptz` | Creation timestamp |
 
 **Relationships:**

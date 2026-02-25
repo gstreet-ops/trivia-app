@@ -86,6 +86,7 @@
 - [x] Pagination on question bank — Questions tab uses pagination for large question banks
 - [x] Season reset — archive current season leaderboard, start new season, season history with frozen leaderboards
 - [x] Season-filtered leaderboard — community leaderboard only counts games from current season
+- [x] Community theming — commissioner can set theme color (picker + presets), upload logo and banner images, add welcome message; theme applied on community detail page, marketplace cards, and communities list
 
 ### Admin Dashboard
 - [x] Platform-wide stats (users, games, public games, avg games/user, popular category)

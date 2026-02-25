@@ -50,7 +50,7 @@ function CommunityMarketplace({ user, onBack }) {
       // Fetch public communities
       const { data: publicCommunities } = await supabase
         .from('communities')
-        .select('id, name, slug, description, season_start, season_end, created_at, commissioner_id, profiles!communities_commissioner_id_fkey(username)')
+        .select('id, name, slug, description, season_start, season_end, created_at, commissioner_id, settings, profiles!communities_commissioner_id_fkey(username)')
         .eq('visibility', 'public')
         .order('name');
 
@@ -216,9 +216,12 @@ function CommunityMarketplace({ user, onBack }) {
       ) : (
         <div className="marketplace-grid">
           {filtered.map(community => (
-            <div key={community.id} className="marketplace-card">
+            <div key={community.id} className="marketplace-card" style={community.settings?.theme_color ? {borderTopColor: community.settings.theme_color, borderTopWidth: '3px'} : undefined}>
               <div className="marketplace-card-header">
-                <h3>{community.name}</h3>
+                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                  {community.settings?.logo_url && <img src={community.settings.logo_url} alt="" style={{width:'32px', height:'32px', borderRadius:'6px', objectFit:'cover'}} />}
+                  <h3>{community.name}</h3>
+                </div>
                 <span className={`marketplace-category-badge cat-${community.category.toLowerCase()}`}>
                   {community.category}
                 </span>

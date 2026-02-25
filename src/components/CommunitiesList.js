@@ -16,7 +16,7 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
 
   const fetchMyCommunities = async () => {
     try {
-      const { data: memberships } = await supabase.from('community_members').select('community_id, communities(id, name, slug, invite_code, commissioner_id, season_start, season_end, profiles!communities_commissioner_id_fkey(username))').eq('user_id', user.id);
+      const { data: memberships } = await supabase.from('community_members').select('community_id, communities(id, name, slug, invite_code, commissioner_id, season_start, season_end, settings, profiles!communities_commissioner_id_fkey(username))').eq('user_id', user.id);
       setMyCommunities(memberships?.map(m => m.communities) || []);
     } catch (err) { console.error('Error:', err); }
     setLoading(false);
@@ -64,8 +64,11 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
       {myCommunities.length === 0 ? <div className="empty-state"><p>You haven't joined any communities yet.</p><p>Create your own or join with an invite code!</p></div> : (
         <div className="communities-grid">
           {myCommunities.map(community => (
-            <div key={community.id} className="community-card" role="button" tabIndex={0} onClick={() => onViewCommunity(community.id, community.name)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewCommunity(community.id, community.name); } }}>
-              <h3>{community.name}</h3>
+            <div key={community.id} className="community-card" role="button" tabIndex={0} onClick={() => onViewCommunity(community.id, community.name)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewCommunity(community.id, community.name); } }} style={community.settings?.theme_color ? {borderTopColor: community.settings.theme_color} : undefined}>
+              <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom: community.settings?.logo_url ? '0' : undefined}}>
+                {community.settings?.logo_url && <img src={community.settings.logo_url} alt="" style={{width:'36px', height:'36px', borderRadius:'6px', objectFit:'cover'}} />}
+                <h3 style={{margin:0}}>{community.name}</h3>
+              </div>
               <p className="commissioner">Commissioner: {community.profiles?.username}</p>
               <p className="dates">{new Date(community.season_start).toLocaleDateString()} - {new Date(community.season_end).toLocaleDateString()}</p>
               {community.commissioner_id === user.id && <p className="invite-code">Code: {community.invite_code}</p>}

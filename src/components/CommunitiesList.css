@@ -54,6 +54,7 @@
 .community-card {
   background: var(--section-bg);
   border: 2px solid var(--border-color);
+  border-top: 3px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;

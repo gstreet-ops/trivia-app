@@ -134,18 +134,39 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
   const isCommissioner = community?.commissioner_id === currentUserId;
 
+  // Theme values from settings JSONB
+  const themeColor = community?.settings?.theme_color || null;
+  const logoUrl = community?.settings?.logo_url || null;
+  const bannerUrl = community?.settings?.banner_url || null;
+  const welcomeMsg = community?.settings?.welcome_message || null;
+
   if (loading) return <div className="community-detail"><p>Loading...</p></div>;
   if (!community) return <div className="community-detail"><p>Community not found</p></div>;
 
   return (
-    <div className="community-detail">
+    <div className="community-detail" style={themeColor ? {'--community-color': themeColor} : undefined}>
       <button className="back-btn" onClick={onBack}>← Back to My Leagues</button>
-      
+
+      {bannerUrl && (
+        <div className="cd-banner">
+          <img src={bannerUrl} alt={`${community.name} banner`} />
+        </div>
+      )}
+
       <div className="community-header">
+        {logoUrl && (
+          <img src={logoUrl} alt={`${community.name} logo`} className="cd-logo" />
+        )}
         <h1>{community.name}</h1>
         {community.current_season && <span className="cd-season-badge">Season {community.current_season}</span>}
         {isCommissioner && <span className="commissioner-badge">Commissioner</span>}
       </div>
+
+      {welcomeMsg && (
+        <div className="cd-welcome" style={themeColor ? {borderLeftColor: themeColor} : undefined}>
+          {welcomeMsg}
+        </div>
+      )}
 
       <div className="community-info">
         <div className="info-item">
