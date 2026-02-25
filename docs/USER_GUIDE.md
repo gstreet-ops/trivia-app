@@ -102,6 +102,7 @@ After the final question, your score is automatically saved to your history. You
 ## Reviewing a Game
 
 On the Dashboard, click any game in the **Recent Games** section to open the Game Review screen. It shows each question with:
+- Any attached image or YouTube video (displayed above the question)
 - The question text
 - All answer choices
 - Which answer you selected (highlighted)

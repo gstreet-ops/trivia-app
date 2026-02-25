@@ -54,7 +54,9 @@ function QuizScreen({ config, onEnd }) {
       correct_answer: q.correctAnswer,
       user_answer: '(timed out)',
       is_correct: false,
-      explanation: q.explanation || null
+      explanation: q.explanation || null,
+      image_url: q.image_url || null,
+      video_url: q.video_url || null
     }]);
   }, [stopTimer, showResult, questions, currentQuestionIndex]);
 
@@ -229,7 +231,9 @@ function QuizScreen({ config, onEnd }) {
       correct_answer: q.correctAnswer,
       user_answer: answer,
       is_correct: isCorrect,
-      explanation: q.explanation || null
+      explanation: q.explanation || null,
+      image_url: q.image_url || null,
+      video_url: q.video_url || null
     }]);
   };
 

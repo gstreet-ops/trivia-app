@@ -129,7 +129,7 @@ function buildPrompt(source, sourceInput, settings) {
   }
 
   // CSV format block
-  const csvHeaders = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty${includeExplanations ? ',explanation' : ''}`;
+  const csvHeaders = `question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty${includeExplanations ? ',explanation' : ''},image_url,video_url`;
   lines.push('**Output format:**');
   lines.push(`Generate the results as a CSV with these exact headers:`);
   lines.push(csvHeaders);
@@ -143,6 +143,7 @@ function buildPrompt(source, sourceInput, settings) {
   if (includeExplanations) {
     lines.push('- The explanation should be 1-2 sentences explaining why the correct answer is right');
   }
+  lines.push('- image_url and video_url are optional — leave empty unless a relevant image or YouTube video URL is directly available from the source material');
   lines.push('');
 
   // Quality block

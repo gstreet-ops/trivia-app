@@ -50,6 +50,21 @@ function GameReview({ gameId, onBack }) {
         {answers.map((answer, index) => (
           <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')} aria-label={`Question ${index + 1}: ${answer.is_correct ? 'Correct' : 'Incorrect'}`}>
             <div className="question-number">Question {index + 1}</div>
+            {answer.image_url && (
+              <div className="review-media">
+                <img src={answer.image_url} alt="Question media" className="review-media-img" />
+              </div>
+            )}
+            {answer.video_url && (() => {
+              const vidMatch = answer.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+              return vidMatch ? (
+                <div className="review-media">
+                  <div className="review-media-video">
+                    <iframe src={`https://www.youtube.com/embed/${vidMatch[1]}`} title="Question video" style={{border: 0}} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                  </div>
+                </div>
+              ) : null;
+            })()}
             <div className="question-text">{decodeHtml(answer.question_text)}</div>
             <div className="answer-options">
               <div className="your-answer">

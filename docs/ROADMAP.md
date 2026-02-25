@@ -139,6 +139,10 @@
 - [x] Commissioner media editor — upload/remove image and video per question card
 - [x] CSV import support for image_url and video_url columns
 - [x] Media indicators on question cards (image and video icons)
+- [x] Game review media — images and YouTube videos shown in per-game answer review cards
+- [x] Question Generator prompt includes image_url and video_url CSV columns
+- [x] Media Library tab — centralized media asset manager in Commissioner Dashboard with upload, search, filter, preview, delete, and usage tracking
+- [x] Browse Library picker — modal to select media from library when adding/editing question image or video
 
 ### Question Explanations
 - [x] Explanation field on community questions — optional text explaining the correct answer

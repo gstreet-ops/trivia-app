@@ -261,14 +261,48 @@ You can attach images and YouTube videos to questions. Media appears above the q
 
 1. Expand a question in the Questions tab
 2. Click **Media**
-3. **Image**: Click **Upload Image** to select a file. The image is uploaded to Supabase Storage and a thumbnail preview appears.
-4. **Video**: Paste a YouTube URL. A thumbnail preview appears.
+3. **Image**: Click **Upload Image** to select a file, or click **Browse Library** to pick from your media library. The image is uploaded to Supabase Storage and a thumbnail preview appears.
+4. **Video**: Paste a YouTube URL, or click **Browse Library** to pick a video from the library. A thumbnail preview appears.
 
 Media indicators (image and video icons) are shown on compact question rows so you can see at a glance which questions have media.
 
 ### Removing Media
 
 In the media editor, click **Remove** next to the image or video to remove it from the question.
+
+---
+
+## Media Library Tab
+
+The **Media** tab provides a centralized library for managing all images and videos used across your community's questions.
+
+### Uploading Media
+
+- **Images**: Click **Upload Image** to upload a PNG, JPEG, WebP, or GIF file (max 2MB). The image is stored in Supabase Storage.
+- **Videos**: Click **Add Video** and paste a YouTube URL. The video is saved as a library reference.
+
+### Browsing & Filtering
+
+- Use the **search bar** to filter by filename or tags
+- Use the **type pills** (All / Images / Videos) to filter by media type
+- Media is displayed as a responsive grid with thumbnails
+
+### Asset Cards
+
+Each card shows:
+- Thumbnail preview (image or YouTube thumbnail with play icon)
+- Filename, type badge, upload date
+- Usage count (how many questions reference this media)
+- **Copy** button to copy the URL to clipboard
+- **Delete** button with confirmation (warns if the asset is used by questions)
+
+### Full Preview
+
+Click any card to open a full preview showing the media, file details, URL, and a list of all questions using it.
+
+### Using Library Media in Questions
+
+When adding or editing a question's media, click **Browse Library** to open a picker modal. Select any asset to attach it to the question.
 
 ---
 

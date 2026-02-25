@@ -26,6 +26,7 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `multiplayer_participants` | Players in a multiplayer room |
 | `multiplayer_questions` | Questions assigned to a multiplayer game |
 | `multiplayer_answers` | Per-player answers in a multiplayer game |
+| `media_library` | Centralized media assets per community |
 
 ---
 
@@ -114,6 +115,9 @@ Stores each individual answer from a game. Enables the per-game review screen.
 | `correct_answer` | `text` | The correct answer |
 | `user_answer` | `text` | What the user selected |
 | `is_correct` | `boolean` | Whether the answer was correct |
+| `explanation` | `text` | Explanation of the correct answer (nullable) |
+| `image_url` | `text` | URL to question image (nullable) |
+| `video_url` | `text` | YouTube URL for video questions (nullable) |
 
 **Relationships:**
 - `game_id` → `games.id`
@@ -551,7 +555,8 @@ auth.users
             │       ├── community_messages (community_id)
             │       ├── question_templates (community_id)
             │       ├── generation_requests (community_id, requested_by)
-            │       └── season_archives (community_id)
+            │       ├── season_archives (community_id)
+            │       └── media_library (community_id, uploaded_by)
             │
             ├── custom_questions (creator_id)
             │
@@ -563,14 +568,43 @@ auth.users
 
 ---
 
+### `media_library`
+
+Centralized media asset library per community. Commissioners upload images and save YouTube video URLs here, then attach them to questions.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `uuid` | FK → `communities.id` (CASCADE delete) |
+| `uploaded_by` | `uuid` | FK → `profiles.id` |
+| `file_url` | `text` | Public URL (Storage URL for images, YouTube URL for videos) |
+| `file_type` | `text` | `'image'` or `'video'` |
+| `filename` | `text` | Original filename or YouTube video ID label |
+| `file_size` | `integer` | File size in bytes (nullable; null for videos) |
+| `storage_path` | `text` | Supabase Storage path (nullable; null for videos) |
+| `tags` | `text[]` | Custom tags for organization |
+| `created_at` | `timestamptz` | Upload timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+- `uploaded_by` → `profiles.id`
+
+**RLS Policies:**
+- SELECT: community members
+- INSERT: owner, commissioner, moderator roles
+- DELETE: owner, commissioner roles
+
+---
+
 ## Storage Buckets
 
 | Bucket | Purpose |
 |--------|---------|
 | `question-images` | Images uploaded for community questions (commissioner media editor) |
 | `community-images` | Community logos and banner images (commissioner theming) |
+| `community-media` | Media library uploads (images for the centralized media library) |
 
-Both buckets use RLS policies scoped to authenticated users. Public URLs are generated via `supabase.storage.from(bucket).getPublicUrl(path)`.
+All buckets use RLS policies scoped to authenticated users. Public URLs are generated via `supabase.storage.from(bucket).getPublicUrl(path)`.
 
 ---
 
@@ -598,6 +632,7 @@ RLS (Row Level Security) is enabled on all tables. Policies are managed in Supab
 | `season_archives` | Members of community | System/RPC (insert) |
 | `multiplayer_questions` | All authenticated users | Host only (insert) |
 | `multiplayer_answers` | All authenticated users | Own rows (insert) |
+| `media_library` | Community members | Owner/commissioner/moderator (insert); owner/commissioner (delete) |
 
 ---
 

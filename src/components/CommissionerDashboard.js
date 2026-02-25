@@ -80,6 +80,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [editingMediaId, setEditingMediaId] = useState(null);
   const [mediaUploading, setMediaUploading] = useState(false);
 
+  // Media Library state
+  const [mediaLibrary, setMediaLibrary] = useState([]);
+  const [mediaLibraryLoading, setMediaLibraryLoading] = useState(false);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaTypeFilter, setMediaTypeFilter] = useState('all');
+  const [mediaUploadingLib, setMediaUploadingLib] = useState(false);
+  const [mediaPreviewItem, setMediaPreviewItem] = useState(null);
+  const [mediaBrowseTarget, setMediaBrowseTarget] = useState(null); // 'image' | 'video' | null — for picker modal
+  const [mediaBrowseCallback, setMediaBrowseCallback] = useState(null); // fn(url) to call on pick
+
   // Theme / Appearance state
   const [themeColor, setThemeColor] = useState('#041E42');
   const [welcomeMessage, setWelcomeMessage] = useState('');
@@ -108,6 +118,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchAnnouncements();
     fetchGenRequests();
     fetchSeasonData();
+    fetchMediaLibrary();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset to page 1 when filters change
@@ -1399,6 +1410,113 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (error) { showToast('Failed to save video URL: ' + error.message, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); }
   };
 
+  // --- Media Library handlers ---
+  const fetchMediaLibrary = async () => {
+    setMediaLibraryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('media_library')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setMediaLibrary(data || []);
+    } catch (err) {
+      console.error('Error fetching media library:', err);
+    }
+    setMediaLibraryLoading(false);
+  };
+
+  const getMediaUsageCount = (fileUrl) => {
+    return questions.filter(q => q.image_url === fileUrl || q.video_url === fileUrl).length;
+  };
+
+  const getMediaUsageQuestions = (fileUrl) => {
+    return questions.filter(q => q.image_url === fileUrl || q.video_url === fileUrl);
+  };
+
+  const handleMediaLibraryUpload = async (file) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('File must be under 2MB.', 'error'); return; }
+    const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) { showToast('Invalid file type. Use PNG, JPEG, WebP, or GIF.', 'error'); return; }
+    setMediaUploadingLib(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path = `${communityId}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage.from('community-media').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('community-media').getPublicUrl(path);
+      const { error: dbError } = await supabase.from('media_library').insert([{
+        community_id: communityId,
+        uploaded_by: currentUserId,
+        file_url: urlData.publicUrl,
+        file_type: 'image',
+        filename: file.name,
+        file_size: file.size,
+        storage_path: path,
+        tags: []
+      }]);
+      if (dbError) throw dbError;
+      showToast('Image uploaded to library!');
+      fetchMediaLibrary();
+    } catch (err) {
+      showToast('Upload failed: ' + err.message, 'error');
+    }
+    setMediaUploadingLib(false);
+  };
+
+  const handleMediaLibraryAddVideo = async (url) => {
+    if (!url || !isValidYouTubeUrl(url)) { showToast('Invalid YouTube URL.', 'error'); return; }
+    try {
+      const videoId = extractYouTubeId(url);
+      const { error } = await supabase.from('media_library').insert([{
+        community_id: communityId,
+        uploaded_by: currentUserId,
+        file_url: url,
+        file_type: 'video',
+        filename: `YouTube: ${videoId}`,
+        file_size: null,
+        storage_path: null,
+        tags: []
+      }]);
+      if (error) throw error;
+      showToast('Video added to library!');
+      fetchMediaLibrary();
+    } catch (err) {
+      showToast('Failed to add video: ' + err.message, 'error');
+    }
+  };
+
+  const handleMediaLibraryDelete = async (item) => {
+    const usage = getMediaUsageCount(item.file_url);
+    const msg = usage > 0
+      ? `This media is used by ${usage} question(s). Deleting it will NOT remove it from those questions. Continue?`
+      : 'Delete this media asset?';
+    if (!window.confirm(msg)) return;
+    try {
+      if (item.storage_path) {
+        await supabase.storage.from('community-media').remove([item.storage_path]);
+      }
+      const { error } = await supabase.from('media_library').delete().eq('id', item.id);
+      if (error) throw error;
+      showToast('Media deleted.');
+      fetchMediaLibrary();
+      if (mediaPreviewItem?.id === item.id) setMediaPreviewItem(null);
+    } catch (err) {
+      showToast('Delete failed: ' + err.message, 'error');
+    }
+  };
+
+  const filteredMediaLibrary = mediaLibrary.filter(item => {
+    if (mediaTypeFilter !== 'all' && item.file_type !== mediaTypeFilter) return false;
+    if (mediaSearch) {
+      const q = mediaSearch.toLowerCase();
+      return item.filename.toLowerCase().includes(q) || (item.tags || []).some(t => t.toLowerCase().includes(q));
+    }
+    return true;
+  });
+
   const handlePostAnnouncement = async () => {
     if (!annForm.title.trim() || !annForm.body.trim()) {
       showToast('Title and body are required', 'error');
@@ -1529,6 +1647,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               overview: 'Overview',
               announcements: `Announcements (${announcements.length})`,
               questions: `Questions (${questions.length})`,
+              media: `Media (${mediaLibrary.length})`,
               members: `Members (${members.length})`,
               settings: 'Settings',
               analytics: 'Analytics',
@@ -1545,6 +1664,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 { id: 'overview', label: 'Overview', icon: <HomeIcon size={16} /> },
                 { id: 'announcements', label: `Announcements (${announcements.length})`, icon: <MegaphoneIcon size={16} /> },
                 canManageQuestions(userCommunityRole) && { id: 'questions', label: `Questions (${questions.length})`, icon: <HelpIcon size={16} /> },
+                canManageQuestions(userCommunityRole) && { id: 'media', label: `Media (${mediaLibrary.length})`, icon: <ImageIcon size={16} /> },
                 canManageMembers(userCommunityRole) && { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
                 canManageSettings(userCommunityRole) && { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
                 canViewAnalytics(userCommunityRole) && { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> }
@@ -1980,6 +2100,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                       <div className="media-upload-row">
                                         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id={`img-upload-${question.id}`} style={{ display: 'none' }} onChange={(e) => { if (e.target.files[0]) handleImageUpload(question.id, e.target.files[0]); }} />
                                         <label htmlFor={`img-upload-${question.id}`} className="btn-secondary media-upload-btn">{mediaUploading ? 'Uploading...' : 'Upload Image'}</label>
+                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('image'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ image_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast('Failed: ' + error.message, 'error'); } else { fetchCommissionerData(); } }); }}>Browse Library</button>
                                         <span className="media-hint">PNG, JPEG, WebP, GIF — max 500KB</span>
                                       </div>
                                     )}
@@ -1996,6 +2117,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                       <div className="media-upload-row">
                                         <input type="text" className="media-video-input" placeholder="https://www.youtube.com/watch?v=..." onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(question.id, e.target.value); }} />
                                         <button className="btn-secondary" onClick={(e) => { const input = e.target.previousElementSibling; handleSaveVideoUrl(question.id, input.value); }}>Save</button>
+                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('video'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ video_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast('Failed: ' + error.message, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); } }); }}>Browse Library</button>
                                       </div>
                                     )}
                                   </div>
@@ -2107,6 +2229,124 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               </div>
             )}
             </>
+            )}
+          </div>
+        )}
+
+        {/* MEDIA LIBRARY TAB */}
+        {activeTab === 'media' && canManageQuestions(userCommunityRole) && (
+          <div className="tab-pane">
+            <div className="ml-header">
+              <h2>Media Library ({mediaLibrary.length})</h2>
+              <div className="ml-header-actions">
+                <label className="q-action-btn ml-upload-btn">
+                  <UploadIcon size={14} /> {mediaUploadingLib ? 'Uploading...' : 'Upload Image'}
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" style={{ display: 'none' }} disabled={mediaUploadingLib} onChange={(e) => { if (e.target.files[0]) handleMediaLibraryUpload(e.target.files[0]); e.target.value = ''; }} />
+                </label>
+                <button className="q-action-btn" onClick={() => {
+                  const url = window.prompt('Enter YouTube URL:');
+                  if (url) handleMediaLibraryAddVideo(url);
+                }}><VideoIcon size={14} /> Add Video</button>
+              </div>
+            </div>
+
+            <div className="ml-filters">
+              <div className="search-input-wrapper">
+                <input type="text" className="search-input" placeholder="Search by filename or tags..." value={mediaSearch} onChange={(e) => setMediaSearch(e.target.value)} />
+                {mediaSearch && <button className="clear-search" onClick={() => setMediaSearch('')}>✕</button>}
+              </div>
+              <div className="ml-type-pills">
+                {['all', 'image', 'video'].map(t => (
+                  <button key={t} className={`ml-type-pill${mediaTypeFilter === t ? ' active' : ''}`} onClick={() => setMediaTypeFilter(t)}>
+                    {t === 'all' ? 'All' : t === 'image' ? 'Images' : 'Videos'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {mediaLibraryLoading ? (
+              <div className="commissioner-section"><p>Loading media...</p></div>
+            ) : filteredMediaLibrary.length === 0 ? (
+              <div className="commissioner-section">
+                <p className="empty-message">{mediaLibrary.length === 0 ? 'No media uploaded yet. Upload images or add YouTube videos to build your library.' : 'No media matches your search.'}</p>
+              </div>
+            ) : (
+              <div className="ml-grid">
+                {filteredMediaLibrary.map(item => {
+                  const usage = getMediaUsageCount(item.file_url);
+                  const isVideo = item.file_type === 'video';
+                  const ytId = isVideo ? extractYouTubeId(item.file_url) : null;
+                  return (
+                    <div key={item.id} className="ml-card" onClick={() => setMediaPreviewItem(item)}>
+                      <div className="ml-card-thumb">
+                        {isVideo && ytId ? (
+                          <>
+                            <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} alt={item.filename} />
+                            <div className="ml-card-play">▶</div>
+                          </>
+                        ) : (
+                          <img src={item.file_url} alt={item.filename} />
+                        )}
+                      </div>
+                      <div className="ml-card-info">
+                        <div className="ml-card-name" title={item.filename}>{item.filename}</div>
+                        <div className="ml-card-meta">
+                          <span className={`ml-type-badge ${item.file_type}`}>{item.file_type}</span>
+                          <span className="ml-card-date">{new Date(item.created_at).toLocaleDateString()}</span>
+                        </div>
+                        {usage > 0 && <div className="ml-card-usage">{usage} question{usage !== 1 ? 's' : ''}</div>}
+                      </div>
+                      <div className="ml-card-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="ml-card-action-btn" title="Copy URL" onClick={() => { navigator.clipboard.writeText(item.file_url); showToast('URL copied!'); }}>Copy</button>
+                        <button className="ml-card-action-btn danger" title="Delete" onClick={() => handleMediaLibraryDelete(item)}>Delete</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Media Preview Modal */}
+            {mediaPreviewItem && (
+              <div className="cd-modal-overlay" onClick={() => setMediaPreviewItem(null)}>
+                <div className="cd-modal ml-preview-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="cd-modal-header">
+                    <h2>{mediaPreviewItem.filename}</h2>
+                    <button className="cd-modal-close" onClick={() => setMediaPreviewItem(null)}>×</button>
+                  </div>
+                  <div className="cd-modal-body">
+                    <div className="ml-preview-media">
+                      {mediaPreviewItem.file_type === 'video' && extractYouTubeId(mediaPreviewItem.file_url) ? (
+                        <div className="ml-preview-video">
+                          <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(mediaPreviewItem.file_url)}`} title="Video preview" style={{ border: 0 }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                        </div>
+                      ) : (
+                        <img src={mediaPreviewItem.file_url} alt={mediaPreviewItem.filename} className="ml-preview-img" />
+                      )}
+                    </div>
+                    <div className="ml-preview-details">
+                      <div className="ml-preview-row"><strong>Type:</strong> {mediaPreviewItem.file_type}</div>
+                      {mediaPreviewItem.file_size && <div className="ml-preview-row"><strong>Size:</strong> {(mediaPreviewItem.file_size / 1024).toFixed(1)} KB</div>}
+                      <div className="ml-preview-row"><strong>Uploaded:</strong> {new Date(mediaPreviewItem.created_at).toLocaleString()}</div>
+                      <div className="ml-preview-row"><strong>URL:</strong> <code className="ml-url-code">{mediaPreviewItem.file_url}</code></div>
+                    </div>
+                    {(() => {
+                      const usedBy = getMediaUsageQuestions(mediaPreviewItem.file_url);
+                      if (usedBy.length === 0) return <p className="ml-preview-no-usage">Not used by any questions.</p>;
+                      return (
+                        <div className="ml-preview-usage">
+                          <h4>Used by {usedBy.length} question{usedBy.length !== 1 ? 's' : ''}:</h4>
+                          <ul>{usedBy.map(q => <li key={q.id}>{q.question_text}</li>)}</ul>
+                        </div>
+                      );
+                    })()}
+                    <div className="ml-preview-actions">
+                      <button className="btn-secondary" onClick={() => { navigator.clipboard.writeText(mediaPreviewItem.file_url); showToast('URL copied!'); }}>Copy URL</button>
+                      <button className="btn-danger-sm" onClick={() => { handleMediaLibraryDelete(mediaPreviewItem); }}>Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -2901,6 +3141,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     }}
                   />
                   {addQImagePreview && <img src={addQImagePreview} alt="Preview" className="add-q-img-preview" />}
+                  <button type="button" className="btn-secondary ml-browse-btn" onClick={() => { setMediaBrowseTarget('image'); setMediaBrowseCallback(() => (url) => { setAddQForm(f => ({ ...f, image_url: url })); setAddQImagePreview(url); setAddQImageFile(null); }); }}>Browse Library</button>
                 </div>
                 <div className="add-q-field">
                   <label>YouTube Video URL (optional)</label>
@@ -2908,6 +3149,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                   {addQForm.video_url && extractYouTubeId(addQForm.video_url) && (
                     <img src={`https://img.youtube.com/vi/${extractYouTubeId(addQForm.video_url)}/mqdefault.jpg`} alt="Video thumbnail" className="add-q-img-preview" />
                   )}
+                  <button type="button" className="btn-secondary ml-browse-btn" onClick={() => { setMediaBrowseTarget('video'); setMediaBrowseCallback(() => (url) => { setAddQForm(f => ({ ...f, video_url: url })); }); }}>Browse Library</button>
                 </div>
               </div>
               <div className="add-q-field">
@@ -3243,6 +3485,49 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== BROWSE MEDIA LIBRARY MODAL ===== */}
+      {mediaBrowseTarget && (
+        <div className="cd-modal-overlay" onClick={() => { setMediaBrowseTarget(null); setMediaBrowseCallback(null); }}>
+          <div className="cd-modal ml-browse-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cd-modal-header">
+              <h2>Browse Media Library — {mediaBrowseTarget === 'image' ? 'Images' : 'Videos'}</h2>
+              <button className="cd-modal-close" onClick={() => { setMediaBrowseTarget(null); setMediaBrowseCallback(null); }}>×</button>
+            </div>
+            <div className="cd-modal-body">
+              {mediaLibrary.filter(m => mediaBrowseTarget === 'image' ? m.file_type === 'image' : m.file_type === 'video').length === 0 ? (
+                <p className="empty-message">No {mediaBrowseTarget === 'image' ? 'images' : 'videos'} in your library yet. Upload from the Media tab first.</p>
+              ) : (
+                <div className="ml-browse-grid">
+                  {mediaLibrary.filter(m => mediaBrowseTarget === 'image' ? m.file_type === 'image' : m.file_type === 'video').map(item => {
+                    const isVideo = item.file_type === 'video';
+                    const ytId = isVideo ? extractYouTubeId(item.file_url) : null;
+                    return (
+                      <div key={item.id} className="ml-browse-card" onClick={() => {
+                        if (mediaBrowseCallback) mediaBrowseCallback(item.file_url);
+                        setMediaBrowseTarget(null);
+                        setMediaBrowseCallback(null);
+                      }}>
+                        <div className="ml-card-thumb">
+                          {isVideo && ytId ? (
+                            <>
+                              <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} alt={item.filename} />
+                              <div className="ml-card-play">▶</div>
+                            </>
+                          ) : (
+                            <img src={item.file_url} alt={item.filename} />
+                          )}
+                        </div>
+                        <div className="ml-browse-card-name" title={item.filename}>{item.filename}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
