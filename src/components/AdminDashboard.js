@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
 import { ShieldIcon, UsersIcon, GamepadIcon, ChartIcon, StarIcon, PlusIcon } from './Icons';
+import { isSuperAdmin, getPlatformRole } from '../utils/permissions';
 
 function AdminDashboard({ onBack, currentUserId }) {
   const [stats, setStats] = useState(null);
@@ -33,8 +34,14 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [aiHistory, setAiHistory] = useState([]);
   const [rejectNotes, setRejectNotes] = useState({});
   const [rejectingId, setRejectingId] = useState(null);
+  const [currentAdminProfile, setCurrentAdminProfile] = useState(null);
 
-  useEffect(() => { fetchAdminData(); fetchAiRequests(); }, []);
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchCurrentProfile = async () => {
+    const { data } = await supabase.from('profiles').select('id, platform_role, super_admin, role').eq('id', currentUserId).single();
+    setCurrentAdminProfile(data);
+  };
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -51,7 +58,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         { data: pending }
       ] = await Promise.all([
         supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, user_id'),
-        supabase.from('profiles').select('id, username, created_at, role, super_admin'),
+        supabase.from('profiles').select('id, username, created_at, role, super_admin, platform_role'),
         supabase.from('community_members').select('user_id'),
         supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10),
         supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false })
@@ -215,31 +222,31 @@ function AdminDashboard({ onBack, currentUserId }) {
   };
 
   // Users tab logic
-  const handlePromote = async (userId, username) => {
-    if (!window.confirm(`Promote ${username} to admin?`)) return;
-    const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('id', userId);
-    if (error) { showToast('Failed to promote: ' + error.message, 'error'); return; }
-    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: 'admin' } : u));
-    showToast(`${username} promoted to admin`);
-  };
 
-  const handleDemote = async (userId, username) => {
+  const handlePlatformRoleChange = async (userId, username, newRole) => {
     if (userId === currentUserId) return;
-    if (!window.confirm(`Demote ${username} to user?`)) return;
-    const { error } = await supabase.from('profiles').update({ role: 'user' }).eq('id', userId);
-    if (error) { showToast('Failed to demote: ' + error.message, 'error'); return; }
-    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: 'user' } : u));
-    showToast(`${username} demoted to user`);
-  };
-
-  const handleToggleSuperAdmin = async (userId, username, currentVal) => {
-    if (userId === currentUserId) return;
-    const action = currentVal ? 'remove super admin from' : 'grant super admin to';
-    if (!window.confirm(`Are you sure you want to ${action} ${username}? Super admins have full platform access.`)) return;
-    const { error } = await supabase.from('profiles').update({ super_admin: !currentVal }).eq('id', userId);
-    if (error) { showToast('Failed to update: ' + error.message, 'error'); return; }
-    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, super_admin: !currentVal } : u));
-    showToast(`${username} ${currentVal ? 'removed from' : 'granted'} super admin`);
+    const labels = { user: 'User', admin: 'Admin', super_admin: 'Super Admin' };
+    if (!window.confirm(`Change ${username}'s platform role to ${labels[newRole]}? ${newRole === 'super_admin' ? 'Super admins have full platform access.' : ''}`)) return;
+    try {
+      // Update both new and legacy columns for backward compatibility
+      const updates = { platform_role: newRole };
+      if (newRole === 'super_admin') {
+        updates.super_admin = true;
+        updates.role = 'admin';
+      } else if (newRole === 'admin') {
+        updates.super_admin = false;
+        updates.role = 'admin';
+      } else {
+        updates.super_admin = false;
+        updates.role = 'user';
+      }
+      const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+      if (error) { showToast('Failed to change role: ' + error.message, 'error'); return; }
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+      showToast(`${username} is now ${labels[newRole]}`);
+    } catch (err) {
+      showToast('Failed to change role', 'error');
+    }
   };
 
   const handleViewActivity = async (userId) => {
@@ -332,9 +339,7 @@ function AdminDashboard({ onBack, currentUserId }) {
   };
 
   const getRoleLabel = (user) => {
-    if (user.super_admin) return 'super_admin';
-    if (user.role === 'admin') return 'admin';
-    return 'user';
+    return getPlatformRole(user);
   };
 
   const filteredUsers = allUsers
@@ -559,7 +564,7 @@ function AdminDashboard({ onBack, currentUserId }) {
                 <thead>
                   <tr>
                     <th className="um-sortable" onClick={() => handleSort('username')}>Username{sortArrow('username')}</th>
-                    <th className="um-sortable" onClick={() => handleSort('role')}>Role{sortArrow('role')}</th>
+                    <th className="um-sortable" onClick={() => handleSort('role')}>Platform Role{sortArrow('role')}</th>
                     <th className="um-sortable" onClick={() => handleSort('games')}>Games{sortArrow('games')}</th>
                     <th>Communities</th>
                     <th className="um-sortable" onClick={() => handleSort('created_at')}>Joined{sortArrow('created_at')}</th>
@@ -575,31 +580,30 @@ function AdminDashboard({ onBack, currentUserId }) {
                         <tr className={expandedUser === user.id ? 'um-expanded-row' : ''}>
                           <td className="um-username">{user.username}{isSelf && <span className="um-you-badge">you</span>}</td>
                           <td>
-                            <span className={`role-badge role-${roleLabel === 'user' ? 'user' : 'admin'}`}>
-                              {roleLabel === 'super_admin' ? 'super admin' : roleLabel}
-                            </span>
+                            {isSuperAdmin(currentAdminProfile) && !isSelf ? (
+                              <select
+                                value={roleLabel}
+                                onChange={(e) => handlePlatformRoleChange(user.id, user.username, e.target.value)}
+                                style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '6px', border: '1px solid #DEE2E6' }}
+                              >
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                                <option value="super_admin">Super Admin</option>
+                              </select>
+                            ) : (
+                              <span className={`role-badge role-${roleLabel === 'user' ? 'user' : 'admin'}`}>
+                                {roleLabel === 'super_admin' ? 'super admin' : roleLabel}
+                              </span>
+                            )}
                           </td>
                           <td>{userGameCounts[user.id] || 0}</td>
                           <td>{userCommunityCounts[user.id] || 0}</td>
                           <td>{new Date(user.created_at).toLocaleDateString()}</td>
                           <td className="um-actions">
-                            {user.role !== 'admin' && !user.super_admin && (
-                              <button className="um-action-btn um-promote" onClick={() => handlePromote(user.id, user.username)}>Promote</button>
-                            )}
-                            {user.role === 'admin' && !user.super_admin && (
-                              <button className="um-action-btn um-demote" onClick={() => handleDemote(user.id, user.username)} disabled={isSelf}>Demote</button>
-                            )}
-                            <button
-                              className={`um-action-btn ${user.super_admin ? 'um-revoke-sa' : 'um-grant-sa'}`}
-                              onClick={() => handleToggleSuperAdmin(user.id, user.username, user.super_admin)}
-                              disabled={isSelf}
-                            >
-                              {user.super_admin ? 'Revoke SA' : 'Grant SA'}
-                            </button>
                             <button className="um-action-btn um-view" onClick={() => handleViewActivity(user.id)}>
                               {expandedUser === user.id ? 'Hide' : 'Activity'}
                             </button>
-                            {!isSelf && !user.super_admin && (
+                            {!isSelf && !isSuperAdmin(user) && (
                               <button className="um-action-btn um-delete" onClick={() => handleOpenDeleteModal(user)}>Delete</button>
                             )}
                           </td>

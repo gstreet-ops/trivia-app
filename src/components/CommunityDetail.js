@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
 import CommunityChat from './CommunityChat';
 import { SettingsIcon, PinIcon, TrophyIcon, UsersIcon, FileIcon, MessageIcon } from './Icons';
+import { hasCommunityRole } from '../utils/permissions';
 
 function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQuiz, onManageCommunity }) {
   const [community, setCommunity] = useState(null);
@@ -16,6 +17,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
   const [expandedArchive, setExpandedArchive] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [userCommunityRole, setUserCommunityRole] = useState(null);
 
   useEffect(() => {
     fetchCommunityData();
@@ -33,10 +35,14 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
       const { data: membersData } = await supabase
         .from('community_members')
-        .select('user_id, joined_at, profiles(username)')
+        .select('user_id, joined_at, role, profiles(username)')
         .eq('community_id', communityId)
         .order('joined_at', { ascending: true });
       setMembers(membersData || []);
+
+      // Fetch current user's community role
+      const myMembership = (membersData || []).find(m => m.user_id === currentUserId);
+      setUserCommunityRole(myMembership?.role || null);
 
       // Fetch leaderboard — filter by season_start if available
       if (communityData?.season_start) {
@@ -136,6 +142,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
   };
 
   const isCommissioner = community?.commissioner_id === currentUserId;
+  const canManage = hasCommunityRole(userCommunityRole, 'moderator');
 
   // Theme values from settings JSONB
   const themeColor = community?.settings?.theme_color || null;
@@ -195,9 +202,9 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
         </div>
       </div>
 
-      {isCommissioner && (
+      {canManage && (
         <button className="manage-community-btn" onClick={() => onManageCommunity(communityId)}>
-          <SettingsIcon size={14} /> Manage Community
+          <SettingsIcon size={14} /> {hasCommunityRole(userCommunityRole, 'commissioner') ? 'Manage Community' : 'Manage Questions'}
         </button>
       )}
 

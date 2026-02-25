@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import './CommissionerDashboard.css';
 import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon } from './Icons';
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
+import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership } from '../utils/permissions';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -51,6 +52,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [navOpen, setNavOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'add' | 'import' | 'ai' | null
   const [showGenerator, setShowGenerator] = useState(false);
+  const [userCommunityRole, setUserCommunityRole] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferTarget, setTransferTarget] = useState('');
+  const [transferConfirmText, setTransferConfirmText] = useState('');
+  const [transferLoading, setTransferLoading] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
   const [annEditing, setAnnEditing] = useState(null);
@@ -165,7 +171,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('id', communityId)
         .single();
 
-      if (communityData.commissioner_id !== currentUserId) {
+      // Fetch current user's community membership for role check
+      const { data: myMembership } = await supabase
+        .from('community_members')
+        .select('role')
+        .eq('community_id', communityId)
+        .eq('user_id', currentUserId)
+        .single();
+
+      const myRole = myMembership?.role || null;
+      setUserCommunityRole(myRole);
+
+      // Also check legacy commissioner_id for backward compatibility
+      const isLegacyCommissioner = communityData.commissioner_id === currentUserId;
+
+      if (!hasCommunityRole(myRole, 'moderator') && !isLegacyCommissioner) {
         showToast('You are not authorized to access this page', 'error');
         onBack();
         return;
@@ -175,7 +195,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username')
+        .select('username, platform_role, super_admin')
         .eq('id', currentUserId)
         .single();
       setUsername(profileData?.username || '');
@@ -512,6 +532,90 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     } catch (error) {
       console.error('Error removing member:', error);
       showToast('Failed to remove member', 'error');
+    }
+  };
+
+  const handleRoleChange = async (userId, username, newRole) => {
+    const roleLabels = { member: 'Member', moderator: 'Moderator', commissioner: 'Commissioner', owner: 'Owner' };
+    if (!window.confirm(`Change ${username}'s role to ${roleLabels[newRole]}?`)) return;
+    try {
+      const { error } = await supabase
+        .from('community_members')
+        .update({ role: newRole })
+        .eq('community_id', communityId)
+        .eq('user_id', userId);
+      if (error) {
+        showToast('Failed to change role: ' + error.message, 'error');
+      } else {
+        showToast(`${username} is now ${roleLabels[newRole]}`);
+        fetchCommissionerData();
+      }
+    } catch (err) {
+      console.error('Error changing role:', err);
+      showToast('Failed to change role', 'error');
+    }
+  };
+
+  const handleTransferOwnership = async () => {
+    if (!transferTarget || transferConfirmText !== community?.name) return;
+    setTransferLoading(true);
+    try {
+      // Set new owner
+      const { error: e1 } = await supabase
+        .from('community_members')
+        .update({ role: 'owner' })
+        .eq('community_id', communityId)
+        .eq('user_id', transferTarget);
+      if (e1) throw e1;
+
+      // Demote self to commissioner
+      const { error: e2 } = await supabase
+        .from('community_members')
+        .update({ role: 'commissioner' })
+        .eq('community_id', communityId)
+        .eq('user_id', currentUserId);
+      if (e2) throw e2;
+
+      // Update legacy commissioner_id
+      const { error: e3 } = await supabase
+        .from('communities')
+        .update({ commissioner_id: transferTarget })
+        .eq('id', communityId);
+      if (e3) throw e3;
+
+      showToast('Ownership transferred successfully');
+      setShowTransferModal(false);
+      setTransferTarget('');
+      setTransferConfirmText('');
+      fetchCommissionerData();
+    } catch (err) {
+      console.error('Error transferring ownership:', err);
+      showToast('Failed to transfer ownership: ' + (err.message || err), 'error');
+    }
+    setTransferLoading(false);
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${community?.name}"? This cannot be undone.`)) return;
+    if (!window.confirm('This will delete ALL community data including questions, games, members, and announcements. Type OK in the next prompt to confirm.')) return;
+    const final = window.prompt('Type the community name to confirm deletion:');
+    if (final !== community?.name) { showToast('Community name did not match', 'error'); return; }
+    try {
+      // Delete dependent data first
+      await supabase.from('community_messages').delete().eq('community_id', communityId);
+      await supabase.from('community_announcements').delete().eq('community_id', communityId);
+      await supabase.from('question_templates').delete().eq('community_id', communityId);
+      await supabase.from('generation_requests').delete().eq('community_id', communityId);
+      await supabase.from('season_archives').delete().eq('community_id', communityId);
+      await supabase.from('community_questions').delete().eq('community_id', communityId);
+      await supabase.from('community_members').delete().eq('community_id', communityId);
+      const { error } = await supabase.from('communities').delete().eq('id', communityId);
+      if (error) throw error;
+      showToast('Community deleted');
+      onBack();
+    } catch (err) {
+      console.error('Error deleting community:', err);
+      showToast('Failed to delete community: ' + (err.message || err), 'error');
     }
   };
 
@@ -1440,11 +1544,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               {[
                 { id: 'overview', label: 'Overview', icon: <HomeIcon size={16} /> },
                 { id: 'announcements', label: `Announcements (${announcements.length})`, icon: <MegaphoneIcon size={16} /> },
-                { id: 'questions', label: `Questions (${questions.length})`, icon: <HelpIcon size={16} /> },
-                { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
-                { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
-                { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> }
-              ].map(tab => (
+                canManageQuestions(userCommunityRole) && { id: 'questions', label: `Questions (${questions.length})`, icon: <HelpIcon size={16} /> },
+                canManageMembers(userCommunityRole) && { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
+                canManageSettings(userCommunityRole) && { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
+                canViewAnalytics(userCommunityRole) && { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> }
+              ].filter(Boolean).map(tab => (
                 <button
                   key={tab.id}
                   className={`nav-dropdown-item ${activeTab === tab.id ? 'active' : ''}`}
@@ -1637,7 +1741,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         )}
 
         {/* QUESTIONS TAB */}
-        {activeTab === 'questions' && (
+        {activeTab === 'questions' && canManageQuestions(userCommunityRole) && (
           <div className="tab-pane">
             {showGenerator ? (
               <CommissionerGenerator onClose={() => setShowGenerator(false)} />
@@ -2008,7 +2112,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         )}
 
         {/* MEMBERS TAB */}
-        {activeTab === 'members' && (
+        {activeTab === 'members' && canManageMembers(userCommunityRole) && (
           <div className="tab-pane">
             <div className="commissioner-section">
               <h2>Manage Members ({members.length})</h2>
@@ -2018,27 +2122,70 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <div className="members-table">
                   <table>
                     <thead>
-                      <tr><th>Username</th><th>Joined</th><th>Actions</th></tr>
+                      <tr><th>Username</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
                     </thead>
                     <tbody>
-                      {members.map(member => (
-                        <tr key={member.user_id}>
-                          <td>
-                            {member.profiles?.username}
-                            {member.user_id === community.commissioner_id && (
-                              <span className="commissioner-tag">Commissioner</span>
-                            )}
-                          </td>
-                          <td>{new Date(member.joined_at).toLocaleDateString()}</td>
-                          <td>
-                            {member.user_id !== community.commissioner_id && (
-                              <button className="btn-danger-sm" onClick={() => handleRemoveMember(member.user_id, member.profiles?.username)}>
-                                Remove
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {members.map(member => {
+                        const mRole = member.role || 'member';
+                        const isSelf = member.user_id === currentUserId;
+                        const roleBadgeStyles = {
+                          owner: { background: '#B8860B', color: '#fff' },
+                          commissioner: { background: '#041E42', color: '#fff' },
+                          moderator: { background: '#0D7377', color: '#fff' },
+                          member: { background: '#E0E0E0', color: '#333' },
+                        };
+                        const badgeStyle = {
+                          ...roleBadgeStyles[mRole] || roleBadgeStyles.member,
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          textTransform: 'uppercase',
+                          fontWeight: 600,
+                          display: 'inline-block',
+                        };
+
+                        // Determine allowed role options for dropdown
+                        let roleOptions = null;
+                        if (!isSelf) {
+                          if (userCommunityRole === 'owner' && mRole !== 'owner') {
+                            roleOptions = ['member', 'moderator', 'commissioner'];
+                          } else if (userCommunityRole === 'commissioner' && (mRole === 'member' || mRole === 'moderator')) {
+                            roleOptions = ['member', 'moderator'];
+                          }
+                        }
+
+                        return (
+                          <tr key={member.user_id}>
+                            <td>
+                              {member.profiles?.username}
+                              {isSelf && <span style={{ fontSize: '10px', color: '#8B9DC3', marginLeft: '6px' }}>(you)</span>}
+                            </td>
+                            <td>
+                              {roleOptions ? (
+                                <select
+                                  value={mRole}
+                                  onChange={(e) => handleRoleChange(member.user_id, member.profiles?.username, e.target.value)}
+                                  style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '6px', border: '1px solid #DEE2E6' }}
+                                >
+                                  {roleOptions.map(r => (
+                                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span style={badgeStyle}>{mRole}</span>
+                              )}
+                            </td>
+                            <td>{new Date(member.joined_at).toLocaleDateString()}</td>
+                            <td>
+                              {!isSelf && mRole !== 'owner' && hasCommunityRole(userCommunityRole, 'commissioner') && (
+                                <button className="btn-danger-sm" onClick={() => handleRemoveMember(member.user_id, member.profiles?.username)}>
+                                  Remove
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2048,7 +2195,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         )}
 
         {/* SETTINGS TAB */}
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && canManageSettings(userCommunityRole) && (
           <div className="tab-pane">
             <div className="commissioner-section">
               <div className="section-header">
@@ -2450,11 +2597,91 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 </div>
               )}
             </div>
+
+            {/* Owner-only danger zone */}
+            {(canDeleteCommunity(userCommunityRole) || canTransferOwnership(userCommunityRole)) && (
+              <div className="commissioner-section" style={{ marginTop: '32px' }}>
+                <h2 style={{ color: '#C41E3A' }}>Danger Zone</h2>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
+                  {canTransferOwnership(userCommunityRole) && (
+                    <button
+                      className="btn-danger-sm"
+                      style={{ padding: '8px 18px', fontSize: '13px' }}
+                      onClick={() => setShowTransferModal(true)}
+                    >
+                      Transfer Ownership
+                    </button>
+                  )}
+                  {canDeleteCommunity(userCommunityRole) && (
+                    <button
+                      className="btn-danger-sm"
+                      style={{ padding: '8px 18px', fontSize: '13px', background: '#C41E3A', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      onClick={handleDeleteCommunity}
+                    >
+                      Delete Community
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Transfer Ownership Modal */}
+        {showTransferModal && (
+          <div className="cd-modal-overlay" onClick={() => setShowTransferModal(false)}>
+            <div className="cd-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <div className="cd-modal-header">
+                <h2>Transfer Ownership</h2>
+                <button className="cd-modal-close" onClick={() => setShowTransferModal(false)}>×</button>
+              </div>
+              <div className="cd-modal-body">
+                <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca', marginBottom: '16px', fontSize: '13px', color: '#991b1b' }}>
+                  This will make the selected member the new owner. You will be demoted to Commissioner.
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#041E42', marginBottom: '4px' }}>New Owner</label>
+                  <select
+                    value={transferTarget}
+                    onChange={(e) => setTransferTarget(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #DEE2E6', fontSize: '14px' }}
+                  >
+                    <option value="">Select a member...</option>
+                    {members.filter(m => m.user_id !== currentUserId).map(m => (
+                      <option key={m.user_id} value={m.user_id}>{m.profiles?.username} ({m.role || 'member'})</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#041E42', marginBottom: '4px' }}>
+                    Type <strong>{community?.name}</strong> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={transferConfirmText}
+                    onChange={(e) => setTransferConfirmText(e.target.value)}
+                    placeholder={community?.name}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #DEE2E6', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button className="btn-primary" style={{ background: '#E8ECF0', color: '#54585A' }} onClick={() => setShowTransferModal(false)} disabled={transferLoading}>Cancel</button>
+                  <button
+                    className="btn-primary"
+                    style={{ background: '#C41E3A' }}
+                    disabled={!transferTarget || transferConfirmText !== community?.name || transferLoading}
+                    onClick={handleTransferOwnership}
+                  >
+                    {transferLoading ? 'Transferring...' : 'Transfer Ownership'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* ANALYTICS TAB */}
-        {activeTab === 'analytics' && (
+        {activeTab === 'analytics' && canViewAnalytics(userCommunityRole) && (
           <div className="tab-pane">
             {analytics ? (
               <div className="analytics-container">

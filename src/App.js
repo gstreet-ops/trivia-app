@@ -21,6 +21,7 @@ import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
 import NotificationBell from './components/NotificationBell';
 import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon, ChevronDownIcon, CheckIcon } from './components/Icons';
+import { isPlatformAdmin, getPlatformRole } from './utils/permissions';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
@@ -243,11 +244,11 @@ function App() {
 
   const fetchUserRole = async (userId) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('role, super_admin, username, theme').eq('id', userId).single();
+      const { data, error } = await supabase.from('profiles').select('role, super_admin, platform_role, username, theme').eq('id', userId).single();
       if (error) throw error;
-      if (data?.super_admin) setUserRole('super_admin');
-      else setUserRole('user');
-      setAppIsAdmin(data?.super_admin === true);
+      const resolvedRole = getPlatformRole(data);
+      setUserRole(resolvedRole);
+      setAppIsAdmin(isPlatformAdmin(data));
       setAppUsername(data?.username || '');
 
       // Apply theme from profile (cross-device persistence)

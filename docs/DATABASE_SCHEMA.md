@@ -39,16 +39,18 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 |--------|------|-------------|
 | `id` | `uuid` | Primary key; matches `auth.users.id` |
 | `username` | `text` | Display name chosen at signup |
-| `role` | `text` | `'user'` (default) or `'admin'` |
-| `super_admin` | `boolean` | Platform super-admin flag |
+| `platform_role` | `text` | `'user'` (default), `'admin'`, or `'super_admin'` — new unified role column |
+| `role` | `text` | **Deprecated** — `'user'` or `'admin'`. Kept for backward compatibility; use `platform_role` instead |
+| `super_admin` | `boolean` | **Deprecated** — Kept for backward compatibility; use `platform_role` instead |
 | `profile_visibility` | `boolean` | If false, profile hidden from other users |
 | `leaderboard_visibility` | `boolean` | If false, excluded from leaderboards |
 | `theme` | `text` | `'light'` or `'dark'` — user's preferred color theme |
 | `created_at` | `timestamptz` | Row creation timestamp |
 
 **Notes:**
-- `role = 'admin'` or `super_admin = true` grants access to the Admin Dashboard
-- `super_admin` users additionally see the "Mixed (All Sources)" quiz option
+- `platform_role = 'admin'` or `'super_admin'` grants access to the Admin Dashboard
+- `super_admin` platform role users additionally see the "Mixed (All Sources)" quiz option
+- Legacy columns `role` and `super_admin` are kept in sync by the app for backward compatibility but `platform_role` is the canonical source of truth
 
 ---
 
@@ -171,10 +173,25 @@ Join table connecting users to communities.
 | `id` | `uuid` | Primary key |
 | `community_id` | `uuid` | FK → `communities.id` |
 | `user_id` | `uuid` | FK → `profiles.id` |
+| `role` | `text` | `'owner'`, `'commissioner'`, `'moderator'`, or `'member'` (default) |
 | `joined_at` | `timestamptz` | Join timestamp |
 
 **Constraints:**
 - Unique on `(community_id, user_id)` — prevents duplicate membership (error code `23505`)
+- CHECK on `role` — must be one of: `owner`, `commissioner`, `moderator`, `member`
+
+**Community Role Permissions:**
+
+| Permission | Owner | Commissioner | Moderator | Member |
+|------------|-------|--------------|-----------|--------|
+| View community | Yes | Yes | Yes | Yes |
+| Manage questions (add/edit/delete/import) | Yes | Yes | Yes | No |
+| View analytics | Yes | Yes | Yes | No |
+| Manage members (remove, change roles) | Yes | Yes | No | No |
+| Manage settings | Yes | Yes | No | No |
+| Post announcements | Yes | Yes | No | No |
+| Transfer ownership | Yes | No | No | No |
+| Delete community | Yes | No | No | No |
 
 ---
 
@@ -595,12 +612,13 @@ When a new user signs up via `supabase.auth.signUp()`, a trigger should auto-cre
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, role, super_admin, profile_visibility, leaderboard_visibility)
+  INSERT INTO public.profiles (id, username, role, super_admin, platform_role, profile_visibility, leaderboard_visibility)
   VALUES (
     new.id,
     new.raw_user_meta_data->>'username',
     'user',
     false,
+    'user',
     true,
     true
   );

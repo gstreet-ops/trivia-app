@@ -48,7 +48,7 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
       const inviteCode = Array.from(randomBytes, b => chars[b % chars.length]).join('');
       const { data: community, error: createError } = await supabase.from('communities').insert([{ name: trimmedName, slug: slug, commissioner_id: user.id, invite_code: inviteCode, season_start: new Date().toISOString(), season_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }]).select().single();
       if (createError) throw createError;
-      await supabase.from('community_members').insert([{ community_id: community.id, user_id: user.id }]);
+      await supabase.from('community_members').insert([{ community_id: community.id, user_id: user.id, role: 'owner' }]);
       setShowCreateModal(false);
       setNewCommunityName('');
       fetchMyCommunities();
@@ -62,7 +62,7 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
     <div className="communities-list">
       <button className="back-btn" onClick={onBack}>Back to Dashboard</button>
       <h1>My Communities</h1>
-      <div className="action-buttons">{userRole === 'super_admin' && <button className="create-btn" onClick={() => setShowCreateModal(true)}>Create Community</button>}<button className="join-btn" onClick={() => setShowJoinModal(true)}>Join Community</button><button className="browse-btn" onClick={onBrowseMarketplace}>Browse Marketplace</button></div>
+      <div className="action-buttons">{(userRole === 'super_admin' || userRole === 'admin') && <button className="create-btn" onClick={() => setShowCreateModal(true)}>Create Community</button>}<button className="join-btn" onClick={() => setShowJoinModal(true)}>Join Community</button><button className="browse-btn" onClick={onBrowseMarketplace}>Browse Marketplace</button></div>
       {myCommunities.length === 0 ? <div className="empty-state"><p>You haven't joined any communities yet.</p><p>Create your own or join with an invite code!</p></div> : (
         <div className="communities-grid">
           {myCommunities.map(community => (

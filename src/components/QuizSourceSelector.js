@@ -9,7 +9,7 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
   const [questionCount, setQuestionCount] = useState(10);
   const [timerSettings, setTimerSettings] = useState(null);
 
-  const isAdmin = userRole === 'super_admin';
+  const isAdmin = userRole === 'super_admin' || userRole === 'admin';
 
   const categories = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature'];
 

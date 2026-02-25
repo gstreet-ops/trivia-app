@@ -189,6 +189,18 @@
 - [x] AI-optimized prompt output with copy-to-clipboard, source-specific usage instructions, and CSV import post-steps
 - [x] Modular architecture — PromptBuilder utility, QuestionGeneratorCore shell, CommissionerGenerator wrapper (ready for Phase 2 admin version)
 
+### Role System (Phase 1 — Foundation)
+- [x] `platform_role` column on profiles — unified `user`/`admin`/`super_admin` role with migration from legacy `role`+`super_admin` columns
+- [x] `role` column on community_members — `owner`/`commissioner`/`moderator`/`member` hierarchy
+- [x] Central `permissions.js` utility — `hasPlatformRole`, `hasCommunityRole`, permission check functions
+- [x] Commissioner Dashboard role-gated tabs — Questions (moderator+), Members (commissioner+), Settings (commissioner+), Analytics (moderator+)
+- [x] Members tab role badges (color-coded pills) and role dropdown for owners/commissioners
+- [x] Owner-only danger zone — Transfer Ownership modal and Delete Community in Settings tab
+- [x] Admin Dashboard platform role dropdown — super admins can change any user's platform role
+- [x] Community Detail "Manage Community" / "Manage Questions" button based on community role
+- [x] SQL migration script (`docs/MIGRATION_ROLES.sql`) with RLS policy updates
+- [x] Backward-compatible — legacy `role`, `super_admin`, `commissioner_id` columns preserved and kept in sync
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon
@@ -226,12 +238,12 @@
 ### Medium-term
 
 - [ ] **Member question submissions** — commissioners can optionally allow members to submit questions to their community bank, with commissioner approval
-- [ ] **Server-side RLS role enforcement (Phase 2)** — enforce roles at Supabase RLS level: commissioners restricted to own community data, super admin full access, users own data only
+- [ ] **Server-side RLS role enforcement (Phase 2)** — extend RLS policies to enforce community roles at the database level for all tables
 - [ ] **Question difficulty auto-rating** — compute difficulty from actual performance data
 
 ### Longer-term
 
-- [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, community permission tiers (viewer, contributor, moderator, commissioner), configurable per-community member capabilities
+- [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, configurable per-community member capabilities, viewer/contributor tiers
 - [ ] **Mobile app** — React Native port
 - [ ] **Scheduled quizzes** — commissioner sets a quiz time; all members play the same questions simultaneously
 - [ ] **Streak tracking** — daily play streak with streak badges
