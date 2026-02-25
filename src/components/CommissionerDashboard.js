@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
 import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon } from './Icons';
+import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -49,6 +50,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [username, setUsername] = useState('');
   const [navOpen, setNavOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'add' | 'import' | 'ai' | null
+  const [showGenerator, setShowGenerator] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
   const [annEditing, setAnnEditing] = useState(null);
@@ -1637,13 +1639,17 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {/* QUESTIONS TAB */}
         {activeTab === 'questions' && (
           <div className="tab-pane">
+            {showGenerator ? (
+              <CommissionerGenerator onClose={() => setShowGenerator(false)} />
+            ) : (
+            <>
             {/* Action Bar */}
             <div className="q-action-bar">
               <h2 className="q-action-bar-title">Questions ({questions.length})</h2>
               <div className="q-action-bar-buttons">
                 <button className="q-action-btn" onClick={() => setActiveModal('add')}><PlusIcon size={14} /> Add</button>
                 <button className="q-action-btn" onClick={() => setActiveModal('import')}><UploadIcon size={14} /> Import CSV</button>
-                <button className="q-action-btn" onClick={() => setActiveModal('ai')}><SparklesIcon size={14} /> AI Generate</button>
+                <button className="q-action-btn" onClick={() => setShowGenerator(true)}><SparklesIcon size={14} /> Generate with AI</button>
                 <button className="q-action-btn" onClick={exportToCSV} disabled={questions.length === 0}><DownloadIcon size={14} /> Export</button>
               </div>
             </div>
@@ -1995,6 +2001,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                   ))}
                 </div>
               </div>
+            )}
+            </>
             )}
           </div>
         )}

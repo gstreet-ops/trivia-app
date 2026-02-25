@@ -87,7 +87,7 @@
 - [x] Season reset — archive current season leaderboard, start new season, season history with frozen leaderboards
 - [x] Season-filtered leaderboard — community leaderboard only counts games from current season
 - [x] Community theming — commissioner can set theme color (picker + presets), upload logo and banner images, add welcome message; theme applied on community detail page, marketplace cards, and communities list
-- [x] Questions tab action bar + modals — clean action bar with Add, Import CSV, AI Generate, Export buttons; Add Question, CSV Import, and AI Generate open as modals instead of inline sections; AI Generate tab removed as standalone tab
+- [x] Questions tab action bar + modals — clean action bar with Add, Import CSV, Generate with AI, Export buttons; Add Question and CSV Import open as modals; Generate with AI opens the Question Generator wizard
 - [x] Questions tab compact table redesign — compact ~50px table rows with truncated text, inline expand panel with full details, proper pagination (25/50/100 per page), floating bulk actions bar, select-all-pages support
 
 ### Admin Dashboard
@@ -181,6 +181,13 @@
 - [x] Auto-notify on AI generation request approve/reject
 - [x] 30-second polling for new notifications
 - [x] Click notification to navigate to relevant screen
+
+### Question Generator Tool (Phase 1)
+- [x] Commissioner prompt builder wizard — 4-step flow (source → input → settings → output)
+- [x] 7 source types — General Knowledge, Webpage/Article, YouTube Video, Paste Document, Data/Stats, Custom Prompt, Social/Trending
+- [x] Configurable question count (10/20/30/60), difficulty distribution (equal split or custom), category override, extra instructions
+- [x] AI-optimized prompt output with copy-to-clipboard, source-specific usage instructions, and CSV import post-steps
+- [x] Modular architecture — PromptBuilder utility, QuestionGeneratorCore shell, CommissionerGenerator wrapper (ready for Phase 2 admin version)
 
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)

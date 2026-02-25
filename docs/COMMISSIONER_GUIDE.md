@@ -24,7 +24,7 @@ The Commissioner Dashboard is organized into six tabs:
 |-----|---------|
 | **Overview** | Stats summary + import history |
 | **Announcements** | Post, edit, pin/unpin, delete announcements |
-| **Questions** | Full question bank management (action bar with Add, Import CSV, AI Generate, Export) |
+| **Questions** | Full question bank management (action bar with Add, Import CSV, Generate with AI, Export) |
 | **Members** | Member list + remove member |
 | **Settings** | Edit community name, dates, member cap, appearance |
 | **Analytics** | Per-category and per-difficulty performance charts |
@@ -49,7 +49,7 @@ The Questions tab is the main question management area. At the top is an **actio
 
 - **➕ Add** — opens a modal to add a single question (question text, answers, category, difficulty, tags, image, video, explanation)
 - **📥 Import CSV** — opens a modal to upload a CSV file with bulk questions
-- **🤖 AI Generate** — opens a modal to request AI-generated questions (submit request form + review completed requests)
+- **✨ Generate with AI** — opens the Question Generator wizard (build AI prompts from 7 source types, copy to your AI tool, import results via CSV)
 - **📤 Export** — exports all questions to CSV directly (no modal)
 
 Below the action bar is the question list displayed as compact table rows. Each row shows the question text (truncated), correct answer, category, difficulty, source, and media indicators at a glance. Click any row to expand it and see full details.
@@ -196,44 +196,55 @@ Click **Delete** on any template. This only removes the template, not any questi
 
 ---
 
-## AI Question Generation
+## Question Generator (Generate with AI)
 
-Click **AI Generate** in the action bar to open the AI generation modal. This uses a request/approval flow:
+Click **Generate with AI** in the Questions tab action bar to open the Question Generator wizard. This tool builds optimized AI prompts that you copy into your preferred AI chat tool (ChatGPT, Claude, Gemini, etc.) to generate CSV-formatted questions ready for bulk import.
 
-### Submitting a Request
+### Step 1: Choose a Source
 
-1. Fill in the request form:
-   - **Theme** — the topic for generated questions (e.g., "90s pop culture", "European capitals")
-   - **Difficulty** — Easy, Medium, or Hard
-   - **Question Count** — 5 to 25 questions
-   - **Special Instructions** — optional notes for the AI (e.g., "avoid questions about...")
-2. Click **Submit Request**
+Select one of 7 source types:
 
-Your request enters a pending queue for platform admin approval.
+| Source | Description |
+|--------|-------------|
+| 🌐 **General Knowledge** | Any topic — AI picks the best sources |
+| 🔗 **Webpage / Article** | Generate from a specific URL |
+| 🎥 **YouTube Video** | Questions from a YouTube video |
+| 📄 **Paste Document** | Paste text from a PDF, article, or notes |
+| 📊 **Data / Stats** | Paste tables, stats, or structured data |
+| 📝 **Custom Prompt** | Write your own instructions for the AI |
+| 📱 **Social / Trending** | Current events, memes, and trending topics |
 
-### Request Lifecycle
+Clicking a source card automatically advances to Step 2.
 
-| Status | Meaning |
-|--------|---------|
-| **Pending** | Awaiting admin review |
-| **Approved / Generating** | Admin approved; AI is generating questions |
-| **Completed** | Questions generated and ready for review |
-| **Failed** | Generation encountered an error (you can retry) |
-| **Rejected** | Admin rejected the request (admin notes shown) |
+### Step 2: Source Details
 
-When requests are in the **Generating** state, the modal auto-polls every 5 seconds and shows a toast when generation completes or fails.
+Fill in the source-specific fields (topic, URL, pasted content, etc.). Required fields are marked with an asterisk. Click **Next** to continue.
 
-### Reviewing Generated Questions
+### Step 3: Question Settings
 
-Once a request is **Completed**:
-1. Click the request in the modal to expand it
-2. Review each generated question
-3. Click **Add to Bank** to accept individual questions, or **Discard** to skip them
-4. Accepted questions appear in your question bank with source "AI Generated"
+Configure your generation parameters:
 
-### Request History
+- **Number of Questions** — choose 10, 20, 30, or 60
+- **Category Override** — optionally force all questions into one category (leave blank to let the AI assign)
+- **Difficulty Distribution** — toggle between **Equal Split** (auto-balanced across easy/medium/hard) and **Custom** (set exact counts per difficulty level)
+- **Additional Instructions** — optional free-text for extra guidance (e.g., "avoid date questions", "include humor")
 
-The modal also shows your past requests with status badges, dates, and admin notes on rejections.
+Click **Generate Prompt** to build the prompt.
+
+### Step 4: Copy & Use
+
+The final step shows:
+1. **How to use** instructions specific to your source type
+2. **The generated prompt** in a copyable code block — click **Copy** to copy to clipboard
+3. **After you get the AI response** — step-by-step instructions to import the CSV output
+
+Paste the prompt into your AI tool, copy the CSV output, then use **Import CSV** in the Questions tab to add the questions to your bank.
+
+### Navigation
+
+- Use **← Back** buttons to return to previous steps and adjust settings
+- **Generate Another** resets the wizard to start fresh
+- **← Back to Questions** closes the generator and returns to the normal Questions tab
 
 ---
 
