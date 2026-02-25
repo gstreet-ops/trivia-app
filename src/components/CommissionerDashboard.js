@@ -1744,7 +1744,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {activeTab === 'questions' && canManageQuestions(userCommunityRole) && (
           <div className="tab-pane">
             {showGenerator ? (
-              <CommissionerGenerator onClose={() => setShowGenerator(false)} />
+              <CommissionerGenerator onClose={() => setShowGenerator(false)} onOpenImport={() => { setShowGenerator(false); setActiveModal('import'); }} />
             ) : (
             <>
             {/* Action Bar */}

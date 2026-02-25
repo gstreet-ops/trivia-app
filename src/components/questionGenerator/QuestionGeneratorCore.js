@@ -20,7 +20,7 @@ const INITIAL_SETTINGS = {
   additionalInstructions: '',
 };
 
-function QuestionGeneratorCore({ mode = 'commissioner' }) {
+function QuestionGeneratorCore({ mode = 'commissioner', onUploadCSV }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [source, setSource] = useState(null);
   const [sourceInput, setSourceInput] = useState({});
@@ -115,6 +115,7 @@ function QuestionGeneratorCore({ mode = 'commissioner' }) {
           postSteps={output.postSteps}
           onGenerateAnother={handleReset}
           onBackToSettings={() => setCurrentStep(3)}
+          onUploadCSV={onUploadCSV}
         />
       )}
     </div>

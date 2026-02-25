@@ -139,7 +139,7 @@ function buildPrompt(source, sourceInput, settings) {
   lines.push('- Escape any internal double quotes with two double quotes ("")');
   lines.push('- One question per line');
   lines.push('- No blank lines between questions');
-  lines.push('- Output ONLY the CSV data (header row + data rows) with no other text, commentary, or markdown formatting before or after the CSV');
+  lines.push('- If possible, provide the CSV as a downloadable .csv file. Otherwise, output ONLY the raw CSV data (header row + data rows) inside a single code block with no other text, commentary, or markdown formatting before or after it.');
   if (includeExplanations) {
     lines.push('- The explanation should be 1-2 sentences explaining why the correct answer is right');
   }
@@ -179,10 +179,9 @@ function buildPrompt(source, sourceInput, settings) {
 
   // Post-steps (same for all)
   const postSteps = [
-    'Copy the CSV output from the AI\'s response',
-    'Save it as a .csv file, or keep it copied',
-    'Go to the Questions tab and click Import CSV',
-    'Upload or paste the CSV \u2014 questions will be validated and imported',
+    'Download the .csv file from the AI\'s response (or copy the CSV text)',
+    'Click the \'Upload CSV Now\' button below to go directly to import',
+    'Upload the file \u2014 questions will be validated and imported',
     'Review imported questions and add tags as needed',
   ];
 

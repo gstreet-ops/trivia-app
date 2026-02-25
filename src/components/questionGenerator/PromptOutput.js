@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBackToSettings }) {
+function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBackToSettings, onUploadCSV }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -64,6 +64,17 @@ function PromptOutput({ prompt, instructions, postSteps, onGenerateAnother, onBa
             ))}
           </ol>
         </div>
+      )}
+
+      {/* Upload CSV Now button */}
+      {onUploadCSV && (
+        <button
+          className="qg-upload-csv-btn"
+          onClick={onUploadCSV}
+          type="button"
+        >
+          {'\u{1F4E4}'} Upload CSV Now
+        </button>
       )}
 
       {/* Bottom actions */}

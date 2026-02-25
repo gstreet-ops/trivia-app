@@ -575,6 +575,27 @@
   background: var(--qg-success) !important;
 }
 
+/* Upload CSV Now button */
+.qg-upload-csv-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: var(--qg-navy);
+  color: var(--qg-white);
+  border: none;
+  border-radius: var(--qg-radius);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.qg-upload-csv-btn:hover {
+  background: var(--qg-navy-light);
+}
+
 .qg-prompt-text {
   margin: 0;
   padding: 16px;
