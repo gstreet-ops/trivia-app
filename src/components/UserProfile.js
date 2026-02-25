@@ -17,16 +17,17 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
 
   const fetchUserData = async () => {
     try {
-      const { data: userGames } = await supabase.from('games').select('*').eq('user_id', userId).eq('visibility', 'public').order('created_at', { ascending: false }).limit(10);
-      setGames(userGames || []);
-      if (userGames && userGames.length > 0) {
-        const totalGames = userGames.length;
-        const totalScore = userGames.reduce((sum, g) => sum + g.score, 0);
-        const totalQuestions = userGames.reduce((sum, g) => sum + g.total_questions, 0);
-        const avgScore = ((totalScore / totalQuestions) * 100).toFixed(1);
-        const categories = [...new Set(userGames.map(g => g.category))].length;
-        const bestGame = userGames.reduce((best, g) => {
-          const percentage = (g.score / g.total_questions) * 100;
+      const { data: userGames } = await supabase.from('games').select('*').eq('user_id', userId).eq('visibility', 'public').order('created_at', { ascending: false });
+      const allGames = userGames || [];
+      setGames(allGames.slice(0, 10)); // Show only 10 most recent in UI
+      if (allGames.length > 0) {
+        const totalGames = allGames.length;
+        const totalScore = allGames.reduce((sum, g) => sum + g.score, 0);
+        const totalQuestions = allGames.reduce((sum, g) => sum + g.total_questions, 0);
+        const avgScore = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : '0.0';
+        const categories = [...new Set(allGames.map(g => g.category))].length;
+        const bestGame = allGames.reduce((best, g) => {
+          const percentage = g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0;
           return percentage > best ? percentage : best;
         }, 0).toFixed(1);
         const badges = await checkAchievements(userId, supabase);

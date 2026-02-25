@@ -12,6 +12,7 @@ function StartScreen({ onStart, onBack }) {
   const [resetMode, setResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetMessage, setResetMessage] = useState('');
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -23,8 +24,8 @@ function StartScreen({ onStart, onBack }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({ 
-          email, 
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
           password,
           options: {
             data: {
@@ -33,6 +34,12 @@ function StartScreen({ onStart, onBack }) {
           }
         });
         if (signUpError) throw signUpError;
+        // Check if email confirmation is required (identities will be empty)
+        if (signUpData?.user?.identities?.length === 0) {
+          throw new Error('An account with this email already exists.');
+        }
+        setSignupSuccess(true);
+        setTimeout(() => { setIsLogin(true); setSignupSuccess(false); }, 2000);
       }
     } catch (error) {
       setError(error.message);
@@ -98,6 +105,11 @@ function StartScreen({ onStart, onBack }) {
           <button className={!isLogin ? 'active' : ''} onClick={() => setIsLogin(false)}>Sign Up</button>
         </div>
         {error && <div className="error-message">{error}</div>}
+        {signupSuccess && (
+          <div className="success-message" style={{ textAlign: 'center' }}>
+            Account created! You can now log in.
+          </div>
+        )}
         <form onSubmit={handleAuth}>
           {!isLogin && (
             <div className="form-group">

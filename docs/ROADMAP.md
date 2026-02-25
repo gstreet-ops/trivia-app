@@ -210,6 +210,9 @@
 | ~~Auth double-navigation on load~~ | **Fixed** — Removed duplicate `getSession()` call; app relies solely on `onAuthStateChange` (fires `INITIAL_SESSION`). |
 | ~~Invite codes used Math.random()~~ | **Fixed** — Invite code generation now uses `crypto.getRandomValues()` with an unambiguous character set. |
 | ~~Unbounded queries in Admin/Marketplace~~ | **Fixed** — AdminDashboard selects specific columns and parallelizes queries; CommunityMarketplace scopes count queries to public community IDs. |
+| ~~Leaderboard limited to 100 recent games~~ | **Fixed** — Removed `.limit(100)` from Dashboard leaderboard query; rankings now reflect all public games. |
+| ~~UserProfile stats based on only 10 games~~ | **Fixed** — Removed `.limit(10)` from UserProfile query; stats computed from all games, UI still shows 10 most recent. Division-by-zero guards added. |
+| ~~No post-signup confirmation message~~ | **Fixed** — Success message shown after signup with auto-switch to login tab. Duplicate email detection added. |
 
 ---
 
