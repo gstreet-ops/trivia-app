@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
+import CommunityChat from './CommunityChat';
 
-function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onManageCommunity }) {
+function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQuiz, onManageCommunity }) {
   const [community, setCommunity] = useState(null);
   const [members, setMembers] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -294,6 +295,13 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {session && (
+          <div className="section">
+            <h2>💬 Community Chat</h2>
+            <CommunityChat communityId={communityId} session={session} isCommissioner={isCommissioner} />
           </div>
         )}
 

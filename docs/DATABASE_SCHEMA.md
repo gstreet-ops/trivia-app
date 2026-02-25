@@ -16,6 +16,7 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `community_questions` | Community-owned question bank |
 | `community_leaderboards` | Computed rankings per community |
 | `community_announcements` | Commissioner announcements per community |
+| `community_messages` | Real-time chat messages per community |
 | `custom_questions` | User-submitted questions awaiting admin review |
 | `question_templates` | Reusable question templates per community |
 | `multiplayer_rooms` | Multiplayer game rooms (lobby) |
@@ -277,6 +278,38 @@ Commissioner-posted announcements visible to all community members.
 
 ---
 
+### `community_messages`
+
+Real-time chat messages within a community. Soft-deletable by commissioner.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `bigint` | Primary key (auto-increment) |
+| `community_id` | `bigint` | FK → `communities.id` |
+| `user_id` | `uuid` | FK → `profiles.id` (message author) |
+| `username` | `text` | Denormalized username for display |
+| `message` | `text` | Message content (max 500 chars enforced client-side) |
+| `is_deleted` | `boolean` | Soft delete flag (default false) |
+| `deleted_by` | `uuid` | FK → `profiles.id` (commissioner who deleted) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+- `user_id` → `profiles.id`
+- `deleted_by` → `profiles.id`
+
+**RLS Policies:**
+- SELECT: community members only
+- INSERT: community members, must match `auth.uid()`
+- UPDATE: commissioner of the community (for soft-delete)
+
+**Notes:**
+- Realtime enabled via `supabase_realtime` publication
+- Indexed on `(community_id, created_at DESC)` for fast page loads
+- Deleted messages render as "[Message removed by commissioner]"
+
+---
+
 ### `multiplayer_rooms`
 
 A multiplayer game room. Created by a host; players join via room code or open rooms browser.
@@ -392,6 +425,7 @@ auth.users
             │       ├── community_questions (community_id)
             │       ├── community_leaderboards (community_id)
             │       ├── community_announcements (community_id)
+            │       ├── community_messages (community_id)
             │       └── question_templates (community_id)
             │
             ├── custom_questions (creator_id)
@@ -420,6 +454,7 @@ RLS (Row Level Security) is enabled on all tables. Policies are managed in Supab
 | `custom_questions` | Own rows; admins see all | Creator (insert); admin (update status) |
 | `question_templates` | Commissioner of community | Commissioner |
 | `community_announcements` | Members of community | Commissioner only |
+| `community_messages` | Members of community | Members (insert); commissioner (soft-delete) |
 | `multiplayer_rooms` | All authenticated users | Host (insert/update) |
 | `multiplayer_participants` | All authenticated users | Own rows (insert/update/delete) |
 | `multiplayer_questions` | All authenticated users | Host only (insert) |

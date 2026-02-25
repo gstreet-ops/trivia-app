@@ -224,6 +224,67 @@ const { data, error } = await supabase.rpc('reset_season', {
 
 ---
 
+## 5. Community Chat Messages Table
+
+**Problem:** Communities need real-time chat. This creates the `community_messages` table with RLS policies restricting access to community members, and enables Supabase Realtime for live message delivery.
+
+```sql
+CREATE TABLE IF NOT EXISTS community_messages (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  community_id bigint REFERENCES communities(id) ON DELETE CASCADE NOT NULL,
+  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  username text NOT NULL,
+  message text NOT NULL,
+  is_deleted boolean DEFAULT false,
+  deleted_by uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE community_messages ENABLE ROW LEVEL SECURITY;
+
+-- Members can view messages in their communities
+CREATE POLICY "Members can view community messages"
+  ON community_messages FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM community_members
+      WHERE community_members.community_id = community_messages.community_id
+      AND community_members.user_id = auth.uid()
+    )
+  );
+
+-- Members can insert messages in their communities
+CREATE POLICY "Members can send messages"
+  ON community_messages FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM community_members
+      WHERE community_members.community_id = community_messages.community_id
+      AND community_members.user_id = auth.uid()
+    )
+  );
+
+-- Commissioner can soft-delete any message
+CREATE POLICY "Commissioner can delete messages"
+  ON community_messages FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM communities
+      WHERE communities.id = community_messages.community_id
+      AND communities.commissioner_id = auth.uid()
+    )
+  );
+
+-- Index for fast queries
+CREATE INDEX idx_community_messages_community ON community_messages(community_id, created_at DESC);
+
+-- Enable Realtime on this table
+ALTER PUBLICATION supabase_realtime ADD TABLE community_messages;
+```
+
+---
+
 ## Verification
 
 After running each script:
@@ -234,3 +295,4 @@ After running each script:
 | Leaderboard view | `SELECT * FROM community_leaderboards LIMIT 5;` — should return live data |
 | Pending limit trigger | Insert 10 pending questions for a test user, then attempt an 11th — should fail with the exception message |
 | Season reset RPC | `SELECT reset_season(1, 'some-uuid'::uuid, '[]'::jsonb, 0, 0);` — should return `{"old_season": N, "new_season": N+1}` |
+| Community chat table | `SELECT * FROM community_messages LIMIT 1;` — should return empty (or rows if messages exist). Verify RLS by checking a non-member cannot select. |

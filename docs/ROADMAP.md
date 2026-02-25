@@ -57,6 +57,7 @@
 - [x] Community name clickable in top bar → community detail
 - [x] Community Marketplace — browse public communities, join directly, commissioner visibility toggle and description
 - [x] Community announcements — commissioner posts visible to all members on community detail page, with pin/unpin, edit, delete, "New" badge for recent posts
+- [x] Real-time community chat — Supabase Realtime powered chat on community detail page, message bubbles (own=navy, other=gray), commissioner message deletion, load older messages, 500-char limit, auto-scroll
 
 ### Commissioner Dashboard
 - [x] Tabbed navigation (Overview, Questions, Members, Settings, Analytics)

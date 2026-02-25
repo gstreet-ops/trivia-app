@@ -435,6 +435,7 @@ function App() {
         <CommunityDetail
           communityId={viewCommunityId}
           currentUserId={session.user.id}
+          session={session}
           onBack={() => navigateTo('communities')}
           onStartQuiz={(commId) => navigateTo('quizConfig', { communityId: commId })}
           onManageCommunity={(commId) => navigateTo('commissionerDashboard', { communityId: commId })}
