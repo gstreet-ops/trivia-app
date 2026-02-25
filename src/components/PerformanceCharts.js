@@ -22,7 +22,7 @@ function PerformanceCharts({ games }) {
             <YAxis label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} domain={[0, 100]} allowDataOverflow={true} />
             <Tooltip formatter={(value) => `${value}%`} />
             <Legend />
-            <Line type="monotone" dataKey="score" stroke="#667eea" strokeWidth={3} dot={{ fill: '#667eea', r: 5 }} name="Score %" />
+            <Line type="monotone" dataKey="score" stroke="#041E42" strokeWidth={3} dot={{ fill: '#041E42', r: 5 }} name="Score %" />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -35,7 +35,7 @@ function PerformanceCharts({ games }) {
             <YAxis domain={[0, 100]} allowDataOverflow={true} label={{ value: 'Average %', angle: -90, position: 'insideLeft' }} />
             <Tooltip formatter={(value) => `${value}%`} />
             <Legend />
-            <Bar dataKey="percentage" fill="#764ba2" name="Average %" />
+            <Bar dataKey="percentage" fill="#041E42" name="Average %" />
           </BarChart>
         </ResponsiveContainer>
       </div>

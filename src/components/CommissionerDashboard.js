@@ -47,6 +47,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
   const [annEditing, setAnnEditing] = useState(null);
   const [annEditForm, setAnnEditForm] = useState({ title: '', body: '', pinned: false });
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   // AI Generation state
   const [genRequests, setGenRequests] = useState([]);
@@ -94,7 +100,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .single();
 
       if (communityData.commissioner_id !== currentUserId) {
-        alert('You are not authorized to access this page');
+        showToast('You are not authorized to access this page', 'error');
         onBack();
         return;
       }
@@ -172,15 +178,15 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('id', communityId);
 
       if (error) {
-        alert('Failed to update settings: ' + error.message);
+        showToast('Failed to update settings: ' + error.message, 'error');
       } else {
-        alert('Settings updated successfully!');
+        showToast('Settings updated successfully!');
         setEditMode(false);
         fetchCommissionerData();
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to update settings');
+      showToast('Failed to update settings', 'error');
     }
   };
 
@@ -307,14 +313,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('id', communityId);
       if (updateError) throw updateError;
 
-      alert(`Season ${oldSeasonNumber} archived! Season ${oldSeasonNumber + 1} has begun.`);
+      showToast(`Season ${oldSeasonNumber} archived! Season ${oldSeasonNumber + 1} has begun.`);
       setShowResetModal(false);
       setResetConfirmed(false);
       fetchCommissionerData();
       fetchSeasonData();
     } catch (err) {
       console.error('Error resetting season:', err);
-      alert('Failed to reset season: ' + err.message);
+      showToast('Failed to reset season: ' + err.message, 'error');
     }
     setResetting(false);
   };
@@ -332,7 +338,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (updateError) throw updateError;
       await fetchCommissionerData();
     } catch (err) {
-      alert('Failed to regenerate invite code: ' + err.message);
+      showToast('Failed to regenerate invite code: ' + err.message, 'error');
     }
     setRegenerating(false);
   };
@@ -347,14 +353,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('user_id', userId);
 
       if (error) {
-        alert('Failed to remove member: ' + error.message);
+        showToast('Failed to remove member: ' + error.message, 'error');
       } else {
-        alert(`${username} has been removed from the community`);
+        showToast(`${username} has been removed from the community`);
         fetchCommissionerData();
       }
     } catch (error) {
       console.error('Error removing member:', error);
-      alert('Failed to remove member');
+      showToast('Failed to remove member', 'error');
     }
   };
 
@@ -368,7 +374,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('community_id', communityId);
 
       if (error) {
-        alert('Failed to delete question: ' + error.message);
+        showToast('Failed to delete question: ' + error.message, 'error');
       } else {
         fetchCommissionerData();
       }
@@ -381,14 +387,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const file = event.target.files[0];
     if (!file) return;
     if (!file.name.endsWith('.csv')) {
-      alert('Please upload a CSV file');
+      showToast('Please upload a CSV file', 'error');
       return;
     }
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => { validateAndPreviewCSV(results.data); },
-      error: (error) => { alert('Error parsing CSV: ' + error.message); }
+      error: (error) => { showToast('Error parsing CSV: ' + error.message, 'error'); }
     });
   };
 
@@ -449,7 +455,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const handleBulkImport = async () => {
-    if (csvData.length === 0) { alert('No valid questions to import'); return; }
+    if (csvData.length === 0) { showToast('No valid questions to import', 'error'); return; }
     if (!window.confirm(`Are you sure you want to import ${csvData.length} questions?`)) return;
 
     setUploading(true);
@@ -476,9 +482,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { error } = await supabase.from('community_questions').insert(questionsToInsert);
 
       if (error) {
-        alert('Failed to import questions: ' + error.message);
+        showToast('Failed to import questions: ' + error.message, 'error');
       } else {
-        alert(`Successfully imported ${csvData.length} questions!`);
+        showToast(`Successfully imported ${csvData.length} questions!`);
         const historyEntry = { timestamp: importTimestamp, count: csvData.length, user: currentUserId };
         setImportHistory(prev => [historyEntry, ...prev].slice(0, 10));
         setCsvData([]);
@@ -488,7 +494,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       }
     } catch (error) {
       console.error('Error importing questions:', error);
-      alert('Failed to import questions');
+      showToast('Failed to import questions', 'error');
     }
     setUploading(false);
   };
@@ -517,7 +523,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const exportToCSV = () => {
-    if (questions.length === 0) { alert('No questions to export'); return; }
+    if (questions.length === 0) { showToast('No questions to export', 'error'); return; }
     const csvRows = ['question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,explanation'];
     questions.forEach(q => {
       const row = [
@@ -557,12 +563,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedQuestions.length === 0) { alert('No questions selected'); return; }
+    if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
     if (!window.confirm(`Are you sure you want to delete ${selectedQuestions.length} questions?`)) return;
     try {
       const { error } = await supabase.from('community_questions').delete().in('id', selectedQuestions).eq('community_id', communityId);
       if (error) {
-        alert('Failed to delete questions: ' + error.message);
+        showToast('Failed to delete questions: ' + error.message, 'error');
       } else {
         setSelectedQuestions([]);
         fetchCommissionerData();
@@ -595,11 +601,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!tag.trim()) return;
     const question = questions.find(q => q.id === questionId);
     const currentTags = question.tags || [];
-    if (currentTags.includes(tag.trim())) { alert('Tag already exists on this question'); return; }
+    if (currentTags.includes(tag.trim())) { showToast('Tag already exists on this question', 'error'); return; }
     const updatedTags = [...currentTags, tag.trim()];
     await createVersionHistory(questionId, 'tag_added', { tag: tag.trim() });
     const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { alert('Failed to add tag: ' + error.message); } else { setNewTag(''); fetchCommissionerData(); }
+    if (error) { showToast('Failed to add tag: ' + error.message, 'error'); } else { setNewTag(''); fetchCommissionerData(); }
   };
 
   const handleRemoveTag = async (questionId, tag) => {
@@ -607,7 +613,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const updatedTags = (question.tags || []).filter(t => t !== tag);
     await createVersionHistory(questionId, 'tag_removed', { tag });
     const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { alert('Failed to remove tag: ' + error.message); } else { fetchCommissionerData(); }
+    if (error) { showToast('Failed to remove tag: ' + error.message, 'error'); } else { fetchCommissionerData(); }
   };
 
   const toggleTagFilter = (tag) => {
@@ -648,7 +654,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       difficulty: versionSnapshot.difficulty,
       tags: versionSnapshot.tags || []
     }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { alert('Failed to restore version: ' + error.message); } else { setShowVersionHistory(null); fetchCommissionerData(); }
+    if (error) { showToast('Failed to restore version: ' + error.message, 'error'); } else { setShowVersionHistory(null); fetchCommissionerData(); }
   };
 
   const fetchTemplates = async () => {
@@ -677,7 +683,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         tags: question.tags || [],
         created_by: currentUserId
       }]);
-      if (error) { alert('Failed to save template: ' + error.message); } else { alert('Template saved!'); fetchTemplates(); }
+      if (error) { showToast('Failed to save template: ' + error.message, 'error'); } else { showToast('Template saved!'); fetchTemplates(); }
     } catch (error) {
       console.error('Error saving template:', error);
     }
@@ -697,7 +703,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         difficulty: template.difficulty,
         tags: template.tags || []
       }]);
-      if (error) { alert('Failed to create question: ' + error.message); } else { fetchCommissionerData(); }
+      if (error) { showToast('Failed to create question: ' + error.message, 'error'); } else { fetchCommissionerData(); }
     } catch (error) {
       console.error('Error creating from template:', error);
     }
@@ -707,15 +713,15 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!window.confirm('Are you sure you want to delete this template?')) return;
     try {
       const { error } = await supabase.from('question_templates').delete().eq('id', templateId);
-      if (error) { alert('Failed to delete template: ' + error.message); } else { fetchTemplates(); }
+      if (error) { showToast('Failed to delete template: ' + error.message, 'error'); } else { fetchTemplates(); }
     } catch (error) {
       console.error('Error deleting template:', error);
     }
   };
 
   const handleBulkAddTag = async () => {
-    if (selectedQuestions.length === 0) { alert('No questions selected'); return; }
-    if (!bulkTagInput.trim()) { alert('Please enter a tag name'); return; }
+    if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
+    if (!bulkTagInput.trim()) { showToast('Please enter a tag name', 'error'); return; }
     const tag = bulkTagInput.trim();
     try {
       for (const questionId of selectedQuestions) {
@@ -735,7 +741,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const handleBulkRemoveTag = async (tag) => {
-    if (selectedQuestions.length === 0) { alert('No questions selected'); return; }
+    if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
     if (!window.confirm(`Remove tag "${tag}" from ${selectedQuestions.length} selected questions?`)) return;
     try {
       for (const questionId of selectedQuestions) {
@@ -874,7 +880,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setGenForm({ theme: '', difficulty: 'mixed', question_count: 10, special_instructions: '' });
       fetchGenRequests();
     } catch (err) {
-      alert('Failed to submit request: ' + err.message);
+      showToast('Failed to submit request: ' + err.message, 'error');
     }
     setGenSubmitting(false);
   };
@@ -912,19 +918,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', requestId);
       fetchCommissionerData();
     } catch (err) {
-      alert('Failed to add question: ' + err.message);
+      showToast('Failed to add question: ' + err.message, 'error');
     }
   };
 
   const handleAddSelectedQuestions = async (req) => {
     const selected = genSelected[req.id];
-    if (!selected || selected.size === 0) { alert('No questions selected'); return; }
+    if (!selected || selected.size === 0) { showToast('No questions selected', 'error'); return; }
     const generatedQs = req.generated_questions || [];
     const acceptedTexts = genAccepted[req.id] || [];
     const toAdd = [...selected]
       .map(i => generatedQs[i])
       .filter(q => q && !acceptedTexts.includes(q.question_text));
-    if (toAdd.length === 0) { alert('All selected questions have already been added'); return; }
+    if (toAdd.length === 0) { showToast('All selected questions have already been added', 'error'); return; }
     try {
       const rows = toAdd.map(q => {
         const r = {
@@ -957,7 +963,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       await supabase.from('generation_requests').update({ questions_accepted: accepted }).eq('id', req.id);
       fetchCommissionerData();
     } catch (err) {
-      alert('Failed to add questions: ' + err.message);
+      showToast('Failed to add questions: ' + err.message, 'error');
     }
   };
 
@@ -1012,7 +1018,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setShowAddQuestion(false);
       fetchCommissionerData();
     } catch (err) {
-      alert('Failed to add question: ' + err.message);
+      showToast('Failed to add question: ' + err.message, 'error');
     }
     setAddQSubmitting(false);
   };
@@ -1028,9 +1034,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   const handleImageUpload = async (questionId, file) => {
     if (!file) return;
-    if (file.size > 500 * 1024) { alert('Image must be under 500KB. Please resize and try again.'); return; }
+    if (file.size > 500 * 1024) { showToast('Image must be under 500KB. Please resize and try again.', 'error'); return; }
     const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-    if (!allowed.includes(file.type)) { alert('Invalid file type. Use PNG, JPEG, WebP, or GIF.'); return; }
+    if (!allowed.includes(file.type)) { showToast('Invalid file type. Use PNG, JPEG, WebP, or GIF.', 'error'); return; }
     setMediaUploading(true);
     try {
       const path = `${communityId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
@@ -1042,7 +1048,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (error) throw error;
       fetchCommissionerData();
     } catch (err) {
-      alert('Failed to upload image: ' + err.message);
+      showToast('Failed to upload image: ' + err.message, 'error');
     }
     setMediaUploading(false);
   };
@@ -1050,18 +1056,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const handleRemoveImage = async (questionId) => {
     if (!window.confirm('Remove image from this question?')) return;
     const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { alert('Failed to remove image: ' + error.message); } else { fetchCommissionerData(); }
+    if (error) { showToast('Failed to remove image: ' + error.message, 'error'); } else { fetchCommissionerData(); }
   };
 
   const handleSaveVideoUrl = async (questionId, url) => {
-    if (url && !isValidYouTubeUrl(url)) { alert('Invalid YouTube URL. Use youtube.com/watch?v=... or youtu.be/... format.'); return; }
+    if (url && !isValidYouTubeUrl(url)) { showToast('Invalid YouTube URL. Use youtube.com/watch?v=... or youtu.be/... format.', 'error'); return; }
     const { error } = await supabase.from('community_questions').update({ video_url: url || null }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { alert('Failed to save video URL: ' + error.message); } else { fetchCommissionerData(); setEditingMediaId(null); }
+    if (error) { showToast('Failed to save video URL: ' + error.message, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); }
   };
 
   const handlePostAnnouncement = async () => {
     if (!annForm.title.trim() || !annForm.body.trim()) {
-      alert('Title and body are required');
+      showToast('Title and body are required', 'error');
       return;
     }
     try {
@@ -1072,7 +1078,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         body: annForm.body.trim(),
         pinned: annForm.pinned
       }]);
-      if (error) { alert('Failed to post: ' + error.message); return; }
+      if (error) { showToast('Failed to post: ' + error.message, 'error'); return; }
       setAnnForm({ title: '', body: '', pinned: false });
       fetchAnnouncements();
     } catch (error) {
@@ -1082,7 +1088,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   const handleUpdateAnnouncement = async (id) => {
     if (!annEditForm.title.trim() || !annEditForm.body.trim()) {
-      alert('Title and body are required');
+      showToast('Title and body are required', 'error');
       return;
     }
     try {
@@ -1092,7 +1098,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         pinned: annEditForm.pinned,
         updated_at: new Date().toISOString()
       }).eq('id', id);
-      if (error) { alert('Failed to update: ' + error.message); return; }
+      if (error) { showToast('Failed to update: ' + error.message, 'error'); return; }
       setAnnEditing(null);
       fetchAnnouncements();
     } catch (error) {
@@ -1104,7 +1110,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!window.confirm('Are you sure you want to delete this announcement?')) return;
     try {
       const { error } = await supabase.from('community_announcements').delete().eq('id', id);
-      if (error) { alert('Failed to delete: ' + error.message); return; }
+      if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
       fetchAnnouncements();
     } catch (error) {
       console.error('Error deleting announcement:', error);
@@ -1117,7 +1123,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         pinned: !currentPinned,
         updated_at: new Date().toISOString()
       }).eq('id', id);
-      if (error) { alert('Failed to update: ' + error.message); return; }
+      if (error) { showToast('Failed to update: ' + error.message, 'error'); return; }
       fetchAnnouncements();
     } catch (error) {
       console.error('Error toggling pin:', error);
@@ -1158,6 +1164,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   return (
     <div className="commissioner-dashboard">
+      {toast && (
+        <div className={`cd-toast ${toast.type}`}>
+          {toast.msg}
+        </div>
+      )}
       <button className="back-btn" onClick={onBack}>← Back to Community</button>
 
       <div className="dashboard-header">

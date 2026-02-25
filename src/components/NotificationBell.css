@@ -76,7 +76,7 @@
 .notification-mark-all {
   background: none;
   border: none;
-  color: #2563EB;
+  color: var(--navy);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -85,7 +85,7 @@
   transition: background 0.15s;
 }
 .notification-mark-all:hover {
-  background: #EFF6FF;
+  background: var(--bg-hover);
 }
 
 .notification-list {
@@ -141,7 +141,7 @@
 
 .notification-message {
   font-size: 12px;
-  color: #4A5568;
+  color: var(--text-secondary);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -151,14 +151,14 @@
 
 .notification-time {
   font-size: 11px;
-  color: #8B9DC3;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
 .notification-empty {
   padding: 32px 16px;
   text-align: center;
-  color: #8B9DC3;
+  color: var(--text-muted);
   font-size: 13px;
 }
 

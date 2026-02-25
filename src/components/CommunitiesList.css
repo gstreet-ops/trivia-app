@@ -8,7 +8,7 @@
 }
 
 .communities-list h1 {
-  color: #667eea;
+  color: var(--navy);
   font-size: 2.5rem;
   margin-bottom: 30px;
 }
@@ -31,7 +31,7 @@
 }
 
 .create-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
   color: white;
 }
 
@@ -62,12 +62,12 @@
 
 .community-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
+  box-shadow: 0 8px 25px rgba(4, 30, 66, 0.2);
+  border-color: var(--navy);
 }
 
 .community-card h3 {
-  color: #667eea;
+  color: var(--navy);
   margin-bottom: 10px;
 }
 

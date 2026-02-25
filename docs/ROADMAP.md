@@ -193,6 +193,10 @@
 |-------|-------|
 | Community leaderboard uses a separate `community_leaderboards` table | If this view/table isn't auto-updated, the community leaderboard may be stale. SQL fix in `docs/SUPABASE_SCRIPTS.md` converts it to a live Postgres view. |
 | CSS delivery via GitHub Pages CDN caching | CSS changes may not appear until users hard-refresh. Critical layout styles should use React inline styles. |
+| ~~Off-brand purple (#667eea) across UI~~ | **Fixed** — All 44 occurrences of `#667eea` replaced with `var(--navy)` / `var(--navy-light)` across 17 CSS files and 1 JS file. |
+| ~~Hardcoded light-mode colors break dark mode~~ | **Fixed** — Replaced hardcoded hex colors in QuizScreen, GameReview, NotificationBell, CommunityDetail, MultiplayerLobby, QuizSourceSelector, and UserProfile with CSS variables that adapt to dark mode. |
+| ~~CommissionerDashboard uses browser alert() dialogs~~ | **Fixed** — All 43 `alert()` calls replaced with in-app toast notifications (auto-dismiss after 3s, success/error styling). |
+| ~~Dead code: ResultsScreen~~ | **Fixed** — Removed unused `ResultsScreen.js` and `ResultsScreen.css`. |
 | No email confirmation on signup | Supabase email confirmation may be disabled in project settings; users log in immediately after signup. |
 | Admin cannot undo approve/reject | No UI to move a question back to pending; requires direct database edit. |
 | Sentry test event confirmation pending | Sentry SDK integrated and DSN configured; awaiting confirmation that production errors are captured and visible in the Sentry dashboard. |

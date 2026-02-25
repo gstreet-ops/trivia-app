@@ -8,7 +8,7 @@
 }
 
 .community-feed h1 {
-  color: #667eea;
+  color: var(--navy);
   font-size: 2.5rem;
   margin-bottom: 30px;
 }
@@ -39,7 +39,7 @@
 
 .filter-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--navy);
 }
 
 .games-grid {
@@ -58,8 +58,8 @@
 
 .game-card-feed:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
+  box-shadow: 0 8px 25px rgba(4, 30, 66, 0.2);
+  border-color: var(--navy);
 }
 
 .game-header {
@@ -71,7 +71,7 @@
 
 .username {
   font-weight: 700;
-  color: #667eea;
+  color: var(--navy);
   cursor: pointer;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .category-badge {
-  background: #667eea;
+  background: var(--navy);
   color: white;
   padding: 5px 12px;
   border-radius: 8px;
@@ -128,7 +128,7 @@
 .view-btn {
   width: 100%;
   padding: 12px;
-  background: #667eea;
+  background: var(--navy);
   color: white;
   border: none;
   border-radius: 8px;
@@ -138,7 +138,7 @@
 }
 
 .view-btn:hover {
-  background: #5568d3;
+  background: var(--navy-light);
 }
 
 .no-games {

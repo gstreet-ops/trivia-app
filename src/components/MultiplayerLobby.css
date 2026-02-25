@@ -438,7 +438,7 @@
 
 .mp-player-card.ready {
   border-color: #2D6A4F;
-  background: #f0faf4;
+  background: var(--correct-bg);
 }
 
 .mp-player-avatar {
@@ -1015,7 +1015,7 @@
 }
 
 .mp-results-row.mp-medal-1 {
-  background: #FFF9E6;
+  background: var(--warning-bg);
   border-color: #D4AF37;
 }
 
@@ -1025,7 +1025,7 @@
 }
 
 .mp-results-row.mp-medal-3 {
-  background: #FDF0E6;
+  background: var(--warning-bg);
   border-color: #CD7F32;
 }
 
@@ -1109,7 +1109,7 @@
 /* Explanation Panel */
 .mp-explanation-panel {
   background: var(--info-bg);
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--navy);
   border-radius: 8px;
   padding: 14px 18px;
   margin-top: 12px;
@@ -1117,7 +1117,7 @@
 }
 .mp-explanation-header {
   font-weight: 700;
-  color: #667eea;
+  color: var(--navy);
   font-size: 0.95rem;
   margin-bottom: 4px;
 }

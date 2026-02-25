@@ -15,7 +15,7 @@
 }
 
 .review-header h1 {
-  color: #667eea;
+  color: var(--navy);
   font-size: 2.5rem;
   margin: 0;
 }
@@ -29,7 +29,7 @@
 .score-large {
   font-size: 3rem;
   font-weight: 700;
-  color: #667eea;
+  color: var(--navy);
 }
 
 .percentage {
@@ -128,8 +128,8 @@
   gap: 8px;
   margin-top: 12px;
   padding: 10px 14px;
-  background: #F0F4FF;
-  border-left: 3px solid #667eea;
+  background: var(--info-bg);
+  border-left: 3px solid var(--navy);
   border-radius: 6px;
 }
 .review-explanation-icon {

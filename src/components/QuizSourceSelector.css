@@ -8,7 +8,7 @@
 }
 
 .quiz-source-selector h2 {
-  color: #667eea;
+  color: var(--navy);
   font-size: 2rem;
   margin-bottom: 30px;
 }
@@ -30,11 +30,13 @@
   border: 2px solid var(--input-border);
   border-radius: 8px;
   font-size: 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--navy);
 }
 
 .timer-notice {
@@ -58,7 +60,7 @@
 .start-quiz-btn {
   width: 100%;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -66,13 +68,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+  box-shadow: 0 4px 15px rgba(4,30,66,0.3);
   margin-top: 20px;
 }
 
 .start-quiz-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+  box-shadow: 0 6px 20px rgba(4,30,66,0.4);
 }
 
 .back-btn {

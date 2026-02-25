@@ -8,7 +8,7 @@
 }
 
 .user-profile h1 {
-  color: #667eea;
+  color: var(--navy);
   font-size: 2.5rem;
   margin-bottom: 30px;
 }
@@ -27,7 +27,7 @@
 }
 
 .profile-stat-card {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
   padding: 30px;
   border-radius: 12px;
   text-align: center;
@@ -66,7 +66,7 @@
 .profile-game-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  border-color: var(--navy);
 }
 
 .game-info {
@@ -75,7 +75,7 @@
 }
 
 .game-category {
-  background: #667eea;
+  background: var(--navy);
   color: white;
   padding: 5px 12px;
   border-radius: 8px;
@@ -95,7 +95,7 @@
 .game-score {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #667eea;
+  color: var(--navy);
 }
 
 .game-date {
