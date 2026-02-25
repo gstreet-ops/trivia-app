@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
 import { ShieldIcon, UsersIcon, GamepadIcon, ChartIcon, StarIcon, PlusIcon } from './Icons';
 import { isSuperAdmin, getPlatformRole } from '../utils/permissions';
+import { sendGenericEmail, sendQuestionNotification } from '../utils/emailService';
 
 function AdminDashboard({ onBack, currentUserId }) {
   const [stats, setStats] = useState(null);
@@ -139,6 +140,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         message: `Your AI question request for "${req.theme}" has been approved and questions are being generated.`,
         link_screen: 'commissioner'
       }]);
+      sendGenericEmail(req.requested_by, req.profiles?.username || '', 'AI Request Approved!', `Your AI question request for "${req.theme}" has been approved and questions are being generated.`);
     }
 
     showToast('Request approved! Questions are being generated...');
@@ -177,6 +179,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         message: `Your AI question request for "${req.theme}" was not approved.${notesSuffix}`,
         link_screen: 'commissioner'
       }]);
+      sendGenericEmail(req.requested_by, req.profiles?.username || '', 'AI Request Declined', `Your AI question request for "${req.theme}" was not approved.${notesSuffix}`);
     }
 
     setRejectingId(null);
@@ -250,6 +253,7 @@ function AdminDashboard({ onBack, currentUserId }) {
         message: `Your community "${req.name}" has been created! You are now the commissioner.`,
         link_screen: 'communities'
       }]);
+      sendGenericEmail(req.requester_id, req.profiles?.username || '', 'Community Request Approved!', `Your community "${req.name}" has been created! You are now the commissioner.`);
 
       showToast(`"${req.name}" created — ${req.profiles?.username} is now commissioner`);
       fetchCommunityRequests();
@@ -281,6 +285,7 @@ function AdminDashboard({ onBack, currentUserId }) {
           message: `Your request for "${req.name}" was not approved.${notesSuffix}`,
           link_screen: 'communities'
         }]);
+        sendGenericEmail(req.requester_id, req.profiles?.username || '', 'Community Request Declined', `Your request for "${req.name}" was not approved.${notesSuffix}`);
       }
 
       setCrRejectingId(null);
@@ -356,6 +361,7 @@ function AdminDashboard({ onBack, currentUserId }) {
           message: `Your question "${preview}" has been approved and is now available in quizzes!`,
           link_screen: 'dashboard'
         }]);
+        sendQuestionNotification(q.creator_id, q.profiles?.username || '', q.question_text, 'approved');
       }
       setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
     }
@@ -379,6 +385,7 @@ function AdminDashboard({ onBack, currentUserId }) {
           message: `Your question "${preview}" was not approved. You can edit and resubmit from the question creator.`,
           link_screen: 'createQuestion'
         }]);
+        sendQuestionNotification(q.creator_id, q.profiles?.username || '', q.question_text, 'rejected');
       }
       setPendingQuestions(prev => prev.filter(q => q.id !== questionId));
     }

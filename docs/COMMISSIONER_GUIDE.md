@@ -25,7 +25,7 @@ The Commissioner Dashboard is organized into six tabs:
 | **Overview** | Stats summary + import history |
 | **Announcements** | Post, edit, pin/unpin, delete announcements |
 | **Questions** | Full question bank management (action bar with Add, Import CSV, Generate with AI, Export) |
-| **Members** | Member list + remove member |
+| **Members** | Member list, remove member, invite by email |
 | **Settings** | Edit community name, dates, member cap, appearance |
 | **Analytics** | Per-category and per-difficulty performance charts |
 
@@ -308,9 +308,23 @@ When adding or editing a question's media, click **Browse Library** to open a pi
 
 ## Members Tab
 
-Shows a table of all current community members with their username and join date.
+Shows a table of all current community members with their username, role, and join date.
 
-**Removing a member:**
+### Invite by Email
+
+Send an email invitation to someone who isn't on the platform yet (or who you want to invite directly):
+
+1. Click **Invite by Email** in the Members tab header
+2. Enter the recipient's email address
+3. Optionally add a personal message
+4. Click **Send Invitation**
+
+The email includes your community name, description, invite code, and instructions for joining. Emails are sent via the Resend API using Georgetown-branded templates.
+
+> **Note:** On Resend's free tier, emails from `onboarding@resend.dev` can only be delivered to the Resend account owner's email. For production use, configure a custom domain in Resend.
+
+### Removing a member
+
 1. Find the member in the table
 2. Click **Remove**
 3. Confirm the removal in the dialog

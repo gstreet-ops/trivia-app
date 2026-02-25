@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunitiesList.css';
+import { sendJoinConfirmation } from '../utils/emailService';
 
 function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMarketplace, onMembershipChange }) {
   const [myCommunities, setMyCommunities] = useState([]);
@@ -49,10 +50,13 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
   const joinCommunity = async () => {
     setError(null);
     try {
-      const { data: community } = await supabase.from('communities').select('id').eq('invite_code', inviteCode.toUpperCase()).single();
+      const { data: community } = await supabase.from('communities').select('id, name').eq('invite_code', inviteCode.toUpperCase()).single();
       if (!community) { setError('Invalid invite code'); return; }
       const { error: joinError } = await supabase.from('community_members').insert([{ community_id: community.id, user_id: user.id }]);
       if (joinError) { if (joinError.code === '23505') { setError('Already a member'); } else { setError(joinError.message); } return; }
+      // Fire-and-forget join confirmation email
+      const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+      sendJoinConfirmation(user.id, profile?.username || '', community.name);
       setShowJoinModal(false);
       setInviteCode('');
       fetchMyCommunities();

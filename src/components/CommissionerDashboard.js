@@ -5,6 +5,7 @@ import './CommissionerDashboard.css';
 import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon } from './Icons';
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership } from '../utils/permissions';
+import { sendInvitationEmail } from '../utils/emailService';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -62,6 +63,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [annEditing, setAnnEditing] = useState(null);
   const [annEditForm, setAnnEditForm] = useState({ title: '', body: '', pinned: false });
   const [toast, setToast] = useState(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteMessage, setInviteMessage] = useState('');
+  const [inviteSending, setInviteSending] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -2355,7 +2360,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {activeTab === 'members' && canManageMembers(userCommunityRole) && (
           <div className="tab-pane">
             <div className="commissioner-section">
-              <h2>Manage Members ({members.length})</h2>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'10px',marginBottom:'16px'}}>
+                <h2 style={{margin:0}}>Manage Members ({members.length})</h2>
+                <button className="btn-primary" onClick={() => setShowInviteModal(true)} style={{fontSize:'13px',padding:'6px 14px'}}>
+                  Invite by Email
+                </button>
+              </div>
               {members.length === 0 ? (
                 <p className="empty-message">No members yet</p>
               ) : (
@@ -2431,6 +2441,66 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 </div>
               )}
             </div>
+            {/* Invite by Email Modal */}
+            {showInviteModal && (
+              <div className="cd-modal-overlay" onClick={() => { if (!inviteSending) setShowInviteModal(false); }}>
+                <div className="cd-modal" onClick={e => e.stopPropagation()} style={{maxWidth:'440px'}}>
+                  <h3 style={{margin:'0 0 12px',color:'#041E42'}}>Invite by Email</h3>
+                  <p style={{fontSize:'0.85rem',color:'#54585A',margin:'0 0 16px'}}>
+                    Send an email invitation with the community invite code.
+                  </p>
+                  <label style={{display:'block',fontSize:'13px',fontWeight:600,marginBottom:'4px'}}>Email Address *</label>
+                  <input
+                    type="email"
+                    placeholder="friend@example.com"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    style={{width:'100%',padding:'8px 10px',borderRadius:'6px',border:'1px solid #DEE2E6',fontSize:'14px',boxSizing:'border-box',marginBottom:'12px'}}
+                  />
+                  <label style={{display:'block',fontSize:'13px',fontWeight:600,marginBottom:'4px'}}>Personal Message (optional)</label>
+                  <textarea
+                    placeholder="Add a note to your invitation..."
+                    value={inviteMessage}
+                    onChange={e => { if (e.target.value.length <= 300) setInviteMessage(e.target.value); }}
+                    rows={3}
+                    style={{width:'100%',padding:'8px 10px',borderRadius:'6px',border:'1px solid #DEE2E6',fontSize:'14px',boxSizing:'border-box',resize:'vertical',marginBottom:'4px'}}
+                  />
+                  <div style={{textAlign:'right',fontSize:'0.72rem',color:'#54585A',marginBottom:'16px'}}>
+                    {inviteMessage.length}/300
+                  </div>
+                  <div style={{display:'flex',gap:'8px',justifyContent:'flex-end'}}>
+                    <button
+                      className="btn-primary"
+                      disabled={inviteSending || !inviteEmail.trim()}
+                      onClick={async () => {
+                        setInviteSending(true);
+                        sendInvitationEmail(
+                          inviteEmail.trim(),
+                          community.name,
+                          community.invite_code,
+                          community.description || '',
+                          inviteMessage.trim()
+                        );
+                        showToast('Invitation sent to ' + inviteEmail.trim());
+                        setInviteEmail('');
+                        setInviteMessage('');
+                        setShowInviteModal(false);
+                        setInviteSending(false);
+                      }}
+                    >
+                      {inviteSending ? 'Sending...' : 'Send Invitation'}
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => { setShowInviteModal(false); setInviteEmail(''); setInviteMessage(''); }}
+                      disabled={inviteSending}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

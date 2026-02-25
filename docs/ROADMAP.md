@@ -219,6 +219,14 @@
 - [x] Settings links — legal section with ToS and Privacy Policy buttons
 - [x] Unauthenticated access — ToS and Privacy pages viewable from signup screen via hash routing
 
+### Email Notifications
+- [x] Supabase Edge Function (`send-email`) with Resend API integration
+- [x] Georgetown-branded HTML email templates (invitation, join confirmation, question notification, generic)
+- [x] Commissioner "Invite by Email" — send email invitations with invite code and optional personal message from Members tab
+- [x] Join confirmation email — sent automatically when a user joins a community via invite code
+- [x] Admin action emails — email notifications alongside in-app notifications for question approvals/rejections, AI request approvals/rejections, community request approvals/rejections
+- [x] Fire-and-forget pattern — emails never block UI; errors logged to console
+
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)
 - [x] SVG favicon

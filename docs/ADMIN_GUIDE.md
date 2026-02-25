@@ -297,14 +297,18 @@ The cascade deletes all user data in this order:
 
 ## Notifications
 
-Admin actions that affect users automatically send in-app notifications:
+Admin actions that affect users automatically send both **in-app notifications** and **email notifications**:
 
-| Action | Notification Sent To |
-|--------|---------------------|
-| Approve custom question | Question submitter |
-| Reject custom question | Question submitter |
-| Approve AI generation request | Requesting commissioner |
-| Reject AI generation request | Requesting commissioner |
+| Action | Notification Sent To | Email Type |
+|--------|---------------------|------------|
+| Approve custom question | Question submitter | Question notification |
+| Reject custom question | Question submitter | Question notification |
+| Approve AI generation request | Requesting commissioner | Generic |
+| Reject AI generation request | Requesting commissioner | Generic |
+| Approve community request | Requesting user | Generic |
+| Reject community request | Requesting user | Generic |
+
+Email notifications are fire-and-forget — they never block the admin UI. If email delivery fails (e.g., Resend API key not configured), the in-app notification is still sent. Emails use Georgetown-branded HTML templates delivered via the `send-email` Supabase Edge Function and Resend API.
 
 ---
 
