@@ -213,6 +213,8 @@
 | ~~Leaderboard limited to 100 recent games~~ | **Fixed** — Removed `.limit(100)` from Dashboard leaderboard query; rankings now reflect all public games. |
 | ~~UserProfile stats based on only 10 games~~ | **Fixed** — Removed `.limit(10)` from UserProfile query; stats computed from all games, UI still shows 10 most recent. Division-by-zero guards added. |
 | ~~No post-signup confirmation message~~ | **Fixed** — Success message shown after signup with auto-switch to login tab. Duplicate email detection added. |
+| ~~N+1 bulk tag operations~~ | **Fixed** — Bulk tag add/remove now uses `Promise.all()` for parallel updates with error aggregation instead of sequential loops. |
+| ~~Season reset not atomic~~ | **Fixed** — Season reset uses `reset_season` Supabase RPC function that wraps archive + season update in a single transaction. SQL in `docs/SUPABASE_SCRIPTS.md`. |
 
 ---
 

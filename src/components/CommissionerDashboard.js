@@ -284,34 +284,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const totalQuestions = games.reduce((sum, g) => sum + g.total_questions, 0);
       const topPlayer = leaderboard[0] || null;
 
-      // 2. Insert archive
-      const { error: archiveError } = await supabase.from('season_archives').insert([{
-        community_id: communityId,
-        season_number: oldSeasonNumber,
-        season_start: community.season_start,
-        season_end: community.season_end || new Date().toISOString(),
-        leaderboard_snapshot: leaderboard,
-        total_games: games.length,
-        total_questions_played: totalQuestions,
-        top_player_id: topPlayer?.user_id || null,
-        top_player_username: topPlayer?.username || null,
-        top_player_avg: topPlayer?.avg_score || null,
-        archived_by: currentUserId
-      }]);
-      if (archiveError) throw archiveError;
-
-      // 3. Update community: increment season, reset dates
-      const now = new Date();
-      const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      const { error: updateError } = await supabase
-        .from('communities')
-        .update({
-          current_season: oldSeasonNumber + 1,
-          season_start: now.toISOString(),
-          season_end: thirtyDaysLater.toISOString()
-        })
-        .eq('id', communityId);
-      if (updateError) throw updateError;
+      // 2. Atomic archive + season update via RPC
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('reset_season', {
+        p_community_id: communityId,
+        p_archived_by: currentUserId,
+        p_leaderboard_snapshot: leaderboard,
+        p_total_games: games.length,
+        p_total_questions_played: totalQuestions,
+        p_top_player_id: topPlayer?.user_id || null,
+        p_top_player_username: topPlayer?.username || null,
+        p_top_player_avg: topPlayer?.avg_score || null
+      });
+      if (rpcError) throw rpcError;
 
       showToast(`Season ${oldSeasonNumber} archived! Season ${oldSeasonNumber + 1} has begun.`);
       setShowResetModal(false);
@@ -724,19 +708,29 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!bulkTagInput.trim()) { showToast('Please enter a tag name', 'error'); return; }
     const tag = bulkTagInput.trim();
     try {
-      for (const questionId of selectedQuestions) {
-        const question = questions.find(q => q.id === questionId);
-        const currentTags = question.tags || [];
-        if (!currentTags.includes(tag)) {
-          await supabase.from('community_questions').update({ tags: [...currentTags, tag] }).eq('id', questionId).eq('community_id', communityId);
-          await createVersionHistory(questionId, 'tag_added', { tag, bulk: true });
-        }
+      // Filter to questions that don't already have this tag
+      const toUpdate = selectedQuestions
+        .map(id => questions.find(q => q.id === id))
+        .filter(q => q && !(q.tags || []).includes(tag));
+      if (toUpdate.length === 0) { showToast('All selected questions already have this tag', 'error'); return; }
+      // Update all in parallel
+      const results = await Promise.all(toUpdate.map(q =>
+        supabase.from('community_questions')
+          .update({ tags: [...(q.tags || []), tag] })
+          .eq('id', q.id).eq('community_id', communityId)
+      ));
+      const failures = results.filter(r => r.error);
+      if (failures.length > 0) {
+        showToast(`Tagged ${results.length - failures.length} questions. ${failures.length} failed.`, 'error');
+      } else {
+        showToast(`Tag "${tag}" added to ${results.length} questions`);
       }
       setBulkTagInput('');
       setShowBulkTagging(false);
       fetchCommissionerData();
     } catch (error) {
       console.error('Error adding bulk tags:', error);
+      showToast('Failed to add tags: ' + error.message, 'error');
     }
   };
 
@@ -744,15 +738,27 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
     if (!window.confirm(`Remove tag "${tag}" from ${selectedQuestions.length} selected questions?`)) return;
     try {
-      for (const questionId of selectedQuestions) {
-        const question = questions.find(q => q.id === questionId);
-        const updatedTags = (question.tags || []).filter(t => t !== tag);
-        await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
-        await createVersionHistory(questionId, 'tag_removed', { tag, bulk: true });
+      // Filter to questions that actually have this tag
+      const toUpdate = selectedQuestions
+        .map(id => questions.find(q => q.id === id))
+        .filter(q => q && (q.tags || []).includes(tag));
+      if (toUpdate.length === 0) { showToast('No selected questions have this tag', 'error'); return; }
+      // Update all in parallel
+      const results = await Promise.all(toUpdate.map(q =>
+        supabase.from('community_questions')
+          .update({ tags: (q.tags || []).filter(t => t !== tag) })
+          .eq('id', q.id).eq('community_id', communityId)
+      ));
+      const failures = results.filter(r => r.error);
+      if (failures.length > 0) {
+        showToast(`Removed tag from ${results.length - failures.length} questions. ${failures.length} failed.`, 'error');
+      } else {
+        showToast(`Tag "${tag}" removed from ${results.length} questions`);
       }
       fetchCommissionerData();
     } catch (error) {
       console.error('Error removing bulk tags:', error);
+      showToast('Failed to remove tags: ' + error.message, 'error');
     }
   };
 

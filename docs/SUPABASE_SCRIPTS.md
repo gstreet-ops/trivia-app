@@ -137,6 +137,93 @@ CREATE TRIGGER enforce_pending_limit
 
 ---
 
+## 4. Atomic Season Reset
+
+**Problem:** Season reset performs 3 separate DB operations (insert archive, update season number, update dates). If any step fails after a prior step succeeds, the community is left in an inconsistent state.
+
+**Fix:** Wrap all operations in a single Postgres function that runs inside a transaction. The function locks the community row, inserts the archive, and updates the season atomically.
+
+```sql
+CREATE OR REPLACE FUNCTION reset_season(
+  p_community_id bigint,
+  p_archived_by uuid,
+  p_leaderboard_snapshot jsonb,
+  p_total_games integer,
+  p_total_questions_played integer,
+  p_top_player_id uuid DEFAULT NULL,
+  p_top_player_username text DEFAULT NULL,
+  p_top_player_avg numeric DEFAULT NULL
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_community communities%ROWTYPE;
+  v_new_season integer;
+BEGIN
+  -- Lock the community row to prevent concurrent resets
+  SELECT * INTO v_community FROM communities WHERE id = p_community_id FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Community not found';
+  END IF;
+
+  v_new_season := COALESCE(v_community.current_season, 1) + 1;
+
+  -- Insert season archive
+  INSERT INTO season_archives (
+    community_id, season_number, season_start, season_end,
+    leaderboard_snapshot, total_games, total_questions_played,
+    top_player_id, top_player_username, top_player_avg, archived_by
+  ) VALUES (
+    p_community_id,
+    COALESCE(v_community.current_season, 1),
+    COALESCE(v_community.season_start, v_community.created_at),
+    COALESCE(v_community.season_end, now()),
+    p_leaderboard_snapshot,
+    p_total_games,
+    p_total_questions_played,
+    p_top_player_id,
+    p_top_player_username,
+    p_top_player_avg,
+    p_archived_by
+  );
+
+  -- Update community: increment season, reset dates
+  UPDATE communities SET
+    current_season = v_new_season,
+    season_start = now(),
+    season_end = now() + interval '30 days'
+  WHERE id = p_community_id;
+
+  RETURN jsonb_build_object(
+    'old_season', COALESCE(v_community.current_season, 1),
+    'new_season', v_new_season
+  );
+END;
+$$;
+
+-- Allow authenticated users to call this function
+GRANT EXECUTE ON FUNCTION reset_season(bigint, uuid, jsonb, integer, integer, uuid, text, numeric) TO authenticated;
+```
+
+**Usage in app code:**
+```js
+const { data, error } = await supabase.rpc('reset_season', {
+  p_community_id: communityId,
+  p_archived_by: currentUserId,
+  p_leaderboard_snapshot: leaderboard,
+  p_total_games: games.length,
+  p_total_questions_played: totalQuestions,
+  p_top_player_id: topPlayer?.user_id || null,
+  p_top_player_username: topPlayer?.username || null,
+  p_top_player_avg: topPlayer?.avg_score || null
+});
+// data = { old_season: 1, new_season: 2 }
+```
+
+---
+
 ## Verification
 
 After running each script:
@@ -146,3 +233,4 @@ After running each script:
 | Invite code function | `SELECT generate_invite_code();` — should return an 8-char string |
 | Leaderboard view | `SELECT * FROM community_leaderboards LIMIT 5;` — should return live data |
 | Pending limit trigger | Insert 10 pending questions for a test user, then attempt an 11th — should fail with the exception message |
+| Season reset RPC | `SELECT reset_season(1, 'some-uuid'::uuid, '[]'::jsonb, 0, 0);` — should return `{"old_season": N, "new_season": N+1}` |
