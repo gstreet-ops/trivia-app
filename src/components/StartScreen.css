@@ -70,6 +70,12 @@
   border-color: var(--navy);
 }
 
+.field-error {
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
 .auth-container form button[type='submit'] {
   width: 100%;
   padding: 15px;

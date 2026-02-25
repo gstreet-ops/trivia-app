@@ -215,6 +215,17 @@
 | ~~No post-signup confirmation message~~ | **Fixed** — Success message shown after signup with auto-switch to login tab. Duplicate email detection added. |
 | ~~N+1 bulk tag operations~~ | **Fixed** — Bulk tag add/remove now uses `Promise.all()` for parallel updates with error aggregation instead of sequential loops. |
 | ~~Season reset not atomic~~ | **Fixed** — Season reset uses `reset_season` Supabase RPC function that wraps archive + season update in a single transaction. SQL in `docs/SUPABASE_SCRIPTS.md`. |
+| ~~No password/username validation on signup~~ | **Fixed** — Password minimum 8 chars, username 3-30 chars alphanumeric+underscores, inline field errors. |
+| ~~fetchUserRole could blank the screen~~ | **Fixed** — Wrapped in try/catch with fallback to email-based username; user always reaches dashboard. |
+| ~~Invite code visible to all members~~ | **Fixed** — Invite code shown only to commissioner; others see "Ask your commissioner" message. |
+| ~~Community recent activity not scoped~~ | **Fixed** — CommunityDetail recent activity query now filters by `community_id`. |
+| ~~Community name not validated~~ | **Fixed** — Name must be 3-50 chars, not whitespace-only. |
+| ~~Biased shuffle in multiplayer question selection~~ | **Fixed** — Replaced `sort(() => Math.random() - 0.5)` with Fisher-Yates `shuffleArray`. |
+| ~~Score stale closure in QuizScreen~~ | **Fixed** — `setScore(score + 1)` replaced with functional updater `setScore(prev => prev + 1)`. |
+| ~~50/50 hint biased shuffle~~ | **Fixed** — Replaced `sort(() => 0.5 - Math.random())` with Fisher-Yates `shuffleArray`. |
+| ~~CSV whitespace-only answers pass validation~~ | **Fixed** — Incorrect answers trimmed before truthiness check in CSV import. |
+| ~~Clickable divs/spans missing keyboard support~~ | **Fixed** — Added `role="button"`, `tabIndex={0}`, `onKeyDown` to community cards and feed usernames. |
+| ~~Room code generation proceeds after 5 failures~~ | **Fixed** — After 5 failed attempts, shows error and aborts instead of using a potentially duplicate code. |
 
 ---
 

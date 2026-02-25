@@ -95,14 +95,14 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
         .order('created_at', { ascending: false });
       setAnnouncements(annData || []);
 
-      // Fetch recent community member activity
+      // Fetch recent community member activity — scoped to this community
       const memberIds = (membersData || []).map(m => m.user_id);
       if (memberIds.length > 0) {
         const { data: activityData } = await supabase
           .from('games')
           .select('id, user_id, category, difficulty, score, total_questions, created_at, profiles(username)')
           .in('user_id', memberIds)
-          .eq('visibility', 'public')
+          .eq('community_id', communityId)
           .order('created_at', { ascending: false })
           .limit(10);
         setRecentActivity(activityData || []);
@@ -157,7 +157,7 @@ function CommunityDetail({ communityId, currentUserId, onBack, onStartQuiz, onMa
         </div>
         <div className="info-item">
           <span className="label">Invite Code:</span>
-          <span className="value code">{community.invite_code}</span>
+          <span className="value code">{isCommissioner ? community.invite_code : 'Ask your commissioner for the invite code'}</span>
         </div>
         <div className="info-item">
           <span className="label">Members:</span>

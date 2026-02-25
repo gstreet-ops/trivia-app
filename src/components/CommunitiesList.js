@@ -37,12 +37,15 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
 
   const createCommunity = async () => {
     setError(null);
+    const trimmedName = newCommunityName.trim();
+    if (trimmedName.length < 3) { setError('Community name must be at least 3 characters'); return; }
+    if (trimmedName.length > 50) { setError('Community name must be 50 characters or fewer'); return; }
     try {
-      const slug = newCommunityName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // excludes ambiguous I/O/0/1
       const randomBytes = crypto.getRandomValues(new Uint8Array(8));
       const inviteCode = Array.from(randomBytes, b => chars[b % chars.length]).join('');
-      const { data: community, error: createError } = await supabase.from('communities').insert([{ name: newCommunityName, slug: slug, commissioner_id: user.id, invite_code: inviteCode, season_start: new Date().toISOString(), season_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }]).select().single();
+      const { data: community, error: createError } = await supabase.from('communities').insert([{ name: trimmedName, slug: slug, commissioner_id: user.id, invite_code: inviteCode, season_start: new Date().toISOString(), season_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }]).select().single();
       if (createError) throw createError;
       await supabase.from('community_members').insert([{ community_id: community.id, user_id: user.id }]);
       setShowCreateModal(false);
@@ -61,11 +64,11 @@ function CommunitiesList({ user, userRole, onViewCommunity, onBack, onBrowseMark
       {myCommunities.length === 0 ? <div className="empty-state"><p>You haven't joined any communities yet.</p><p>Create your own or join with an invite code!</p></div> : (
         <div className="communities-grid">
           {myCommunities.map(community => (
-            <div key={community.id} className="community-card" onClick={() => onViewCommunity(community.id, community.name)}>
+            <div key={community.id} className="community-card" role="button" tabIndex={0} onClick={() => onViewCommunity(community.id, community.name)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewCommunity(community.id, community.name); } }}>
               <h3>{community.name}</h3>
               <p className="commissioner">Commissioner: {community.profiles?.username}</p>
               <p className="dates">{new Date(community.season_start).toLocaleDateString()} - {new Date(community.season_end).toLocaleDateString()}</p>
-              <p className="invite-code">Code: {community.invite_code}</p>
+              {community.commissioner_id === user.id && <p className="invite-code">Code: {community.invite_code}</p>}
             </div>
           ))}
         </div>

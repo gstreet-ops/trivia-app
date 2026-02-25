@@ -12,7 +12,10 @@
       "Bash(cd /c/Users/brian/projects/trivia-app && git apply ~/Downloads/game-card-labels-fix.patch 2>)",
       "Bash(cd /c/Users/brian/projects/trivia-app && git apply ~/Downloads/create-community-superadmin.patch 2>&1)",
       "Bash(cd /c/Users/brian/projects/trivia-app && git apply ~/Downloads/phase1-role-simplification.patch 2>&1)",
-      "WebFetch(domain:gstreet-ops.github.io)"
+      "WebFetch(domain:gstreet-ops.github.io)",
+      "Bash(cd ~/projects/trivia-app && git pull origin main 2>&1)",
+      "Bash(tail:*)",
+      "Bash(tail:*2)"
     ]
   }
 }

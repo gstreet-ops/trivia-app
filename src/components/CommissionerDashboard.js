@@ -411,7 +411,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const rowErrors = [];
       if (!row.question_text?.trim()) rowErrors.push(`Row ${index + 1}: Missing question text`);
       if (!row.correct_answer?.trim()) rowErrors.push(`Row ${index + 1}: Missing correct answer`);
-      if (!row.incorrect_answer_1 || !row.incorrect_answer_2 || !row.incorrect_answer_3) rowErrors.push(`Row ${index + 1}: Missing incorrect answers (need 3)`);
+      if (!row.incorrect_answer_1?.trim() || !row.incorrect_answer_2?.trim() || !row.incorrect_answer_3?.trim()) rowErrors.push(`Row ${index + 1}: Missing incorrect answers (need 3)`);
       if (!row.category?.trim()) rowErrors.push(`Row ${index + 1}: Missing category`);
       const validDifficulties = ['easy', 'medium', 'hard'];
       if (!row.difficulty || !validDifficulties.includes(row.difficulty.toLowerCase())) rowErrors.push(`Row ${index + 1}: Invalid difficulty (must be easy, medium, or hard)`);

@@ -222,7 +222,7 @@ function QuizScreen({ config, onEnd }) {
 
     const q = questions[currentQuestionIndex];
     const isCorrect = answer === q.correctAnswer;
-    if (isCorrect) setScore(score + 1);
+    if (isCorrect) setScore(prev => prev + 1);
     setAnswersLog(prev => [...prev, {
       question_text: q.question,
       correct_answer: q.correctAnswer,
@@ -234,7 +234,7 @@ function QuizScreen({ config, onEnd }) {
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setHintUsed(false);
@@ -254,8 +254,8 @@ function QuizScreen({ config, onEnd }) {
       answer => answer !== currentQuestion.correctAnswer
     );
 
-    // Randomly select 2 wrong answers to hide
-    const answersToHide = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 2);
+    // Randomly select 2 wrong answers to hide (Fisher-Yates)
+    const answersToHide = shuffleArray(wrongAnswers).slice(0, 2);
     setHiddenAnswers(answersToHide);
     setHintUsed(true);
 

@@ -185,26 +185,33 @@ function App() {
   }, [syncFromHash]);
 
   const fetchUserRole = async (userId) => {
-    const { data } = await supabase.from('profiles').select('role, super_admin, username, theme').eq('id', userId).single();
-    if (data?.super_admin) setUserRole('super_admin');
-    else setUserRole('user');
-    setAppIsAdmin(data?.super_admin === true);
-    setAppUsername(data?.username || '');
+    try {
+      const { data, error } = await supabase.from('profiles').select('role, super_admin, username, theme').eq('id', userId).single();
+      if (error) throw error;
+      if (data?.super_admin) setUserRole('super_admin');
+      else setUserRole('user');
+      setAppIsAdmin(data?.super_admin === true);
+      setAppUsername(data?.username || '');
 
-    // Apply theme from profile (cross-device persistence)
-    if (data?.theme) {
-      setCurrentTheme(data.theme);
-      applyTheme(data.theme);
-    }
+      // Apply theme from profile (cross-device persistence)
+      if (data?.theme) {
+        setCurrentTheme(data.theme);
+        applyTheme(data.theme);
+      }
 
-    // Pre-load community name if user belongs to exactly one community
-    const { data: memberships } = await supabase
-      .from('community_members')
-      .select('communities(id, name)')
-      .eq('user_id', userId);
-    if (memberships && memberships.length === 1) {
-      setAppCommunityName(memberships[0].communities?.name || '');
-      setViewCommunityId(memberships[0].communities?.id || null);
+      // Pre-load community name if user belongs to exactly one community
+      const { data: memberships } = await supabase
+        .from('community_members')
+        .select('communities(id, name)')
+        .eq('user_id', userId);
+      if (memberships && memberships.length === 1) {
+        setAppCommunityName(memberships[0].communities?.name || '');
+        setViewCommunityId(memberships[0].communities?.id || null);
+      }
+    } catch (err) {
+      console.error('fetchUserRole failed:', err);
+      setUserRole('user');
+      setAppUsername(session?.user?.email?.split('@')[0] || 'User');
     }
   };
 

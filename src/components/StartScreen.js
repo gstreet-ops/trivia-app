@@ -14,10 +14,32 @@ function StartScreen({ onStart, onBack }) {
   const [resetMessage, setResetMessage] = useState('');
   const [signupSuccess, setSignupSuccess] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState({});
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setFieldErrors({});
+
+    // Client-side validation for signup
+    if (!isLogin) {
+      const errors = {};
+      const trimmedUsername = username.trim();
+      if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+        errors.username = 'Username must be 3-30 characters';
+      } else if (!/^[a-zA-Z0-9_]+$/.test(trimmedUsername)) {
+        errors.username = 'Username can only contain letters, numbers, and underscores';
+      }
+      if (password.length < 8) {
+        errors.password = 'Password must be at least 8 characters';
+      }
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       if (isLogin) {
@@ -114,7 +136,8 @@ function StartScreen({ onStart, onBack }) {
           {!isLogin && (
             <div className="form-group">
               <label htmlFor="auth-username">Username</label>
-              <input id="auth-username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <input id="auth-username" type="text" value={username} onChange={(e) => { setUsername(e.target.value); setFieldErrors(prev => ({ ...prev, username: null })); }} required />
+              {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
             </div>
           )}
           <div className="form-group">
@@ -123,7 +146,8 @@ function StartScreen({ onStart, onBack }) {
           </div>
           <div className="form-group">
             <label htmlFor="auth-password">Password</label>
-            <input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input id="auth-password" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: null })); }} required />
+            {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
           </div>
           <button type="submit" disabled={loading}>
             {loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}

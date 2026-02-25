@@ -250,17 +250,21 @@ function MultiplayerLobby({ user, username, onBack }) {
     try {
       // Generate unique room code with retry
       let code = generateRoomCode();
-      let attempts = 0;
-      while (attempts < 5) {
+      let codeIsUnique = false;
+      for (let attempts = 0; attempts < 5; attempts++) {
         const { data: existing } = await supabase
           .from('multiplayer_rooms')
           .select('id')
           .eq('room_code', code)
           .eq('status', 'waiting')
           .maybeSingle();
-        if (!existing) break;
+        if (!existing) { codeIsUnique = true; break; }
         code = generateRoomCode();
-        attempts++;
+      }
+      if (!codeIsUnique) {
+        setError('Unable to generate a unique room code. Please try again.');
+        setCreating(false);
+        return;
       }
 
       const { data: newRoom, error: roomError } = await supabase
@@ -497,7 +501,7 @@ function MultiplayerLobby({ user, username, onBack }) {
           return;
         }
         // Shuffle and pick
-        const shuffled = data.sort(() => Math.random() - 0.5).slice(0, room.question_count);
+        const shuffled = shuffleArray(data).slice(0, room.question_count);
         questions = shuffled.map((q, i) => ({
           room_id: room.id,
           question_order: i,

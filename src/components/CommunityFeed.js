@@ -43,7 +43,7 @@ function CommunityFeed({ currentUserId, onBack, onViewGame, onViewUserProfile })
         <div className="games-grid">
           {games.map(game => (
             <div key={game.id} className="game-card-feed">
-              <div className="game-header"><span className="username" onClick={() => onViewUserProfile(game.user_id, game.profiles?.username)}>{game.profiles?.username}</span><span className="game-date">{new Date(game.created_at).toLocaleDateString()}</span></div>
+              <div className="game-header"><span className="username" role="button" tabIndex={0} onClick={() => onViewUserProfile(game.user_id, game.profiles?.username)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewUserProfile(game.user_id, game.profiles?.username); } }}>{game.profiles?.username}</span><span className="game-date">{new Date(game.created_at).toLocaleDateString()}</span></div>
               <div className="game-details"><span className="category-badge">{game.category}</span><span className={'difficulty-badge ' + game.difficulty}>{game.difficulty}</span></div>
               <div className="game-score-large">{game.score}/{game.total_questions}<span className="percentage">({((game.score / game.total_questions) * 100).toFixed(0)}%)</span></div>
               <button className="view-btn" onClick={() => onViewGame(game.id)}>View Details</button>
