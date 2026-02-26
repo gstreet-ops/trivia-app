@@ -653,28 +653,12 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!transferTarget || transferConfirmText !== community?.name) return;
     setTransferLoading(true);
     try {
-      // Set new owner
-      const { error: e1 } = await supabase
-        .from('community_members')
-        .update({ role: 'owner' })
-        .eq('community_id', communityId)
-        .eq('user_id', transferTarget);
-      if (e1) throw e1;
-
-      // Demote self to commissioner
-      const { error: e2 } = await supabase
-        .from('community_members')
-        .update({ role: 'commissioner' })
-        .eq('community_id', communityId)
-        .eq('user_id', currentUserId);
-      if (e2) throw e2;
-
-      // Update legacy commissioner_id
-      const { error: e3 } = await supabase
-        .from('communities')
-        .update({ commissioner_id: transferTarget })
-        .eq('id', communityId);
-      if (e3) throw e3;
+      const { error } = await supabase.rpc('transfer_community_ownership', {
+        p_community_id: communityId,
+        p_new_owner_id: transferTarget,
+        p_current_owner_id: currentUserId,
+      });
+      if (error) throw error;
 
       showToast('Ownership transferred successfully');
       setShowTransferModal(false);

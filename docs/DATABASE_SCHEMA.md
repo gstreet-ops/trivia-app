@@ -805,6 +805,18 @@ Generates a unique invite code for a community.
 **Function:** `generate_invite_code()` (RPC)
 **Called by:** `CommissionerDashboard.js`
 
+### Community ownership transfer RPC
+
+Atomically transfers community ownership in a single transaction:
+1. Verifies caller is the current owner
+2. Verifies target is a community member
+3. Promotes target to `owner`
+4. Demotes current owner to `commissioner`
+5. Updates `communities.commissioner_id`
+
+**Function:** `transfer_community_ownership(p_community_id, p_new_owner_id, p_current_owner_id)` (RPC, SECURITY DEFINER)
+**Called by:** `CommissionerDashboard.js`
+
 ---
 
 ## Edge Functions
