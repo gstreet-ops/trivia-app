@@ -1151,6 +1151,7 @@ function MultiplayerLobby({ user, username, onBack }) {
                 className={cls}
                 onClick={() => handleAnswerClick(answer)}
                 disabled={gamePhase !== 'active'}
+                aria-label={`Answer option ${i + 1}: ${answer}`}
               >
                 {answer}
               </button>

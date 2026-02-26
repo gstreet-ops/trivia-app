@@ -145,7 +145,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
         <table aria-label="Community Leaderboard">
           <thead><tr><th>Rank</th><th>Player</th><th>Avg Score</th><th>Games</th></tr></thead>
           <tbody>{leaderboard.map((player, index) => (
-            <tr key={index}>
+            <tr key={player.userId}>
               <td>{index + 1}</td>
               <td>
                 {player.userId !== user.id && onViewUserProfile ? (
