@@ -50,6 +50,8 @@ function EmbedConfigurator({ communityId, community, showToast }) {
   const [saving, setSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [categories, setCategories] = useState([]);
+  const [embedStats, setEmbedStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const iframeRef = useRef(null);
 
   // Fetch available categories for this community
@@ -67,6 +69,69 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       }
     };
     fetchCategories();
+  }, [communityId]);
+
+  // Fetch embed-specific analytics
+  useEffect(() => {
+    if (!communityId) return;
+    const fetchEmbedStats = async () => {
+      setStatsLoading(true);
+      try {
+        // All games for this community
+        const { data: allGames } = await supabase
+          .from('games')
+          .select('id, source, host_origin, score, total_questions, created_at')
+          .eq('community_id', communityId);
+
+        if (!allGames || allGames.length === 0) {
+          setEmbedStats({ totalGames: 0, embedGames: 0, appGames: 0, embedPct: 0, avgScore: 0, hostDomains: {}, recentTrend: [] });
+          setStatsLoading(false);
+          return;
+        }
+
+        const embedGames = allGames.filter(g => g.source === 'embed');
+        const appGames = allGames.filter(g => g.source !== 'embed');
+
+        // Host domain breakdown
+        const hostDomains = {};
+        embedGames.forEach(g => {
+          const host = g.host_origin || 'Unknown';
+          hostDomains[host] = (hostDomains[host] || 0) + 1;
+        });
+
+        // Average embed score
+        const avgScore = embedGames.length > 0
+          ? Math.round(embedGames.reduce((sum, g) => sum + (g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0), 0) / embedGames.length)
+          : 0;
+
+        // Last 7 days trend
+        const now = new Date();
+        const recentTrend = [];
+        for (let i = 6; i >= 0; i--) {
+          const day = new Date(now);
+          day.setDate(day.getDate() - i);
+          const dayStr = day.toISOString().slice(0, 10);
+          const dayEmbed = embedGames.filter(g => g.created_at && g.created_at.slice(0, 10) === dayStr).length;
+          const dayApp = appGames.filter(g => g.created_at && g.created_at.slice(0, 10) === dayStr).length;
+          recentTrend.push({ date: dayStr, label: day.toLocaleDateString('en-US', { weekday: 'short' }), embed: dayEmbed, app: dayApp });
+        }
+
+        setEmbedStats({
+          totalGames: allGames.length,
+          embedGames: embedGames.length,
+          appGames: appGames.length,
+          embedPct: allGames.length > 0 ? Math.round((embedGames.length / allGames.length) * 100) : 0,
+          avgScore,
+          hostDomains,
+          recentTrend,
+        });
+      } catch (err) {
+        console.error('Error fetching embed stats:', err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchEmbedStats();
   }, [communityId]);
 
   // Load saved embed_theme from community settings on mount
@@ -333,6 +398,93 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       <p style={{ fontSize: '0.75rem', opacity: 0.4, marginTop: '1rem', textAlign: 'center' }}>
         On mobile, this configurator stacks vertically. For best results, configure on desktop.
       </p>
+
+      {/* Embed Analytics Section */}
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>📊 Embed Analytics</h2>
+
+        {statsLoading ? (
+          <p style={{ opacity: 0.5 }}>Loading analytics...</p>
+        ) : !embedStats || embedStats.totalGames === 0 ? (
+          <div className="card" style={{ padding: '2rem', textAlign: 'center', opacity: 0.6 }}>
+            <p>No games played yet. Analytics will appear once players start using the embed.</p>
+          </div>
+        ) : (
+          <>
+            {/* Stat cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              {[
+                { label: 'Total Games', value: embedStats.totalGames },
+                { label: 'Embed Plays', value: embedStats.embedGames },
+                { label: 'App Plays', value: embedStats.appGames },
+                { label: 'Embed Share', value: `${embedStats.embedPct}%` },
+                { label: 'Avg Embed Score', value: `${embedStats.avgScore}%` },
+              ].map(({ label, value }) => (
+                <div key={label} className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{value}</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.25rem' }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 7-day trend */}
+            <div className="card" style={{ padding: '1.25rem', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 600 }}>Last 7 Days</h3>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '80px' }}>
+                {embedStats.recentTrend.map(day => {
+                  const total = day.embed + day.app;
+                  const maxDay = Math.max(...embedStats.recentTrend.map(d => d.embed + d.app), 1);
+                  const height = total > 0 ? Math.max((total / maxDay) * 100, 8) : 4;
+                  const embedPct = total > 0 ? (day.embed / total) * 100 : 0;
+                  return (
+                    <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <div
+                        title={`${day.date}: ${day.embed} embed, ${day.app} app`}
+                        style={{
+                          width: '100%',
+                          height: `${height}%`,
+                          borderRadius: '3px',
+                          background: total > 0
+                            ? `linear-gradient(to top, var(--primary, #6B2D5E) ${embedPct}%, rgba(255,255,255,0.2) ${embedPct}%)`
+                            : 'rgba(255,255,255,0.05)',
+                          minHeight: '3px',
+                          cursor: 'default',
+                        }}
+                      />
+                      <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>{day.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.7rem', opacity: 0.5 }}>
+                <span>■ Embed</span>
+                <span style={{ opacity: 0.4 }}>■ App</span>
+              </div>
+            </div>
+
+            {/* Host domains */}
+            {Object.keys(embedStats.hostDomains).length > 0 && (
+              <div className="card" style={{ padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 600 }}>Embed Host Sites</h3>
+                {Object.entries(embedStats.hostDomains)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([host, count]) => {
+                    const maxCount = Math.max(...Object.values(embedStats.hostDomains));
+                    return (
+                      <div key={host} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', minWidth: '140px' }}>{host}</span>
+                        <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${(count / maxCount) * 100}%`, height: '100%', background: 'var(--primary, #6B2D5E)', borderRadius: '3px' }} />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.6, minWidth: '40px', textAlign: 'right' }}>{count}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -76,6 +76,8 @@ One row per completed quiz session.
 | `total_questions` | `integer` | Total questions in game |
 | `community_id` | `uuid` | FK → `communities.id` (nullable) |
 | `visibility` | `text` | `'public'` or `'private'` |
+| `source` | `text` | `'app'` (default) or `'embed'` — where game was played |
+| `host_origin` | `text` | For embed games: parent site hostname (e.g. `elliehallaron.com`) |
 | `created_at` | `timestamptz` | Game completion timestamp |
 
 **Relationships:**
