@@ -52,10 +52,17 @@ function NotificationBell({ userId, onNavigate }) {
         setDropdownOpen(false);
       }
     };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    };
     if (dropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [dropdownOpen]);
 
   const handleNotificationClick = async (notification) => {
@@ -116,7 +123,10 @@ function NotificationBell({ userId, onNavigate }) {
       <button
         className="notification-bell-btn"
         onClick={() => setDropdownOpen(prev => !prev)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setDropdownOpen(false); }}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-expanded={dropdownOpen}
+        aria-haspopup="true"
       >
         <span className="notification-bell-icon"><BellIcon size={18} color="#fff" /></span>
         {unreadCount > 0 && (
@@ -125,7 +135,7 @@ function NotificationBell({ userId, onNavigate }) {
       </button>
 
       {dropdownOpen && (
-        <div className="notification-dropdown">
+        <div className="notification-dropdown" role="menu" aria-label="Notifications">
           <div className="notification-header">
             <span className="notification-header-title">Notifications</span>
             {unreadCount > 0 && (
@@ -145,6 +155,7 @@ function NotificationBell({ userId, onNavigate }) {
                   key={n.id}
                   className={`notification-item${n.read ? '' : ' unread'}`}
                   onClick={() => handleNotificationClick(n)}
+                  role="menuitem"
                 >
                   <span className="notification-type-icon">{getTypeIcon(n.type)}</span>
                   <div className="notification-content">
