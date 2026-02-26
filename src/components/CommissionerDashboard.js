@@ -738,6 +738,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       showToast('Please upload a CSV file', 'error');
       return;
     }
+    if (file.size > 1 * 1024 * 1024) {
+      showToast('CSV file must be under 1 MB', 'error');
+      return;
+    }
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
