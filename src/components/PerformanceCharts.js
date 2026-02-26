@@ -43,4 +43,4 @@ function PerformanceCharts({ games }) {
   );
 }
 
-export default PerformanceCharts;
+export default React.memo(PerformanceCharts);

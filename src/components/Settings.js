@@ -51,7 +51,7 @@ function Settings({ user, onBack, onNavigate }) {
 
   const handleChangePassword = async () => {
     setPasswordMessage('');
-    if (newPassword.length < 6) { setPasswordMessage('Password must be at least 6 characters.'); return; }
+    if (newPassword.length < 8) { setPasswordMessage('Password must be at least 8 characters.'); return; }
     if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match.'); return; }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) { setPasswordMessage('Error: ' + error.message); return; }

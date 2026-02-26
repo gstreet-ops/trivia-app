@@ -50,7 +50,7 @@ function ResetPasswordScreen({ onDone }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newPassword.length < 6) { setMessage('Password must be at least 6 characters.'); return; }
+    if (newPassword.length < 8) { setMessage('Password must be at least 8 characters.'); return; }
     if (newPassword !== confirmPassword) { setMessage('Passwords do not match.'); return; }
     setSaving(true);
     setMessage('');
