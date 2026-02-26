@@ -12,6 +12,8 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [leaderboard, setLeaderboard] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [expandedGameId, setExpandedGameId] = useState(null);
   const [gameAnswersCache, setGameAnswersCache] = useState({});
 
@@ -33,8 +35,15 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   };
 
   const fetchStats = async () => {
+    setLoading(true);
+    setFetchError(null);
     const { data: games, error: gamesError } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    if (gamesError) console.error('fetchStats games error:', gamesError);
+    if (gamesError) {
+      console.error('fetchStats games error:', gamesError);
+      setFetchError('Failed to load dashboard data. Please try again.');
+      setLoading(false);
+      return;
+    }
     if (games && games.length > 0) {
       const totalGames = games.length;
       const totalScore = games.reduce((sum, g) => sum + g.score, 0);
@@ -63,6 +72,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       const leaderboardArray = Object.values(userScores).map(u => ({ ...u, avgPercentage: u.totalQuestions > 0 ? ((u.totalScore / u.totalQuestions) * 100).toFixed(1) : '0.0' })).sort((a, b) => b.avgPercentage - a.avgPercentage).slice(0, 10);
       setLeaderboard(leaderboardArray);
     }
+    setLoading(false);
   };
 
   const toggleExpand = useCallback(async (gameId) => {
@@ -76,6 +86,27 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       setGameAnswersCache(prev => ({ ...prev, [gameId]: data || [] }));
     }
   }, [expandedGameId, gameAnswersCache]);
+
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <h2 className="dashboard-welcome">Welcome back!</h2>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="dashboard">
+        <h2 className="dashboard-welcome">Welcome back, {username || 'User'}!</h2>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <p style={{ color: 'var(--incorrect-text)', marginBottom: '12px' }}>{fetchError}</p>
+          <button onClick={fetchStats} className="dashboard-start-btn">Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
