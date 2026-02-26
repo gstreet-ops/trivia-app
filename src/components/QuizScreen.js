@@ -139,7 +139,7 @@ function QuizScreen({ config, onEnd }) {
   };
 
   const fetchCommunityQuestions = async (requested) => {
-    let query = supabase.from('community_questions').select('*').eq('community_id', communityId);
+    let query = supabase.from('community_questions').select('*').eq('community_id', communityId).eq('status', 'active');
     if (difficulty && difficulty !== 'mixed') {
       query = query.eq('difficulty', difficulty);
     }

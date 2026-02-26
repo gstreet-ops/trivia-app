@@ -37,7 +37,8 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
       const { data: questions } = await supabase
         .from('community_questions')
         .select('category')
-        .eq('community_id', communityId);
+        .eq('community_id', communityId)
+        .eq('status', 'active');
       if (questions && questions.length > 0) {
         const counts = {};
         questions.forEach(q => {

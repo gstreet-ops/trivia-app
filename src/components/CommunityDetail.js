@@ -93,7 +93,8 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
       const { data: questionsData } = await supabase
         .from('community_questions')
         .select('*')
-        .eq('community_id', communityId);
+        .eq('community_id', communityId)
+        .eq('status', 'active');
       setQuestions(questionsData || []);
 
       // Fetch announcements

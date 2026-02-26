@@ -65,7 +65,7 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
 
       // Fetch question counts
       const { data: questionCounts } = publicIds.length > 0
-        ? await supabase.from('community_questions').select('community_id').in('community_id', publicIds)
+        ? await supabase.from('community_questions').select('community_id').in('community_id', publicIds).eq('status', 'active')
         : { data: [] };
 
       // Build count maps

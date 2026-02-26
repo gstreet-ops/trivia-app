@@ -494,7 +494,7 @@ function MultiplayerLobby({ user, username, onBack }) {
 
       if (room.question_source === 'community' && room.community_id) {
         // Fetch from community questions
-        let query = supabase.from('community_questions').select('*').eq('community_id', room.community_id);
+        let query = supabase.from('community_questions').select('*').eq('community_id', room.community_id).eq('status', 'active');
         if (room.difficulty && room.difficulty !== 'mixed') {
           query = query.eq('difficulty', room.difficulty);
         }
