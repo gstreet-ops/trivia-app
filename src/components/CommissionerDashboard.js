@@ -3178,7 +3178,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         <div key={category} className="distribution-bar-row">
                           <span className="bar-label">{category}</span>
                           <div className="bar-container">
-                            <div className="bar-fill" style={{ width: `${(count / questions.length) * 100}%` }} />
+                            <div className="bar-fill" style={{ width: questions.length > 0 ? `${(count / questions.length) * 100}%` : '0%' }} />
                           </div>
                           <span className="bar-count">{count}</span>
                         </div>
@@ -3209,7 +3209,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                           <div key={tag} className="distribution-bar-row">
                             <span className="bar-label">{tag}</span>
                             <div className="bar-container">
-                              <div className="bar-fill tag" style={{ width: `${(count / questions.length) * 100}%` }} />
+                              <div className="bar-fill tag" style={{ width: questions.length > 0 ? `${(count / questions.length) * 100}%` : '0%' }} />
                             </div>
                             <span className="bar-count">{count}</span>
                           </div>

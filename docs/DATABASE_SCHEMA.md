@@ -773,6 +773,20 @@ Updates `profiles.bot_flags` JSONB with flagged status, reasons array, and times
 **Function:** `check_bot_flags()` (SECURITY DEFINER)
 **Trigger:** `check_bot_after_game` on `games` AFTER INSERT
 
+### Self-role-escalation prevention trigger
+
+Prevents users from modifying their own `platform_role` or `super_admin` status via direct API calls. Fires BEFORE UPDATE on `profiles`.
+
+Checks:
+- If `platform_role` changed OR `super_admin` changed
+- AND the row being updated belongs to `auth.uid()`
+- → Raises exception: "Cannot modify your own role or admin status"
+
+Admins can still change other users' roles through `AdminDashboard.js`. This trigger closes the gap where a client-side-only guard (`AdminDashboard.js:395`) could be bypassed via direct Supabase API calls.
+
+**Function:** `prevent_self_role_escalation()` (SECURITY DEFINER)
+**Trigger:** `prevent_self_role_escalation_trigger` on `profiles` BEFORE UPDATE
+
 ### Season reset RPC
 
 Atomically archives a community's leaderboard and resets the season.

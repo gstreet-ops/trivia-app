@@ -551,7 +551,7 @@ function App() {
           onMembershipChange={refreshUserCommunities}
         />
       )}
-      {screen === 'admin' && <AdminDashboard onBack={() => navigateTo('dashboard')} currentUserId={session.user.id} />}
+      {screen === 'admin' && appIsAdmin && <AdminDashboard onBack={() => navigateTo('dashboard')} currentUserId={session.user.id} />}
       {screen === 'createQuestion' && (
         <QuestionCreator
           user={session.user}
