@@ -1,0 +1,4 @@
+question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_answer_3,category,difficulty,explanation
+"What is the capital of Australia?","Canberra","Sydney","Melbourne","Brisbane","Geography","easy","Canberra was purpose-built as a compromise capital in 1908"
+"What element has the chemical symbol Au?","Gold","Silver","Iron","Copper","Science & Nature","medium","Au comes from the Latin word aurum meaning gold"
+"In what year was the Eiffel Tower completed?","1889","1876","1901","1912","History","hard","Construction began in 1887 and was completed in time for the 1889 World Fair"
