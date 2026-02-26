@@ -104,10 +104,23 @@ function App() {
   const [currentTheme, setCurrentTheme] = useState(getSavedTheme);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Apply saved theme on mount
   useEffect(() => {
     applyTheme(getSavedTheme());
+  }, []);
+
+  // Online/offline detection
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
   }, []);
 
   // PWA install prompt
@@ -383,6 +396,11 @@ function App() {
 
   return (
     <div className="App">
+      {isOffline && (
+        <div style={{ background: '#dc3545', color: '#fff', textAlign: 'center', padding: '8px 16px', fontSize: '14px', fontWeight: 600 }}>
+          You are offline. Some features may not work until your connection is restored.
+        </div>
+      )}
       {appUsername && (() => {
         const navItems = [
           { label: 'My Stats', icon: <ChartIcon size={16} />, action: () => navigateTo('myStats') },
