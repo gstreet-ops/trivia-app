@@ -13,6 +13,17 @@ interface EmailRequest {
   data: Record<string, string>;
 }
 
+// Escape user-supplied values before interpolating into HTML templates
+function escapeHtml(str: string | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Georgetown-branded HTML email wrapper
 function wrapHtml(body: string): string {
   return `<!DOCTYPE html>
@@ -40,37 +51,41 @@ function wrapHtml(body: string): string {
 
 function buildInvitationEmail(data: Record<string, string>): { subject: string; html: string } {
   const { communityName, inviteCode, description, personalMessage } = data;
+  const safeName = escapeHtml(communityName);
+  const safeCode = escapeHtml(inviteCode);
   let body = `
     <h2 style="color:#041E42;margin:0 0 16px;">You're Invited!</h2>
     <p style="color:#333;font-size:15px;line-height:1.5;">
-      You've been invited to join <strong>${communityName}</strong> on the Trivia Platform.
+      You've been invited to join <strong>${safeName}</strong> on the Trivia Platform.
     </p>`;
   if (description) {
-    body += `<p style="color:#54585A;font-size:14px;font-style:italic;margin:8px 0 16px;">${description}</p>`;
+    body += `<p style="color:#54585A;font-size:14px;font-style:italic;margin:8px 0 16px;">${escapeHtml(description)}</p>`;
   }
   if (personalMessage) {
     body += `
     <div style="background:#E8ECF0;border-left:4px solid #041E42;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
-      <p style="margin:0;color:#333;font-size:14px;">${personalMessage}</p>
+      <p style="margin:0;color:#333;font-size:14px;">${escapeHtml(personalMessage)}</p>
     </div>`;
   }
   body += `
     <div style="background:#041E42;border-radius:8px;padding:20px;text-align:center;margin:24px 0;">
       <p style="color:#8B9DC3;margin:0 0 8px;font-size:13px;">Your Invite Code</p>
-      <p style="color:#ffffff;margin:0;font-size:28px;font-weight:700;letter-spacing:3px;">${inviteCode}</p>
+      <p style="color:#ffffff;margin:0;font-size:28px;font-weight:700;letter-spacing:3px;">${safeCode}</p>
     </div>
     <p style="color:#54585A;font-size:14px;">
       To join, visit the Trivia Platform, go to <strong>My Communities</strong>, click <strong>Join Community</strong>, and enter the code above.
     </p>`;
-  return { subject: `You're invited to ${communityName}!`, html: wrapHtml(body) };
+  return { subject: `You're invited to ${safeName}!`, html: wrapHtml(body) };
 }
 
 function buildJoinConfirmationEmail(data: Record<string, string>): { subject: string; html: string } {
   const { username, communityName } = data;
+  const safeName = escapeHtml(communityName);
+  const safeUser = escapeHtml(username);
   const body = `
     <h2 style="color:#041E42;margin:0 0 16px;">Welcome Aboard!</h2>
     <p style="color:#333;font-size:15px;line-height:1.5;">
-      Hey <strong>${username}</strong>, you've successfully joined <strong>${communityName}</strong>!
+      Hey <strong>${safeUser}</strong>, you've successfully joined <strong>${safeName}</strong>!
     </p>
     <p style="color:#54585A;font-size:14px;line-height:1.5;">
       Start playing quizzes, climb the leaderboard, and unlock achievements. Head to the community page to get started.
@@ -80,7 +95,7 @@ function buildJoinConfirmationEmail(data: Record<string, string>): { subject: st
         Let's Play!
       </span>
     </div>`;
-  return { subject: `Welcome to ${communityName}!`, html: wrapHtml(body) };
+  return { subject: `Welcome to ${safeName}!`, html: wrapHtml(body) };
 }
 
 function buildQuestionNotificationEmail(data: Record<string, string>): { subject: string; html: string } {
@@ -88,12 +103,14 @@ function buildQuestionNotificationEmail(data: Record<string, string>): { subject
   const approved = status === "approved";
   const statusColor = approved ? "#28a745" : "#dc3545";
   const statusLabel = approved ? "Approved" : "Not Approved";
-  const preview = questionText.length > 80 ? questionText.slice(0, 80) + "..." : questionText;
+  const safeQuestion = escapeHtml(questionText);
+  const preview = safeQuestion.length > 80 ? safeQuestion.slice(0, 80) + "..." : safeQuestion;
+  const safeUser = escapeHtml(username);
 
   let body = `
     <h2 style="color:#041E42;margin:0 0 16px;">Question ${statusLabel}</h2>
     <p style="color:#333;font-size:15px;line-height:1.5;">
-      Hey <strong>${username}</strong>, your submitted question has been reviewed.
+      Hey <strong>${safeUser}</strong>, your submitted question has been reviewed.
     </p>
     <div style="background:#f8f9fa;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="color:#54585A;font-size:13px;margin:0 0 4px;">Your question:</p>
@@ -105,7 +122,7 @@ function buildQuestionNotificationEmail(data: Record<string, string>): { subject
   if (!approved && rejectionReason) {
     body += `
     <div style="background:#fff3cd;border-left:4px solid #dc3545;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
-      <p style="margin:0;color:#333;font-size:14px;"><strong>Feedback:</strong> ${rejectionReason}</p>
+      <p style="margin:0;color:#333;font-size:14px;"><strong>Feedback:</strong> ${escapeHtml(rejectionReason)}</p>
     </div>`;
   }
   if (approved) {
@@ -118,15 +135,16 @@ function buildQuestionNotificationEmail(data: Record<string, string>): { subject
 
 function buildGenericEmail(data: Record<string, string>): { subject: string; html: string } {
   const { username, subject, message } = data;
+  const safeSubject = escapeHtml(subject);
   const body = `
-    <h2 style="color:#041E42;margin:0 0 16px;">${subject}</h2>
+    <h2 style="color:#041E42;margin:0 0 16px;">${safeSubject}</h2>
     <p style="color:#333;font-size:15px;line-height:1.5;">
-      Hey <strong>${username || "there"}</strong>,
+      Hey <strong>${escapeHtml(username) || "there"}</strong>,
     </p>
     <p style="color:#333;font-size:15px;line-height:1.5;">
-      ${message}
+      ${escapeHtml(message)}
     </p>`;
-  return { subject, html: wrapHtml(body) };
+  return { subject: safeSubject, html: wrapHtml(body) };
 }
 
 Deno.serve(async (req: Request) => {
