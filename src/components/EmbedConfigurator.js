@@ -169,6 +169,8 @@ function EmbedConfigurator({ communityId, community, showToast }) {
     if (behavior.timer > 0) params.set('timer', behavior.timer);
     if (behavior.leaderboard !== 'community') params.set('leaderboard', behavior.leaderboard);
     if (behavior.category !== 'all') params.set('category', behavior.category);
+    // Version pin — ensures client embeds stay on v1 behavior
+    params.set('v', '1');
     return `${EMBED_BASE_URL}?${params.toString()}`;
   };
 
