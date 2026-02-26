@@ -344,12 +344,11 @@ function AdminDashboard({ onBack, currentUserId }) {
   };
 
   const handleApprove = async (questionId) => {
-    const { data, error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
+    const { error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
     if (error) {
       console.error('Error approving question:', error);
       alert('Failed to approve question: ' + error.message);
     } else {
-      console.log('Question approved successfully:', data);
       // Notify submitter
       const q = pendingQuestions.find(q => q.id === questionId);
       if (q?.creator_id) {
@@ -368,12 +367,11 @@ function AdminDashboard({ onBack, currentUserId }) {
   };
 
   const handleReject = async (questionId) => {
-    const { data, error } = await supabase.from('custom_questions').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', questionId);
+    const { error } = await supabase.from('custom_questions').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', questionId);
     if (error) {
       console.error('Error rejecting question:', error);
       alert('Failed to reject question: ' + error.message);
     } else {
-      console.log('Question rejected successfully:', data);
       // Notify submitter
       const q = pendingQuestions.find(q => q.id === questionId);
       if (q?.creator_id) {

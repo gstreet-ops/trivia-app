@@ -231,7 +231,7 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigateTo, syncFromHash]);
+  }, [navigateTo, syncFromHash]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle browser back/forward
   useEffect(() => {
