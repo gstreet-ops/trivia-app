@@ -214,6 +214,10 @@ Join table connecting users to communities.
 | Transfer ownership | Yes | No | No | No |
 | Delete community | Yes | No | No | No |
 
+**RLS Policies (UPDATE):**
+- USING: user must be `owner` or `commissioner` in the community
+- WITH CHECK: cannot update own role; only `owner` can assign `'owner'` role; role must be a valid value (`owner`, `commissioner`, `moderator`, `member`)
+
 **Queried by:** `App.js`, `CommunitiesList.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
