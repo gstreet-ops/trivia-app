@@ -49,7 +49,25 @@ function EmbedConfigurator({ communityId, community, showToast }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [categories, setCategories] = useState([]);
   const iframeRef = useRef(null);
+
+  // Fetch available categories for this community
+  useEffect(() => {
+    if (!communityId) return;
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from('community_questions')
+        .select('category')
+        .eq('community_id', communityId)
+        .eq('status', 'active');
+      if (data) {
+        const unique = [...new Set(data.map(q => q.category).filter(Boolean))].sort();
+        setCategories(unique);
+      }
+    };
+    fetchCategories();
+  }, [communityId]);
 
   // Load saved embed_theme from community settings on mount
   useEffect(() => {
@@ -59,6 +77,14 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       if (saved.behavior) setBehavior(prev => ({ ...prev, ...saved.behavior }));
     }
   }, [community]);
+
+  // Auto-refresh preview when config changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPreviewKey(prev => prev + 1);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [theme, behavior]);
 
   // Build embed URL from current config
   const buildEmbedUrl = () => {
@@ -226,6 +252,15 @@ function EmbedConfigurator({ communityId, community, showToast }) {
                   {['community', 'platform', 'both'].map(l => <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>)}
                 </select>
               </div>
+              {categories.length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Category</label>
+                  <select value={behavior.category} onChange={(e) => updateBehavior('category', e.target.value)} className="form-input" style={{ width: '100%' }}>
+                    <option value="all">All Categories</option>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

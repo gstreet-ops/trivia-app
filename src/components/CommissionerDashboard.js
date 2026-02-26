@@ -1727,6 +1727,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               members: `Members (${members.length})`,
               settings: 'Settings',
               analytics: 'Analytics',
+              embed: 'Embed',
             }[activeTab] || activeTab}
           </span>
           <span className={`nav-chevron ${navOpen ? 'open' : ''}`}>▾</span>
