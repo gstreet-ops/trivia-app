@@ -237,6 +237,7 @@ Question bank owned by a specific community. Used when quiz source is "Community
 | `difficulty` | `text` | `'easy'`, `'medium'`, or `'hard'` |
 | `tags` | `text[]` | Custom tags (nullable) |
 | `explanation` | `text` | Optional explanation of the correct answer |
+| `status` | `text` | `'active'` (default), `'archived'`, `'draft'`, or `'retired'` — controls whether question is served to players |
 | `image_url` | `text` | URL to question image in Supabase Storage (nullable) |
 | `video_url` | `text` | YouTube URL for video questions (nullable) |
 | `source` | `text` | `'manual'`, `'ai_generated'`, or `'imported'` |
