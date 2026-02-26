@@ -182,8 +182,11 @@ function App() {
     }
 
     if (hashScreen === 'review' && param) setViewGameId(param);
-    if (hashScreen === 'communityDetail' && param) setViewCommunityId(param);
-    if (hashScreen === 'commissionerDashboard' && param) setViewCommunityId(param);
+    if ((hashScreen === 'communityDetail' || hashScreen === 'commissionerDashboard') && param) {
+      setViewCommunityId(param);
+      setActiveCommunityId(param);
+      localStorage.setItem('activeCommunityId', String(param));
+    }
     if (hashScreen === 'userProfile' && param) setViewUserId(param);
 
     setScreen(hashScreen);
@@ -269,15 +272,13 @@ function App() {
 
       if (communities.length > 0) {
         const savedId = localStorage.getItem('activeCommunityId');
-        const savedValid = communities.find(c => c.id === savedId);
+        const savedValid = savedId ? communities.find(c => String(c.id) === String(savedId)) : null;
         const active = savedValid || communities[0];
         setActiveCommunityId(active.id);
-        setViewCommunityId(active.id);
         setAppCommunityName(active.name);
-        localStorage.setItem('activeCommunityId', active.id);
+        localStorage.setItem('activeCommunityId', String(active.id));
       } else {
         setActiveCommunityId(null);
-        setViewCommunityId(null);
         setAppCommunityName('');
         localStorage.removeItem('activeCommunityId');
       }
@@ -533,6 +534,9 @@ function App() {
           user={session.user}
           userRole={userRole}
           onViewCommunity={(communityId, communityName) => {
+            setActiveCommunityId(communityId);
+            setAppCommunityName(communityName);
+            localStorage.setItem('activeCommunityId', String(communityId));
             navigateTo('communityDetail', { communityId, communityName });
           }}
           onBack={() => navigateTo('dashboard')}
