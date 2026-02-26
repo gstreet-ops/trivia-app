@@ -58,6 +58,8 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 - `super_admin` platform role users additionally see the "Mixed (All Sources)" quiz option
 - Legacy columns `role` and `super_admin` are kept in sync by the app for backward compatibility but `platform_role` is the canonical source of truth
 
+**Queried by:** `App.js`, `Dashboard.js`, `Settings.js`, `StartScreen.js`, `CommunitiesList.js`, `CommunityChat.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+
 ---
 
 ### `games`
@@ -105,6 +107,8 @@ ORDER BY avg_pct DESC
 LIMIT 10;
 ```
 
+**Queried by:** `App.js`, `Dashboard.js`, `GameReview.js`, `MyStats.js`, `UserProfile.js`, `CommunityDetail.js`, `CommunityFeed.js`, `CommissionerDashboard.js`, `AdminDashboard.js`, `achievementChecker.js`
+
 ---
 
 ### `game_answers`
@@ -129,6 +133,8 @@ Stores each individual answer from a game. Enables the per-game review screen.
 **Relationships:**
 - `game_id` → `games.id`
 - `user_id` → `profiles.id`
+
+**Queried by:** `App.js`, `Dashboard.js`, `GameReview.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -160,7 +166,8 @@ A community (league) groups members and maintains a shared question bank.
   "theme_color": "#041E42",
   "logo_url": "https://...",
   "banner_url": "https://...",
-  "welcome_message": "Welcome to our community!"
+  "welcome_message": "Welcome to our community!",
+  "categories": ["General Knowledge", "History", "Science"]
 }
 ```
 
@@ -172,6 +179,9 @@ A community (league) groups members and maintains a shared question bank.
 - `slug` is generated as `name.toLowerCase().replace(/[^a-z0-9]+/g, '-')`
 - Default season length at creation: 30 days
 - `visibility = 'public'` makes the community appear in the Community Marketplace
+- `settings.categories` stores the dynamic list of community-specific categories (managed by commissioner)
+
+**Queried by:** `CommunitiesList.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `QuizSourceSelector.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -203,6 +213,8 @@ Join table connecting users to communities.
 | Post announcements | Yes | Yes | No | No |
 | Transfer ownership | Yes | No | No | No |
 | Delete community | Yes | No | No | No |
+
+**Queried by:** `App.js`, `CommunitiesList.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -246,11 +258,13 @@ Question bank owned by a specific community. Used when quiz source is "Community
 }
 ```
 
+**Queried by:** `QuizScreen.js`, `QuizSourceSelector.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+
 ---
 
 ### `community_leaderboards`
 
-Rankings per community. Likely a view or materialized view computed from `games` filtered by `community_id`.
+Rankings per community. A view or materialized view computed from `games` filtered by `community_id`.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -261,6 +275,8 @@ Rankings per community. Likely a view or materialized view computed from `games`
 | `rank` | `integer` | Rank position (1 = best) |
 | `avg_score` | `numeric` | Average score percentage |
 | `total_games` | `integer` | Games played in this community |
+
+**Queried by:** `CommunityDetail.js` (fallback when no `season_start` exists)
 
 ---
 
@@ -284,6 +300,8 @@ User-submitted questions that require admin approval before becoming available p
 **Relationships:**
 - `creator_id` → `profiles.id` (foreign key named `custom_questions_creator_id_fkey`)
 
+**Queried by:** `QuestionCreator.js`, `QuizScreen.js`, `AdminDashboard.js`
+
 ---
 
 ### `question_templates`
@@ -303,6 +321,8 @@ Saved question templates within a community. Commissioners can create questions 
 | `tags` | `text[]` | Tags to apply when creating from template |
 | `created_by` | `uuid` | FK → `profiles.id` |
 | `created_at` | `timestamptz` | Creation timestamp |
+
+**Queried by:** `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -332,11 +352,13 @@ AI question generation requests. Commissioners submit requests; admins approve o
 - `requested_by` → `profiles.id`
 - `reviewed_by` → `profiles.id`
 
+**Queried by:** `CommissionerDashboard.js`, `AdminDashboard.js`
+
 ---
 
 ### `notifications`
 
-In-app notifications for users. Triggered by admin actions (question/AI request approve/reject).
+In-app notifications for users. Triggered by admin actions (question/AI request/community request approve/reject).
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -361,6 +383,8 @@ In-app notifications for users. Triggered by admin actions (question/AI request 
 - SELECT: own rows only (`user_id = auth.uid()`)
 - UPDATE: own rows only (for marking as read)
 
+**Queried by:** `NotificationBell.js`, `AdminDashboard.js`
+
 ---
 
 ### `season_archives`
@@ -381,6 +405,8 @@ Archived season leaderboards. Created when a commissioner resets a season.
 **Notes:**
 - Created automatically by the `reset_season` RPC function
 - Viewable by all community members on the community detail page
+
+**Queried by:** `CommunityDetail.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -406,6 +432,8 @@ Commissioner-posted announcements visible to all community members.
 **Notes:**
 - Pinned announcements sort above unpinned; within each group, newest first
 - "New" badge shown to members for announcements less than 48 hours old
+
+**Queried by:** `CommunityDetail.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
 ---
 
@@ -439,6 +467,8 @@ Real-time chat messages within a community. Soft-deletable by commissioner.
 - Indexed on `(community_id, created_at DESC)` for fast page loads
 - Deleted messages render as "[Message removed by commissioner]"
 
+**Queried by:** `CommunityChat.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+
 ---
 
 ### `multiplayer_rooms`
@@ -471,6 +501,8 @@ A multiplayer game room. Created by a host; players join via room code or open r
 
 **Realtime:** Enabled — lobby subscribes to UPDATE events for status changes
 
+**Queried by:** `MultiplayerLobby.js`, `AdminDashboard.js`
+
 ---
 
 ### `multiplayer_participants`
@@ -493,6 +525,8 @@ Players currently in a multiplayer room.
 **RLS:** Authenticated read all; insert/update/delete own rows
 
 **Realtime:** Enabled — lobby subscribes to INSERT, UPDATE, DELETE events
+
+**Queried by:** `MultiplayerLobby.js`, `AdminDashboard.js`
 
 ---
 
@@ -519,6 +553,8 @@ Questions assigned to a multiplayer game. Populated when the host starts the gam
 
 **RLS:** Authenticated read all; insert by host only
 
+**Queried by:** `MultiplayerLobby.js`
+
 ---
 
 ### `multiplayer_answers`
@@ -539,6 +575,68 @@ Per-player answers for each question in a multiplayer game.
 
 **Constraints:**
 - Unique on `(room_id, user_id, question_index)`
+
+**Queried by:** `MultiplayerLobby.js`, `AdminDashboard.js`
+
+---
+
+### `media_library`
+
+Centralized media asset library per community. Commissioners upload images and save YouTube video URLs here, then attach them to questions.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE delete) |
+| `uploaded_by` | `uuid` | FK → `profiles.id` |
+| `file_url` | `text` | Public URL (Storage URL for images, YouTube URL for videos) |
+| `file_type` | `text` | `'image'` or `'video'` |
+| `filename` | `text` | Original filename or YouTube video ID label |
+| `file_size` | `integer` | File size in bytes (nullable; null for videos) |
+| `storage_path` | `text` | Supabase Storage path (nullable; null for videos) |
+| `tags` | `text[]` | Custom tags for organization |
+| `created_at` | `timestamptz` | Upload timestamp |
+
+**Relationships:**
+- `community_id` → `communities.id`
+- `uploaded_by` → `profiles.id`
+
+**RLS Policies:**
+- SELECT: community members
+- INSERT: owner, commissioner, moderator roles
+- DELETE: owner, commissioner roles
+
+**Queried by:** `CommissionerDashboard.js`
+
+---
+
+### `community_requests`
+
+User-submitted requests to create a new community. Super admins approve or reject.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `requester_id` | `uuid` | FK → `profiles.id` (CASCADE delete) |
+| `name` | `text` | Requested community name |
+| `description` | `text` | Community description (nullable) |
+| `reason` | `text` | Reason for the request (nullable) |
+| `status` | `text` | `'pending'`, `'approved'`, or `'rejected'` (default `'pending'`) |
+| `reviewed_by` | `uuid` | FK → `profiles.id` (admin who reviewed) (nullable) |
+| `reviewed_at` | `timestamptz` | When request was reviewed (nullable) |
+| `rejection_reason` | `text` | Reason for rejection (nullable) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Relationships:**
+- `requester_id` → `profiles.id`
+- `reviewed_by` → `profiles.id`
+
+**RLS Policies:**
+- SELECT: own rows (`requester_id = auth.uid()`); super admins see all
+- INSERT: own rows only (`requester_id = auth.uid()`)
+- UPDATE: super admins only (for approve/reject)
+
+**Queried by:** `CommunitiesList.js`, `AdminDashboard.js`
 
 ---
 
@@ -576,62 +674,6 @@ auth.users
                     ├── multiplayer_questions (room_id)
                     └── multiplayer_answers (room_id, user_id)
 ```
-
----
-
-### `media_library`
-
-Centralized media asset library per community. Commissioners upload images and save YouTube video URLs here, then attach them to questions.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | `uuid` | Primary key |
-| `community_id` | `bigint` | FK → `communities.id` (CASCADE delete) |
-| `uploaded_by` | `uuid` | FK → `profiles.id` |
-| `file_url` | `text` | Public URL (Storage URL for images, YouTube URL for videos) |
-| `file_type` | `text` | `'image'` or `'video'` |
-| `filename` | `text` | Original filename or YouTube video ID label |
-| `file_size` | `integer` | File size in bytes (nullable; null for videos) |
-| `storage_path` | `text` | Supabase Storage path (nullable; null for videos) |
-| `tags` | `text[]` | Custom tags for organization |
-| `created_at` | `timestamptz` | Upload timestamp |
-
-**Relationships:**
-- `community_id` → `communities.id`
-- `uploaded_by` → `profiles.id`
-
-**RLS Policies:**
-- SELECT: community members
-- INSERT: owner, commissioner, moderator roles
-- DELETE: owner, commissioner roles
-
----
-
-### `community_requests`
-
-User-submitted requests to create a new community. Super admins approve or reject.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | `uuid` | Primary key |
-| `requester_id` | `uuid` | FK → `profiles.id` (CASCADE delete) |
-| `name` | `text` | Requested community name |
-| `description` | `text` | Community description (nullable) |
-| `reason` | `text` | Reason for the request (nullable) |
-| `status` | `text` | `'pending'`, `'approved'`, or `'rejected'` (default `'pending'`) |
-| `reviewed_by` | `uuid` | FK → `profiles.id` (admin who reviewed) (nullable) |
-| `reviewed_at` | `timestamptz` | When request was reviewed (nullable) |
-| `rejection_reason` | `text` | Reason for rejection (nullable) |
-| `created_at` | `timestamptz` | Creation timestamp |
-
-**Relationships:**
-- `requester_id` → `profiles.id`
-- `reviewed_by` → `profiles.id`
-
-**RLS Policies:**
-- SELECT: own rows (`requester_id = auth.uid()`); super admins see all
-- INSERT: own rows only (`requester_id = auth.uid()`)
-- UPDATE: super admins only (for approve/reject)
 
 ---
 
@@ -730,6 +772,42 @@ Updates `profiles.bot_flags` JSONB with flagged status, reasons array, and times
 
 **Function:** `check_bot_flags()` (SECURITY DEFINER)
 **Trigger:** `check_bot_after_game` on `games` AFTER INSERT
+
+### Season reset RPC
+
+Atomically archives a community's leaderboard and resets the season.
+
+**Function:** `reset_season(p_community_id, p_archived_by, p_leaderboard_snapshot, p_total_games, p_total_questions_played, p_top_player_id, p_top_player_username, p_top_player_avg)` (RPC)
+**Called by:** `CommissionerDashboard.js`
+
+### Invite code generation RPC
+
+Generates a unique invite code for a community.
+
+**Function:** `generate_invite_code()` (RPC)
+**Called by:** `CommissionerDashboard.js`
+
+---
+
+## Edge Functions
+
+| Function | Purpose | Called by |
+|----------|---------|----------|
+| `generate-questions` | AI question generation; receives `request_id`, generates questions, populates `generation_requests.generated_questions` | `AdminDashboard.js` (on approval), `CommissionerDashboard.js` (on retry) |
+| `send-email` | Email delivery via Resend API; supports invitation, join confirmation, question notification, and generic templates | `emailService.js` |
+
+---
+
+## Realtime Subscriptions
+
+| Channel Pattern | Table | Events | Component |
+|-----------------|-------|--------|-----------|
+| `chat-{communityId}` | `community_messages` | INSERT, UPDATE | `CommunityChat.js` |
+| `room-{roomId}` | `multiplayer_participants` | INSERT, UPDATE, DELETE | `MultiplayerLobby.js` |
+| `room-{roomId}` | `multiplayer_rooms` | UPDATE | `MultiplayerLobby.js` |
+| `answers-{roomId}` | `multiplayer_answers` | INSERT | `MultiplayerLobby.js` |
+| `answers-{roomId}` | (broadcast) | `player_answer` | `MultiplayerLobby.js` |
+| `advance-{roomId}` | (broadcast) | `next_question`, `finish_game` | `MultiplayerLobby.js` |
 
 ---
 
