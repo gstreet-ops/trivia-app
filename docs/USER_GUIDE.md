@@ -75,7 +75,7 @@ The persistent top bar (visible on every screen) contains:
      - *Community Questions Only* — questions uploaded by your community commissioner (only available if you're in a community)
      - *Approved Custom Questions* — platform-approved user-submitted questions
      - *Mixed (All Sources)* — admins only
-   - **Category** — General Knowledge, Film, Music, Geography, History, Sports, Science & Nature, Arts & Literature
+   - **Category** — General Knowledge, Film, Music, Geography, History, Sports, Science & Nature, Arts & Literature (for Trivia API); when using Community Questions Only, the dropdown shows the community's actual categories with question counts
    - **Difficulty** — Easy, Medium, or Hard
    - **Number of Questions** — 3, 5, 10, 15, or 20
 3. Click **Start Quiz**

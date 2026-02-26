@@ -20,7 +20,7 @@ const INITIAL_SETTINGS = {
   additionalInstructions: '',
 };
 
-function QuestionGeneratorCore({ mode = 'commissioner', onUploadCSV }) {
+function QuestionGeneratorCore({ mode = 'commissioner', onUploadCSV, communityCategories = [] }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [source, setSource] = useState(null);
   const [sourceInput, setSourceInput] = useState({});
@@ -105,6 +105,7 @@ function QuestionGeneratorCore({ mode = 'commissioner', onUploadCSV }) {
           onSettingsChange={setSettings}
           onBack={() => setCurrentStep(2)}
           onNext={handleGenerate}
+          communityCategories={communityCategories}
         />
       )}
 

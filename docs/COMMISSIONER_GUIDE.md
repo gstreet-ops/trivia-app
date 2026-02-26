@@ -355,6 +355,30 @@ Click **Save Settings** to apply. Changes take effect immediately for all member
 
 The invite code is shown in Settings. Click **Regenerate** to generate a new 8-character invite code. The old code immediately stops working.
 
+### Category Management
+
+The Categories section lets you define and manage question categories for your community. These categories appear in the quiz category dropdown when members play, and in the Add Question form.
+
+**Adding a category:**
+1. Type the category name in the text input
+2. Click **Add** (or press Enter)
+3. The category is saved to your community settings
+
+**Renaming a category:**
+1. Click **Rename** next to the category
+2. Edit the name and click **Save**
+3. All existing questions with the old category name are bulk-updated to the new name
+
+**Deleting a category:**
+- Click **Delete** next to a category
+- Categories with questions assigned cannot be deleted — rename them instead
+- Only empty categories (0 questions) can be removed
+
+**How categories appear to members:**
+- When a member selects "Community Only" as their quiz source, the category dropdown shows your defined categories with question counts (e.g., "Characters (12)")
+- "All Categories" is the default, pulling from all categories
+- The Question Generator wizard also shows your community categories
+
 ### Community Theming
 
 Customize your community's appearance:

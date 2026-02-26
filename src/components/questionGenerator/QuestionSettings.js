@@ -15,7 +15,7 @@ const CATEGORIES = [
 
 const COUNT_OPTIONS = [10, 20, 30, 60];
 
-function QuestionSettings({ settings, onSettingsChange, onBack, onNext }) {
+function QuestionSettings({ settings, onSettingsChange, onBack, onNext, communityCategories = [] }) {
   const {
     category = 'General Knowledge',
     customCategory = '',
@@ -72,9 +72,15 @@ function QuestionSettings({ settings, onSettingsChange, onBack, onNext }) {
             value={category}
             onChange={(e) => update({ category: e.target.value, customCategory: '' })}
           >
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {communityCategories.length > 0
+              ? communityCategories.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))
+              : CATEGORIES.filter(c => c !== 'Custom').map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))
+            }
+            <option value="Custom">Custom</option>
           </select>
           {category === 'Custom' && (
             <input

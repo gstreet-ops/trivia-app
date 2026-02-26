@@ -60,6 +60,15 @@
 - [x] Community announcements — commissioner posts visible to all members on community detail page, with pin/unpin, edit, delete, "New" badge for recent posts
 - [x] Real-time community chat — Supabase Realtime powered chat on community detail page, message bubbles (own=navy, other=gray), commissioner message deletion, load older messages, 500-char limit, auto-scroll
 
+### Dynamic Community Categories
+- [x] Dynamic category dropdown — when playing "Community Only" or "Mixed" source, category dropdown shows actual community categories with question counts instead of hardcoded API categories
+- [x] "All Categories" default option — pulls questions from all categories
+- [x] Category filtering on community quiz — QuizScreen filters community questions by selected category
+- [x] Commissioner category management — Settings tab section to view, add, rename, and delete categories with question counts
+- [x] Categories stored in `communities.settings.categories` JSONB array
+- [x] Add Question form uses defined categories dropdown with "Other (custom)" fallback
+- [x] Question Generator integration — community categories shown in generator wizard category dropdown
+
 ### Commissioner Dashboard
 - [x] Tabbed navigation (Overview, Announcements, Questions, Members, Settings, Analytics)
 - [x] Overview stats (total games, active members, question bank size)

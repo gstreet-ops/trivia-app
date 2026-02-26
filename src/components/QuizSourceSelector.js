@@ -8,37 +8,63 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
   const [questionSource, setQuestionSource] = useState('trivia_api');
   const [questionCount, setQuestionCount] = useState(10);
   const [timerSettings, setTimerSettings] = useState(null);
+  const [communityCategories, setCommunityCategories] = useState([]);
 
   const isAdmin = userRole === 'super_admin' || userRole === 'admin';
 
-  const categories = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature'];
+  const apiCategories = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature'];
 
   useEffect(() => {
     if (communityId) {
-      fetchTimerSettings();
+      fetchCommunityData();
     }
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchTimerSettings = async () => {
+  const fetchCommunityData = async () => {
     try {
-      const { data } = await supabase
+      const { data: communityData } = await supabase
         .from('communities')
         .select('settings')
         .eq('id', communityId)
         .single();
-      if (data?.settings?.timer_enabled) {
+      if (communityData?.settings?.timer_enabled) {
         setTimerSettings({
           enabled: true,
-          seconds: data.settings.timer_seconds || 30
+          seconds: communityData.settings.timer_seconds || 30
         });
       }
+      // Fetch distinct categories with counts from community questions
+      const { data: questions } = await supabase
+        .from('community_questions')
+        .select('category')
+        .eq('community_id', communityId);
+      if (questions && questions.length > 0) {
+        const counts = {};
+        questions.forEach(q => {
+          const cat = q.category || 'Uncategorized';
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+        const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
+        setCommunityCategories(sorted);
+      }
     } catch (err) {
-      console.error('Error fetching timer settings:', err);
+      console.error('Error fetching community data:', err);
+    }
+  };
+
+  const usesCommunity = questionSource === 'community' || questionSource === 'mixed';
+
+  const handleSourceChange = (newSource) => {
+    setQuestionSource(newSource);
+    const isCommunitySource = newSource === 'community' || newSource === 'mixed';
+    if (isCommunitySource) {
+      setCategory('All Categories');
+    } else {
+      setCategory('General Knowledge');
     }
   };
 
   const handleStart = () => {
-    const usesCommunity = questionSource === 'community' || questionSource === 'mixed';
     onStart({
       category,
       difficulty,
@@ -55,7 +81,7 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
 
       <div className='form-group'>
         <label>Question Source</label>
-        <select value={questionSource} onChange={(e) => setQuestionSource(e.target.value)}>
+        <select value={questionSource} onChange={(e) => handleSourceChange(e.target.value)}>
           <option value='trivia_api'>Trivia API (General Knowledge)</option>
           {communityId && <option value='community'>Community Questions Only</option>}
           <option value='custom_approved'>Approved Custom Questions</option>
@@ -65,9 +91,18 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
 
       <div className='form-group'>
         <label>Category</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-        </select>
+        {usesCommunity && communityCategories.length > 0 ? (
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="All Categories">All Categories ({communityCategories.reduce((s, c) => s + c[1], 0)})</option>
+            {communityCategories.map(([cat, count]) => (
+              <option key={cat} value={cat}>{cat} ({count})</option>
+            ))}
+          </select>
+        ) : (
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            {apiCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+        )}
       </div>
 
       <div className='form-group'>
@@ -90,7 +125,7 @@ function QuizSourceSelector({ onStart, userRole, communityId, onBack }) {
         </select>
       </div>
 
-      {timerSettings && (questionSource === 'community' || questionSource === 'mixed') && (
+      {timerSettings && usesCommunity && (
         <div className="timer-notice">
           <span className="timer-notice-icon">⏱</span>
           This community has a {timerSettings.seconds}s timer per question

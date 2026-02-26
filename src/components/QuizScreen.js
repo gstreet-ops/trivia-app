@@ -143,6 +143,9 @@ function QuizScreen({ config, onEnd }) {
     if (difficulty && difficulty !== 'mixed') {
       query = query.eq('difficulty', difficulty);
     }
+    if (category && category !== 'All Categories') {
+      query = query.eq('category', category);
+    }
     const { data } = await query;
     if (!data || data.length === 0) return [];
     // Fisher-Yates shuffle

@@ -67,6 +67,10 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [inviteSending, setInviteSending] = useState(false);
+  const [categoryCounts, setCategoryCounts] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [renamingCategory, setRenamingCategory] = useState(null);
+  const [renameCategoryValue, setRenameCategoryValue] = useState('');
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -124,6 +128,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchGenRequests();
     fetchSeasonData();
     fetchMediaLibrary();
+    fetchCategoryCounts();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset to page 1 when filters change
@@ -298,6 +303,78 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       console.error('Error saving settings:', error);
       showToast('Failed to update settings', 'error');
     }
+  };
+
+  const fetchCategoryCounts = async () => {
+    try {
+      const { data } = await supabase
+        .from('community_questions')
+        .select('category')
+        .eq('community_id', communityId);
+      const counts = {};
+      (data || []).forEach(q => {
+        const cat = q.category || 'Uncategorized';
+        counts[cat] = (counts[cat] || 0) + 1;
+      });
+      setCategoryCounts(Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0])));
+    } catch (err) {
+      console.error('Error fetching category counts:', err);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    const existing = community.settings?.categories || [];
+    if (existing.some(c => c.toLowerCase() === name.toLowerCase())) {
+      showToast('Category already exists', 'error');
+      return;
+    }
+    const updated = [...existing, name].sort();
+    const { error } = await supabase.from('communities').update({
+      settings: { ...community.settings, categories: updated }
+    }).eq('id', communityId);
+    if (error) { showToast('Failed to add category', 'error'); return; }
+    setNewCategory('');
+    showToast(`Category "${name}" added`);
+    fetchCommissionerData();
+  };
+
+  const handleRenameCategory = async (oldName) => {
+    const newName = renameCategoryValue.trim();
+    if (!newName || newName === oldName) { setRenamingCategory(null); return; }
+    // Update all questions with the old category
+    const { error: qError } = await supabase.from('community_questions')
+      .update({ category: newName })
+      .eq('community_id', communityId)
+      .eq('category', oldName);
+    if (qError) { showToast('Failed to rename questions: ' + qError.message, 'error'); return; }
+    // Update the defined categories list
+    const existing = community.settings?.categories || [];
+    const updated = existing.map(c => c === oldName ? newName : c).sort();
+    await supabase.from('communities').update({
+      settings: { ...community.settings, categories: updated }
+    }).eq('id', communityId);
+    setRenamingCategory(null);
+    showToast(`Renamed "${oldName}" → "${newName}"`);
+    fetchCommissionerData();
+    fetchCategoryCounts();
+  };
+
+  const handleDeleteCategory = async (name) => {
+    const count = categoryCounts.find(([c]) => c === name)?.[1] || 0;
+    if (count > 0) {
+      showToast(`Cannot delete "${name}" — ${count} question${count > 1 ? 's' : ''} use it. Rename instead.`, 'error');
+      return;
+    }
+    const existing = community.settings?.categories || [];
+    const updated = existing.filter(c => c !== name);
+    const { error } = await supabase.from('communities').update({
+      settings: { ...community.settings, categories: updated }
+    }).eq('id', communityId);
+    if (error) { showToast('Failed to delete category', 'error'); return; }
+    showToast(`Category "${name}" removed`);
+    fetchCommissionerData();
   };
 
   const handleSaveTheme = async () => {
@@ -1318,13 +1395,17 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   // --- Add Question handler ---
   const handleAddQuestion = async () => {
+    // Resolve category: if "Other" was selected, use the custom input
+    const resolvedCategory = addQForm.category === '__other__'
+      ? (addQForm._customCategory || '').trim()
+      : addQForm.category.trim();
     const errors = [];
     if (!addQForm.question_text.trim()) errors.push('Question text is required');
     if (!addQForm.correct_answer.trim()) errors.push('Correct answer is required');
     if (!addQForm.incorrect_1.trim()) errors.push('Incorrect answer 1 is required');
     if (!addQForm.incorrect_2.trim()) errors.push('Incorrect answer 2 is required');
     if (!addQForm.incorrect_3.trim()) errors.push('Incorrect answer 3 is required');
-    if (!addQForm.category.trim()) errors.push('Category is required');
+    if (!resolvedCategory) errors.push('Category is required');
     if (!addQForm.difficulty) errors.push('Difficulty is required');
     if (addQForm.video_url.trim() && !isValidYouTubeUrl(addQForm.video_url.trim())) errors.push('Invalid YouTube URL format');
     if (addQImageFile && addQImageFile.size > 500 * 1024) errors.push('Image must be under 500KB');
@@ -1347,7 +1428,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         question_text: addQForm.question_text.trim(),
         correct_answer: addQForm.correct_answer.trim(),
         incorrect_answers: [addQForm.incorrect_1.trim(), addQForm.incorrect_2.trim(), addQForm.incorrect_3.trim()],
-        category: addQForm.category.trim(),
+        category: resolvedCategory,
         difficulty: addQForm.difficulty,
         source: 'manual',
         version_number: 1,
@@ -1367,6 +1448,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setActiveModal(null);
       showToast('Question added!');
       fetchCommissionerData();
+      fetchCategoryCounts();
     } catch (err) {
       showToast('Failed to add question: ' + err.message, 'error');
     }
@@ -1869,7 +1951,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {activeTab === 'questions' && canManageQuestions(userCommunityRole) && (
           <div className="tab-pane">
             {showGenerator ? (
-              <CommissionerGenerator onClose={() => setShowGenerator(false)} onOpenImport={() => { setShowGenerator(false); setActiveModal('import'); }} />
+              <CommissionerGenerator onClose={() => setShowGenerator(false)} onOpenImport={() => { setShowGenerator(false); setActiveModal('import'); }} communityCategories={community?.settings?.categories || []} />
             ) : (
             <>
             {/* Action Bar */}
@@ -2767,6 +2849,80 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               </div>
             </div>
 
+            {/* Category Management */}
+            <div className="commissioner-section" style={{marginTop: '24px'}}>
+              <h2>Categories</h2>
+              <p style={{fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:'16px'}}>
+                Define categories for your question bank. These appear in the quiz category dropdown and the Add Question form.
+              </p>
+
+              {/* Add category */}
+              <div style={{display:'flex',gap:'8px',marginBottom:'16px'}}>
+                <input
+                  type="text"
+                  placeholder="New category name"
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddCategory(); }}
+                  maxLength={50}
+                  style={{flex:1,padding:'8px 10px',borderRadius:'6px',border:'2px solid var(--border-color)',fontSize:'0.9rem',background:'var(--bg-input)',color:'var(--text-primary)'}}
+                />
+                <button className="btn-primary" onClick={handleAddCategory} disabled={!newCategory.trim()} style={{fontSize:'13px',padding:'8px 14px'}}>
+                  Add
+                </button>
+              </div>
+
+              {/* Category list */}
+              {(() => {
+                const defined = community?.settings?.categories || [];
+                const inUse = categoryCounts.map(([c]) => c);
+                const allCats = [...new Set([...defined, ...inUse])].sort();
+                if (allCats.length === 0) return <p style={{color:'var(--text-muted)',fontSize:'0.85rem'}}>No categories defined yet. Add questions or define categories above.</p>;
+                return (
+                  <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
+                    {allCats.map(cat => {
+                      const count = categoryCounts.find(([c]) => c === cat)?.[1] || 0;
+                      const isDefined = defined.includes(cat);
+                      return (
+                        <div key={cat} style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:'6px',fontSize:'0.9rem'}}>
+                          {renamingCategory === cat ? (
+                            <>
+                              <input
+                                type="text"
+                                value={renameCategoryValue}
+                                onChange={e => setRenameCategoryValue(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleRenameCategory(cat); if (e.key === 'Escape') setRenamingCategory(null); }}
+                                autoFocus
+                                style={{flex:1,padding:'4px 8px',borderRadius:'4px',border:'1px solid var(--border-color)',fontSize:'0.9rem',background:'var(--bg-input)',color:'var(--text-primary)'}}
+                              />
+                              <button onClick={() => handleRenameCategory(cat)} style={{padding:'3px 10px',fontSize:'12px',borderRadius:'4px',border:'1px solid #041E42',background:'#041E42',color:'#fff',cursor:'pointer'}}>Save</button>
+                              <button onClick={() => setRenamingCategory(null)} style={{padding:'3px 10px',fontSize:'12px',borderRadius:'4px',border:'1px solid var(--border-color)',background:'transparent',color:'var(--text-primary)',cursor:'pointer'}}>Cancel</button>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{flex:1,fontWeight:500,color:'var(--text-primary)'}}>{cat}</span>
+                              <span style={{fontSize:'0.8rem',color:'var(--text-muted)',minWidth:'60px'}}>{count} question{count !== 1 ? 's' : ''}</span>
+                              {!isDefined && <span style={{fontSize:'0.7rem',color:'#8B9DC3',background:'var(--bg-primary)',padding:'1px 6px',borderRadius:'8px'}}>in use</span>}
+                              <button
+                                onClick={() => { setRenamingCategory(cat); setRenameCategoryValue(cat); }}
+                                title="Rename"
+                                style={{padding:'3px 8px',fontSize:'11px',borderRadius:'4px',border:'1px solid var(--border-color)',background:'transparent',color:'var(--text-primary)',cursor:'pointer'}}
+                              >Rename</button>
+                              <button
+                                onClick={() => handleDeleteCategory(cat)}
+                                title={count > 0 ? 'Cannot delete — questions use this category' : 'Delete'}
+                                style={{padding:'3px 8px',fontSize:'11px',borderRadius:'4px',border:'1px solid #dc3545',background:'transparent',color:'#dc3545',cursor:count > 0 ? 'not-allowed' : 'pointer',opacity:count > 0 ? 0.5 : 1}}
+                              >Delete</button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Season Management */}
             <div className="commissioner-section" style={{marginTop: '24px'}}>
               <h2>Season Management</h2>
@@ -3179,7 +3335,24 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               <div className="add-q-row-3">
                 <div className="add-q-field">
                   <label>Category <span className="required">*</span></label>
-                  <input type="text" value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Geography" />
+                  {(community?.settings?.categories || []).length > 0 ? (
+                    addQForm.category === '__other__' ? (
+                      <div style={{display:'flex',gap:'6px'}}>
+                        <input type="text" value={addQForm._customCategory || ''} onChange={e => setAddQForm(f => ({ ...f, _customCategory: e.target.value }))} placeholder="Enter category name" style={{flex:1}} />
+                        <button type="button" onClick={() => setAddQForm(f => ({ ...f, category: '', _customCategory: undefined }))} style={{padding:'4px 8px',fontSize:'12px',border:'1px solid var(--border-color)',borderRadius:'4px',background:'transparent',cursor:'pointer',color:'var(--text-primary)'}}>Back</button>
+                      </div>
+                    ) : (
+                      <select value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))}>
+                        <option value="">Select category...</option>
+                        {(community.settings.categories || []).map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                        <option value="__other__">Other (custom)</option>
+                      </select>
+                    )
+                  ) : (
+                    <input type="text" value={addQForm.category} onChange={e => setAddQForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Geography" />
+                  )}
                 </div>
                 <div className="add-q-field">
                   <label>Difficulty <span className="required">*</span></label>
