@@ -52,6 +52,7 @@ function EmbedConfigurator({ communityId, community, showToast }) {
   const [categories, setCategories] = useState([]);
   const [embedStats, setEmbedStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [webhookUrl, setWebhookUrl] = useState('');
   const iframeRef = useRef(null);
 
   // Fetch available categories for this community
@@ -141,6 +142,9 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       if (saved.theme) setTheme(prev => ({ ...prev, ...saved.theme }));
       if (saved.behavior) setBehavior(prev => ({ ...prev, ...saved.behavior }));
     }
+    if (community?.settings?.webhook_url) {
+      setWebhookUrl(community.settings.webhook_url);
+    }
   }, [community]);
 
   // Auto-refresh preview when config changes (debounced)
@@ -216,7 +220,8 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       const currentSettings = community?.settings || {};
       const updatedSettings = {
         ...currentSettings,
-        embed_theme: { theme, behavior }
+        embed_theme: { theme, behavior },
+        webhook_url: webhookUrl.trim() || null,
       };
       const { error } = await supabase
         .from('communities')
@@ -329,6 +334,22 @@ function EmbedConfigurator({ communityId, community, showToast }) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Webhook */}
+          <div className="card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600 }}>🔗 Webhook</h3>
+            <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: '0 0 0.75rem' }}>
+              Receive a POST request when a player completes a game. Use with Zapier, Make, or your own API.
+            </p>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://hooks.zapier.com/..."
+              className="form-input"
+              style={{ width: '100%' }}
+            />
           </div>
 
           {/* Action buttons */}
