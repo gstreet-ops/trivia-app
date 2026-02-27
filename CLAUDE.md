@@ -3,6 +3,12 @@
 This file is read automatically by Claude Code at the start of every session.
 Follow these rules for all work in this project.
 
+## Cross-Project Context
+Before starting work, read the workspace Project Registry for relationship context:
+`C:\Users\brian\projects\PROJECT_REGISTRY.md`
+This project is part of the **Trivia Platform** group (Supabase Account 1).
+It is the data owner for quiz-embed — schema changes here can break quiz-embed.
+
 ---
 
 ## Project Overview
