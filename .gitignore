@@ -26,3 +26,7 @@ yarn-error.log*
 
 # supabase
 supabase/.temp/
+
+# capacitor native platforms
+/android
+/ios

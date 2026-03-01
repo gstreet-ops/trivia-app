@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import './index.css';
 import App from './App';
+import { isNative, initNativePlugins } from './utils/capacitor';
 
 Sentry.init({
   dsn: process.env.REACT_APP_SENTRY_DSN,
@@ -19,10 +20,18 @@ root.render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA
-if ('serviceWorker' in navigator) {
+// Initialize native plugins (StatusBar, SplashScreen) on Android/iOS
+initNativePlugins();
+
+// Register service worker for PWA (skip on native — Capacitor handles offline)
+if ('serviceWorker' in navigator && !isNative) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/trivia-app/service-worker.js')
+    // Capacitor builds use PUBLIC_URL=. so SW is at ./service-worker.js
+    // GitHub Pages builds use /trivia-app/ prefix
+    const swPath = process.env.PUBLIC_URL
+      ? `${process.env.PUBLIC_URL}/service-worker.js`
+      : '/trivia-app/service-worker.js';
+    navigator.serviceWorker.register(swPath)
       .then(reg => console.log('SW registered:', reg.scope))
       .catch(err => console.log('SW registration failed:', err));
   });

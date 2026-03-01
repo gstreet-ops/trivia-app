@@ -310,6 +310,7 @@
 - [x] Bot prevention — game rate limiting (20/hr, 60/day via DB trigger), answer timing tracking (answered_at + time_taken_ms on game_answers), automatic bot flagging (impossibly fast answers, suspicious perfect streak on hard, excessive play rate) via profiles.bot_flags JSONB, flagged users excluded from leaderboards, admin Flagged Users tab with unflag button
 - [x] PWA install banner — captures `beforeinstallprompt` event, shows install/dismiss banner
 - [x] Service worker registration for PWA support
+- [x] Capacitor Android build setup — `@capacitor/core`, `@capacitor/android`, native plugins (StatusBar, SplashScreen, PushNotifications, Preferences, App); `build:cap` script with `PUBLIC_URL=.` for relative asset paths; `cap:android` one-command build+sync+open; service worker dual-path fallback (GitHub Pages + Capacitor); native plugin init (navy StatusBar, SplashScreen auto-hide); GitHub Pages deployment untouched
 
 ---
 
@@ -343,7 +344,6 @@
 ### Longer-term
 
 - [ ] **Granular permissions (Phase 3)** — question-level edit/delete permissions, configurable per-community member capabilities, viewer/contributor tiers
-- [ ] **Mobile app** — React Native port
 - [ ] **Scheduled quizzes** — commissioner sets a quiz time; all members play the same questions simultaneously
 - [ ] **Streak tracking** — daily play streak with streak badges
 - [ ] **Question difficulty voting** — players can upvote/downvote difficulty rating after answering

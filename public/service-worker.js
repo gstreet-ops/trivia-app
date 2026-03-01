@@ -1,5 +1,7 @@
 const CACHE_NAME = 'trivia-v1';
 const PRECACHE_URLS = [
+  './',
+  './index.html',
   '/trivia-app/',
   '/trivia-app/index.html'
 ];
@@ -47,7 +49,12 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         // Fallback to cache if offline
         return caches.match(event.request)
-          .then(cached => cached || caches.match('/trivia-app/index.html'));
+          .then(cached => {
+            if (cached) return cached;
+            // Try both relative and GitHub Pages paths for index.html fallback
+            return caches.match('./index.html')
+              .then(rel => rel || caches.match('/trivia-app/index.html'));
+          });
       })
   );
 });
