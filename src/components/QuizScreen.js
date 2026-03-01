@@ -125,7 +125,7 @@ function QuizScreen({ config, onEnd }) {
   const fetchApiQuestions = async (requested) => {
     const apiCategory = categoryMap[category] || 'general_knowledge';
     const url = `https://the-trivia-api.com/v2/questions?limit=${requested}&categories=${apiCategory}&difficulties=${difficulty}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!response.ok) throw new Error(`API error ${response.status}`);
     const data = await response.json();
     return (data || []).map((q) => {
@@ -157,7 +157,7 @@ function QuizScreen({ config, onEnd }) {
     return shuffled.slice(0, requested).map(q => ({
       question: q.question_text,
       correctAnswer: q.correct_answer,
-      allAnswers: shuffleArray([q.correct_answer, ...(q.incorrect_answers || [])]),
+      allAnswers: shuffleArray([q.correct_answer, ...(Array.isArray(q.incorrect_answers) ? q.incorrect_answers : [])]),
       image_url: q.image_url || null,
       video_url: q.video_url || null,
       explanation: q.explanation || null
@@ -178,7 +178,7 @@ function QuizScreen({ config, onEnd }) {
     return shuffled.slice(0, requested).map(q => ({
       question: q.question_text,
       correctAnswer: q.correct_answer,
-      allAnswers: shuffleArray([q.correct_answer, ...(q.incorrect_answers || [])]),
+      allAnswers: shuffleArray([q.correct_answer, ...(Array.isArray(q.incorrect_answers) ? q.incorrect_answers : [])]),
       explanation: q.explanation || null
     }));
   };

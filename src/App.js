@@ -99,7 +99,10 @@ function App() {
   const [appIsAdmin, setAppIsAdmin] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [userCommunities, setUserCommunities] = useState([]);
-  const [activeCommunityId, setActiveCommunityId] = useState(() => localStorage.getItem('activeCommunityId'));
+  const [activeCommunityId, setActiveCommunityId] = useState(() => {
+    const saved = localStorage.getItem('activeCommunityId');
+    return saved ? Number(saved) : null;
+  });
   const [communityDropdownOpen, setCommunityDropdownOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(getSavedTheme);
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -314,7 +317,7 @@ function App() {
       setActiveCommunityId(comm.id);
       setViewCommunityId(comm.id);
       setAppCommunityName(comm.name);
-      localStorage.setItem('activeCommunityId', comm.id);
+      localStorage.setItem('activeCommunityId', String(comm.id));
     }
   };
 
@@ -329,13 +332,13 @@ function App() {
 
     // If active community was removed, fall back to first available
     if (communities.length > 0) {
-      const stillValid = communities.find(c => c.id === activeCommunityId);
+      const stillValid = communities.find(c => String(c.id) === String(activeCommunityId));
       if (!stillValid) {
         const first = communities[0];
         setActiveCommunityId(first.id);
         setViewCommunityId(first.id);
         setAppCommunityName(first.name);
-        localStorage.setItem('activeCommunityId', first.id);
+        localStorage.setItem('activeCommunityId', String(first.id));
       }
     } else {
       setActiveCommunityId(null);
@@ -364,9 +367,10 @@ function App() {
       }]).select().single();
       if (error) throw error;
       if (answers.length > 0 && data?.id) {
-        await supabase.from('game_answers').insert(
+        const { error: answerError } = await supabase.from('game_answers').insert(
           answers.map(a => ({ ...a, game_id: data.id, user_id: session.user.id }))
         );
+        if (answerError) throw answerError;
       }
       navigateTo('dashboard');
     } catch (error) {
@@ -433,16 +437,29 @@ function App() {
                     <button
                       className="app-user-bar-community"
                       onClick={() => setCommunityDropdownOpen(p => !p)}
+                      aria-expanded={communityDropdownOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Switch community"
                     >
                       <TrophyIcon size={12} /> {appCommunityName} <ChevronDownIcon size={12} color="#fff" />
                     </button>
                     {communityDropdownOpen && (
                       <>
                         <div className="app-community-backdrop" onClick={() => setCommunityDropdownOpen(false)} />
-                        <div className="app-community-menu">
+                        <div className="app-community-menu" role="listbox" aria-label="Communities" onKeyDown={(e) => {
+                          const items = e.currentTarget.querySelectorAll('[role="option"]');
+                          const current = Array.from(items).indexOf(document.activeElement);
+                          if (e.key === 'ArrowDown') { e.preventDefault(); items[Math.min(current + 1, items.length - 1)]?.focus(); }
+                          else if (e.key === 'ArrowUp') { e.preventDefault(); items[Math.max(current - 1, 0)]?.focus(); }
+                          else if (e.key === 'Home') { e.preventDefault(); items[0]?.focus(); }
+                          else if (e.key === 'End') { e.preventDefault(); items[items.length - 1]?.focus(); }
+                          else if (e.key === 'Escape') { setCommunityDropdownOpen(false); }
+                        }}>
                           {userCommunities.map(c => (
                             <button
                               key={c.id}
+                              role="option"
+                              aria-selected={c.id === activeCommunityId}
                               className={`app-community-item${c.id === activeCommunityId ? ' active' : ''}`}
                               onClick={() => switchCommunity(c.id)}
                             >

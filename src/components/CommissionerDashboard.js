@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
@@ -100,6 +100,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [mediaBrowseTarget, setMediaBrowseTarget] = useState(null); // 'image' | 'video' | null — for picker modal
   const [mediaBrowseCallback, setMediaBrowseCallback] = useState(null); // fn(url) to call on pick
 
+  // Fetch guard — prevents stale data from overwriting state on rapid community switches
+  const fetchIdRef = useRef(0);
+
   // Theme / Appearance state
   const [themeColor, setThemeColor] = useState('#041E42');
   const [welcomeMessage, setWelcomeMessage] = useState('');
@@ -132,12 +135,30 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchCategoryCounts();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reset all filter state when switching communities
+  useEffect(() => {
+    setActiveTab('overview');
+    setSearchQuery('');
+    setCurrentPage(1);
+    setFilterCategory('all');
+    setFilterDifficulty('all');
+    setFilterSource('all');
+    setSelectedTags([]);
+    setSelectedQuestions([]);
+    setSelectAllPages(false);
+    setExpandedQuestionId(null);
+    setActiveModal(null);
+  }, [communityId]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, filterDifficulty, filterSource, selectedTags, pageSize]);
 
   // Poll for in-progress AI generation requests
+  const genRequestsRef = useRef(genRequests);
+  genRequestsRef.current = genRequests;
+
   useEffect(() => {
     const hasInProgress = genRequests.some(r => r.status === 'approved' || r.status === 'generating');
     if (!hasInProgress) return;
@@ -150,17 +171,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .order('created_at', { ascending: false });
       if (!data) return;
 
-      // Check if any request just completed
-      const prevInProgress = genRequests.filter(r => r.status === 'approved' || r.status === 'generating');
-      const nowCompleted = prevInProgress.filter(prev => {
-        const updated = data.find(d => d.id === prev.id);
+      // Use ref for comparison to avoid stale closure
+      const prev = genRequestsRef.current;
+      const prevInProgress = prev.filter(r => r.status === 'approved' || r.status === 'generating');
+      const nowCompleted = prevInProgress.filter(p => {
+        const updated = data.find(d => d.id === p.id);
         return updated && updated.status === 'completed';
       });
       if (nowCompleted.length > 0) {
         showToast('Questions ready for review!');
       }
-      const nowFailed = prevInProgress.filter(prev => {
-        const updated = data.find(d => d.id === prev.id);
+      const nowFailed = prevInProgress.filter(p => {
+        const updated = data.find(d => d.id === p.id);
         return updated && updated.status === 'failed';
       });
       if (nowFailed.length > 0) {
@@ -171,7 +193,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [genRequests, communityId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [communityId, genRequests.some(r => r.status === 'approved' || r.status === 'generating')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lock body scroll when modal is open; close on Escape
   useEffect(() => {
@@ -186,6 +208,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   }, [activeModal]);
 
   const fetchCommissionerData = async () => {
+    const currentFetchId = ++fetchIdRef.current;
     try {
       // --- Authorization gate: check BEFORE fetching any sensitive data ---
       const [{ data: authCheck }, { data: myMembership }] = await Promise.all([
@@ -212,6 +235,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         onBack();
         return;
       }
+
+      // Bail out if a newer fetch was triggered (community switched)
+      if (currentFetchId !== fetchIdRef.current) return;
 
       // --- Authorized: now fetch full community data ---
       const { data: communityData } = await supabase
@@ -385,7 +411,26 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchCommissionerData();
   };
 
+  // WCAG AA contrast ratio check (4.5:1 minimum for text)
+  const getContrastRatio = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const toLinear = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    // Contrast against white (#fff)
+    return (1.05) / (L + 0.05);
+  };
+
   const handleSaveTheme = async () => {
+    // Warn about low-contrast theme colors
+    if (themeColor && /^#[0-9a-fA-F]{6}$/.test(themeColor)) {
+      const ratio = getContrastRatio(themeColor);
+      if (ratio < 4.5) {
+        showToast('Warning: this color may be hard to read with white text (low contrast ratio). Consider a darker color.', 'error');
+        return;
+      }
+    }
     try {
       const { error } = await supabase
         .from('communities')
@@ -779,16 +824,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (rowErrors.length > 0) {
         errors.push(...rowErrors);
       } else {
+        // Strip formula injection characters from imported text fields
+        const stripFormula = (str) => str.replace(/^[=+\-@\t\r]+/, '');
         const q = {
-          question_text: row.question_text.trim(),
-          correct_answer: row.correct_answer.trim(),
-          incorrect_answers: [row.incorrect_answer_1.trim(), row.incorrect_answer_2.trim(), row.incorrect_answer_3.trim()],
-          category: row.category.trim(),
+          question_text: stripFormula(row.question_text.trim()),
+          correct_answer: stripFormula(row.correct_answer.trim()),
+          incorrect_answers: [stripFormula(row.incorrect_answer_1.trim()), stripFormula(row.incorrect_answer_2.trim()), stripFormula(row.incorrect_answer_3.trim())],
+          category: stripFormula(row.category.trim()),
           difficulty: row.difficulty.toLowerCase().trim()
         };
         if (row.image_url?.trim()) q.image_url = row.image_url.trim();
         if (row.video_url?.trim()) q.video_url = row.video_url.trim();
-        if (row.explanation?.trim()) q.explanation = row.explanation.trim();
+        if (row.explanation?.trim()) q.explanation = stripFormula(row.explanation.trim());
         validQuestions.push(q);
       }
     });
@@ -823,12 +870,23 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         return row;
       });
 
-      const { error } = await supabase.from('community_questions').insert(questionsToInsert);
+      // Insert in batches to limit blast radius on partial failure
+      const BATCH_SIZE = 100;
+      let insertedCount = 0;
+      for (let i = 0; i < questionsToInsert.length; i += BATCH_SIZE) {
+        const batch = questionsToInsert.slice(i, i + BATCH_SIZE);
+        const { error: batchError } = await supabase.from('community_questions').insert(batch);
+        if (batchError) {
+          showToast(`Failed at row ${i + 1}: ${batchError.message}. ${insertedCount} rows imported before error.`, 'error');
+          if (insertedCount > 0) fetchCommissionerData();
+          setUploading(false);
+          return;
+        }
+        insertedCount += batch.length;
+      }
 
-      if (error) {
-        showToast('Failed to import questions: ' + error.message, 'error');
-      } else {
-        showToast(`Successfully imported ${csvData.length} questions!`);
+      if (insertedCount > 0) {
+        showToast(`Successfully imported ${insertedCount} questions!`);
         const historyEntry = { timestamp: importTimestamp, count: csvData.length, user: currentUserId };
         setImportHistory(prev => [historyEntry, ...prev].slice(0, 10));
         setCsvData([]);
@@ -940,7 +998,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
-  const filteredQuestions = questions.filter(q => {
+  const filteredQuestions = useMemo(() => questions.filter(q => {
     const categoryMatch = filterCategory === 'all' || q.category === filterCategory;
     const difficultyMatch = filterDifficulty === 'all' || q.difficulty === filterDifficulty;
     const searchMatch = !searchQuery ||
@@ -954,7 +1012,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       || (filterSource === 'csv' && q.imported_at && q.source !== 'ai_generated')
       || (filterSource === 'ai' && (q.source === 'ai_generated' || (q.tags && q.tags.includes('ai-generated'))));
     return categoryMatch && difficultyMatch && searchMatch && tagMatch && sourceMatch;
-  });
+  }), [questions, filterCategory, filterDifficulty, searchQuery, selectedTags, filterSource]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
@@ -1802,8 +1860,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               <div className="commissioner-section">
                 <h2>Recent Imports</h2>
                 <div className="import-history-list">
-                  {importHistory.map((entry, index) => (
-                    <div key={index} className="history-entry">
+                  {importHistory.map((entry) => (
+                    <div key={entry.timestamp} className="history-entry">
                       <span className="history-icon"><UploadIcon size={14} /></span>
                       <span className="history-text">Imported <strong>{entry.count}</strong> questions</span>
                       <span className="history-date">{new Date(entry.timestamp).toLocaleString()}</span>
@@ -2396,9 +2454,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             {/* Media Preview Modal */}
             {mediaPreviewItem && (
               <div className="cd-modal-overlay" onClick={() => setMediaPreviewItem(null)}>
-                <div className="cd-modal ml-preview-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="cd-modal ml-preview-modal" role="dialog" aria-modal="true" aria-labelledby="modal-preview-title" onClick={(e) => e.stopPropagation()}>
                   <div className="cd-modal-header">
-                    <h2>{mediaPreviewItem.filename}</h2>
+                    <h2 id="modal-preview-title">{mediaPreviewItem.filename}</h2>
                     <button className="cd-modal-close" onClick={() => setMediaPreviewItem(null)}>×</button>
                   </div>
                   <div className="cd-modal-body">
@@ -2526,7 +2584,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             {/* Invite by Email Modal */}
             {showInviteModal && (
               <div className="cd-modal-overlay" onClick={() => { if (!inviteSending) setShowInviteModal(false); }}>
-                <div className="cd-modal" onClick={e => e.stopPropagation()} style={{maxWidth:'440px'}}>
+                <div className="cd-modal" role="dialog" aria-modal="true" aria-label="Invite by Email" onClick={e => e.stopPropagation()} style={{maxWidth:'440px'}}>
                   <h3 style={{margin:'0 0 12px',color:'#041E42'}}>Invite by Email</h3>
                   <p style={{fontSize:'0.85rem',color:'#54585A',margin:'0 0 16px'}}>
                     Send an email invitation with the community invite code.
@@ -2969,7 +3027,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               {/* Reset Confirmation Modal */}
               {showResetModal && (
                 <div className="season-modal-backdrop" onClick={() => setShowResetModal(false)}>
-                  <div className="season-modal" onClick={e => e.stopPropagation()}>
+                  <div className="season-modal" role="dialog" aria-modal="true" aria-label="Reset Season" onClick={e => e.stopPropagation()}>
                     <h3 className="season-modal-title">Reset Season {community.current_season || 1}?</h3>
                     <p className="season-modal-warning">
                       This will archive the current season's leaderboard and start fresh rankings. Game history is preserved but the community leaderboard resets to zero.
@@ -3096,9 +3154,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {/* Transfer Ownership Modal */}
         {showTransferModal && (
           <div className="cd-modal-overlay" onClick={() => setShowTransferModal(false)}>
-            <div className="cd-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="cd-modal" role="dialog" aria-modal="true" aria-labelledby="modal-transfer-title" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
               <div className="cd-modal-header">
-                <h2>Transfer Ownership</h2>
+                <h2 id="modal-transfer-title">Transfer Ownership</h2>
                 <button className="cd-modal-close" onClick={() => setShowTransferModal(false)}>×</button>
               </div>
               <div className="cd-modal-body">
@@ -3304,9 +3362,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       {/* ===== ADD QUESTION MODAL ===== */}
       {activeModal === 'add' && (
         <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-modal" role="dialog" aria-modal="true" aria-labelledby="modal-add-title" onClick={(e) => e.stopPropagation()}>
             <div className="cd-modal-header">
-              <h2>Add New Question</h2>
+              <h2 id="modal-add-title">Add New Question</h2>
               <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
             </div>
             <div className="cd-modal-body">
@@ -3415,9 +3473,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       {/* ===== IMPORT CSV MODAL ===== */}
       {activeModal === 'import' && (
         <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-modal" role="dialog" aria-modal="true" aria-labelledby="modal-import-title" onClick={(e) => e.stopPropagation()}>
             <div className="cd-modal-header">
-              <h2>Import Questions from CSV</h2>
+              <h2 id="modal-import-title">Import Questions from CSV</h2>
               <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
             </div>
             <div className="cd-modal-body">
@@ -3479,9 +3537,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       {/* ===== AI GENERATE MODAL ===== */}
       {activeModal === 'ai' && (
         <div className="cd-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="cd-modal cd-modal-wide" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-modal cd-modal-wide" role="dialog" aria-modal="true" aria-labelledby="modal-ai-title" onClick={(e) => e.stopPropagation()}>
             <div className="cd-modal-header">
-              <h2>AI Question Generator</h2>
+              <h2 id="modal-ai-title">AI Question Generator</h2>
               <button className="cd-modal-close" onClick={() => setActiveModal(null)}>×</button>
             </div>
             <div className="cd-modal-body">
@@ -3698,9 +3756,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       {/* Version History Modal */}
       {showVersionHistory && (
         <div className="modal-overlay" onClick={() => setShowVersionHistory(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-version-title" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Version History</h2>
+              <h2 id="modal-version-title">Version History</h2>
               <button className="close-modal" onClick={() => setShowVersionHistory(null)}>×</button>
             </div>
             <div className="modal-body">
@@ -3743,9 +3801,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       {/* ===== BROWSE MEDIA LIBRARY MODAL ===== */}
       {mediaBrowseTarget && (
         <div className="cd-modal-overlay" onClick={() => { setMediaBrowseTarget(null); setMediaBrowseCallback(null); }}>
-          <div className="cd-modal ml-browse-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-modal ml-browse-modal" role="dialog" aria-modal="true" aria-labelledby="modal-browse-title" onClick={(e) => e.stopPropagation()}>
             <div className="cd-modal-header">
-              <h2>Browse Media Library — {mediaBrowseTarget === 'image' ? 'Images' : 'Videos'}</h2>
+              <h2 id="modal-browse-title">Browse Media Library — {mediaBrowseTarget === 'image' ? 'Images' : 'Videos'}</h2>
               <button className="cd-modal-close" onClick={() => { setMediaBrowseTarget(null); setMediaBrowseCallback(null); }}>×</button>
             </div>
             <div className="cd-modal-body">

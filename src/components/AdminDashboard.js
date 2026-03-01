@@ -69,9 +69,9 @@ function AdminDashboard({ onBack, currentUserId }) {
         { data: games },
         { data: pending }
       ] = await Promise.all([
-        supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, user_id'),
-        supabase.from('profiles').select('id, username, created_at, role, super_admin, platform_role'),
-        supabase.from('community_members').select('user_id'),
+        supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, user_id').limit(10000),
+        supabase.from('profiles').select('id, username, created_at, role, super_admin, platform_role').limit(5000),
+        supabase.from('community_members').select('user_id').limit(10000),
         supabase.from('games').select('id, score, total_questions, category, difficulty, visibility, created_at, profiles(username)').order('created_at', { ascending: false }).limit(10),
         supabase.from('custom_questions').select('*, profiles!custom_questions_creator_id_fkey(username)').eq('status', 'pending').order('created_at', { ascending: false })
       ]);

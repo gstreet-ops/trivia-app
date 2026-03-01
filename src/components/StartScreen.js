@@ -93,7 +93,7 @@ function StartScreen() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: window.location.origin + '/trivia-app/'
+        redirectTo: window.location.origin + (process.env.PUBLIC_URL || '/trivia-app/')
       });
       if (error) throw error;
       setResetMessage('Password reset link sent! Check your email.');
