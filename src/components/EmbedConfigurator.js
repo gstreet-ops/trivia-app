@@ -83,7 +83,8 @@ function EmbedConfigurator({ communityId, community, showToast }) {
         const { data: allGames } = await supabase
           .from('games')
           .select('id, source, host_origin, score, total_questions, created_at')
-          .eq('community_id', communityId);
+          .eq('community_id', communityId)
+          .limit(10000);
 
         if (!allGames || allGames.length === 0) {
           setEmbedStats({ totalGames: 0, embedGames: 0, appGames: 0, embedPct: 0, avgScore: 0, hostDomains: {}, recentTrend: [] });

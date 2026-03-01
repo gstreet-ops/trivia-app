@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Achievements from './Achievements';
@@ -17,10 +17,13 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [expandedGameId, setExpandedGameId] = useState(null);
   const [gameAnswersCache, setGameAnswersCache] = useState({});
 
+  const mountedRef = useRef(true);
   useEffect(() => {
+    mountedRef.current = true;
     fetchStats();
     loadAchievements();
     checkAdminStatus();
+    return () => { mountedRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -37,7 +40,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const fetchStats = async () => {
     setLoading(true);
     setFetchError(null);
-    const { data: games, error: gamesError } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const { data: games, error: gamesError } = await supabase.from('games').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(500);
     if (gamesError) {
       console.error('fetchStats games error:', gamesError);
       setFetchError('Failed to load dashboard data. Please try again.');
@@ -56,7 +59,7 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
       setStats({ totalGames, avgScore: Math.min(avgScore, 100), bestScore: Math.min(bestGame, 100).toFixed(1) });
       setRecentGames(games.slice(0, 5));
     }
-    const { data: leaderboardData } = await supabase.from('games').select('user_id, score, total_questions, profiles(username, leaderboard_visibility, bot_flags)').eq('visibility', 'public');
+    const { data: leaderboardData } = await supabase.from('games').select('user_id, score, total_questions, profiles(username, leaderboard_visibility, bot_flags)').eq('visibility', 'public').limit(50000);
     if (leaderboardData) {
       const userScores = {};
       leaderboardData.forEach(game => {

@@ -11,34 +11,37 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    const fetchUserData = async () => {
+      try {
+        const { data: userGames } = await supabase.from('games').select('*').eq('user_id', userId).eq('visibility', 'public').order('created_at', { ascending: false }).limit(500);
+        if (cancelled) return;
+        const allGames = userGames || [];
+        setGames(allGames.slice(0, 10));
+        if (allGames.length > 0) {
+          const totalGames = allGames.length;
+          const totalScore = allGames.reduce((sum, g) => sum + g.score, 0);
+          const totalQuestions = allGames.reduce((sum, g) => sum + g.total_questions, 0);
+          const avgScore = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : '0.0';
+          const categories = [...new Set(allGames.map(g => g.category))].length;
+          const bestGame = allGames.reduce((best, g) => {
+            const percentage = g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0;
+            return percentage > best ? percentage : best;
+          }, 0).toFixed(1);
+          const badges = await checkAchievements(userId, supabase, { publicOnly: true });
+          if (cancelled) return;
+          setEarnedBadges(badges);
+          setStats({ totalGames, avgScore, categories, bestGame });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+      if (!cancelled) setLoading(false);
+    };
     fetchUserData();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
-
-  const fetchUserData = async () => {
-    try {
-      const { data: userGames } = await supabase.from('games').select('*').eq('user_id', userId).eq('visibility', 'public').order('created_at', { ascending: false });
-      const allGames = userGames || [];
-      setGames(allGames.slice(0, 10)); // Show only 10 most recent in UI
-      if (allGames.length > 0) {
-        const totalGames = allGames.length;
-        const totalScore = allGames.reduce((sum, g) => sum + g.score, 0);
-        const totalQuestions = allGames.reduce((sum, g) => sum + g.total_questions, 0);
-        const avgScore = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : '0.0';
-        const categories = [...new Set(allGames.map(g => g.category))].length;
-        const bestGame = allGames.reduce((best, g) => {
-          const percentage = g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0;
-          return percentage > best ? percentage : best;
-        }, 0).toFixed(1);
-        const badges = await checkAchievements(userId, supabase);
-        setEarnedBadges(badges);
-        setStats({ totalGames, avgScore, categories, bestGame });
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-    setLoading(false);
-  };
 
   if (loading) return <div className="user-profile"><p>Loading...</p></div>;
   if (!stats) return <div className="user-profile"><p>No public games found for this user.</p></div>;

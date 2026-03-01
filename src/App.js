@@ -108,6 +108,7 @@ function App() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [appToast, setAppToast] = useState(null);
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -405,6 +406,13 @@ function App() {
           You are offline. Some features may not work until your connection is restored.
         </div>
       )}
+      {appToast && (
+        <div style={{
+          position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
+          padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500,
+          color: '#fff', background: '#16a34a', boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>{appToast}</div>
+      )}
       {appUsername && (() => {
         const navItems = [
           { label: 'My Stats', icon: <ChartIcon size={16} />, action: () => navigateTo('myStats') },
@@ -592,7 +600,8 @@ function App() {
           user={session.user}
           onBack={() => navigateTo('dashboard')}
           onSuccess={() => {
-            alert('Question submitted for review!');
+            setAppToast('Question submitted for review!');
+            setTimeout(() => setAppToast(null), 3000);
             navigateTo('dashboard');
           }}
         />

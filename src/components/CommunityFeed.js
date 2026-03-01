@@ -10,23 +10,26 @@ function CommunityFeed({ currentUserId, onBack, onViewGame, onViewUserProfile })
   const [sortBy, setSortBy] = useState('recent');
 
   useEffect(() => {
+    let cancelled = false;
+    const fetchPublicGames = async () => {
+      setLoading(true);
+      try {
+        let query = supabase.from('games').select('*, profiles(username, profile_visibility)').eq('visibility', 'public');
+        if (categoryFilter !== 'all') query = query.eq('category', categoryFilter);
+        if (difficultyFilter !== 'all') query = query.eq('difficulty', difficultyFilter);
+        if (sortBy === 'recent') { query = query.order('created_at', { ascending: false }); } else { query = query.order('score', { ascending: false }); }
+        query = query.limit(20);
+        const { data } = await query;
+        if (cancelled) return;
+        const filteredGames = (data || []).filter(game => game.profiles?.profile_visibility !== false || game.user_id === currentUserId);
+        setGames(filteredGames);
+      } catch (error) { console.error('Error:', error); }
+      if (!cancelled) setLoading(false);
+    };
     fetchPublicGames();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryFilter, difficultyFilter, sortBy]);
-
-  const fetchPublicGames = async () => {
-    try {
-      let query = supabase.from('games').select('*, profiles(username, profile_visibility)').eq('visibility', 'public');
-      if (categoryFilter !== 'all') query = query.eq('category', categoryFilter);
-      if (difficultyFilter !== 'all') query = query.eq('difficulty', difficultyFilter);
-      if (sortBy === 'recent') { query = query.order('created_at', { ascending: false }); } else { query = query.order('score', { ascending: false }); }
-      query = query.limit(20);
-      const { data } = await query;
-      const filteredGames = (data || []).filter(game => game.profiles?.profile_visibility !== false || game.user_id === currentUserId);
-      setGames(filteredGames);
-    } catch (error) { console.error('Error:', error); }
-    setLoading(false);
-  };
 
   const categories = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature'];
 
@@ -45,7 +48,7 @@ function CommunityFeed({ currentUserId, onBack, onViewGame, onViewUserProfile })
             <div key={game.id} className="game-card-feed">
               <div className="game-header"><span className="username" role="button" tabIndex={0} onClick={() => onViewUserProfile(game.user_id, game.profiles?.username)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewUserProfile(game.user_id, game.profiles?.username); } }}>{game.profiles?.username}</span><span className="game-date">{new Date(game.created_at).toLocaleDateString()}</span></div>
               <div className="game-details"><span className="category-badge">{game.category}</span><span className={'difficulty-badge ' + game.difficulty}>{game.difficulty}</span></div>
-              <div className="game-score-large">{game.score}/{game.total_questions}<span className="percentage">({((game.score / game.total_questions) * 100).toFixed(0)}%)</span></div>
+              <div className="game-score-large">{game.score}/{game.total_questions}<span className="percentage">({game.total_questions > 0 ? ((game.score / game.total_questions) * 100).toFixed(0) : 0}%)</span></div>
               <button className="view-btn" onClick={() => onViewGame(game.id)}>View Details</button>
             </div>
           ))}

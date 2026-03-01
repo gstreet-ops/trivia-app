@@ -41,6 +41,7 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
   const [joiningId, setJoiningId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
   const [sortBy, setSortBy] = useState('members');
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchMarketplace();
@@ -60,12 +61,12 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
 
       // Fetch member counts
       const { data: memberCounts } = publicIds.length > 0
-        ? await supabase.from('community_members').select('community_id').in('community_id', publicIds)
+        ? await supabase.from('community_members').select('community_id').in('community_id', publicIds).limit(10000)
         : { data: [] };
 
       // Fetch question counts
       const { data: questionCounts } = publicIds.length > 0
-        ? await supabase.from('community_questions').select('community_id').in('community_id', publicIds).eq('status', 'active')
+        ? await supabase.from('community_questions').select('community_id').in('community_id', publicIds).eq('status', 'active').limit(10000)
         : { data: [] };
 
       // Build count maps
@@ -114,7 +115,8 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
           // Already a member — update UI state
           setMyMemberships(prev => new Set([...prev, communityId]));
         } else {
-          alert('Failed to join: ' + error.message);
+          setToast({ msg: 'Failed to join: ' + error.message, type: 'error' });
+          setTimeout(() => setToast(null), 3000);
         }
       } else {
         setMyMemberships(prev => new Set([...prev, communityId]));
@@ -125,7 +127,8 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
         onMembershipChange?.();
       }
     } catch (err) {
-      alert('Failed to join community');
+      setToast({ msg: 'Failed to join community', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     }
     setJoiningId(null);
   };
@@ -163,6 +166,15 @@ function CommunityMarketplace({ user, onBack, onMembershipChange }) {
   return (
     <div className="marketplace">
       <button className="back-btn" onClick={onBack}>Back to My Communities</button>
+
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          padding: '12px 20px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500,
+          color: '#fff', background: toast.type === 'error' ? '#dc2626' : '#16a34a',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>{toast.msg}</div>
+      )}
 
       <div className="marketplace-header">
         <h1>Community Marketplace</h1>

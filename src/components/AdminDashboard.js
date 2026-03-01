@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
 import { ShieldIcon, UsersIcon, GamepadIcon, ChartIcon, StarIcon, PlusIcon } from './Icons';
 import { isSuperAdmin, isPlatformAdmin, getPlatformRole } from '../utils/permissions';
+import ConfirmModal from './ConfirmModal';
 import { sendGenericEmail, sendQuestionNotification } from '../utils/emailService';
 
 function AdminDashboard({ onBack, currentUserId }) {
@@ -47,12 +48,15 @@ function AdminDashboard({ onBack, currentUserId }) {
   // Flagged Users tab state
   const [flaggedUsers, setFlaggedUsers] = useState([]);
   const [unflaggingId, setUnflaggingId] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCommunityRequests(); fetchFlaggedUsers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const toastTimerRef = useRef(null);
   const showToast = (msg, type = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   };
 
   const fetchAdminData = async () => {
@@ -331,27 +335,32 @@ function AdminDashboard({ onBack, currentUserId }) {
     }
   };
 
-  const handleUnflagUser = async (userId, username) => {
-    if (!window.confirm(`Unflag ${username}? This will restore them to leaderboards.`)) return;
-    setUnflaggingId(userId);
-    try {
-      const { error } = await supabase.from('profiles').update({
-        bot_flags: { flagged: false, reasons: [], flagged_at: null }
-      }).eq('id', userId);
-      if (error) throw error;
-      showToast(`${username} has been unflagged`);
-      fetchFlaggedUsers();
-    } catch (err) {
-      showToast('Failed to unflag: ' + err.message, 'error');
-    }
-    setUnflaggingId(null);
+  const handleUnflagUser = (userId, username) => {
+    setConfirmAction({
+      message: `Unflag ${username}? This will restore them to leaderboards.`,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setUnflaggingId(userId);
+        try {
+          const { error } = await supabase.from('profiles').update({
+            bot_flags: { flagged: false, reasons: [], flagged_at: null }
+          }).eq('id', userId);
+          if (error) throw error;
+          showToast(`${username} has been unflagged`);
+          fetchFlaggedUsers();
+        } catch (err) {
+          showToast('Failed to unflag: ' + err.message, 'error');
+        }
+        setUnflaggingId(null);
+      }
+    });
   };
 
   const handleApprove = async (questionId) => {
     const { error } = await supabase.from('custom_questions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', questionId);
     if (error) {
       console.error('Error approving question:', error);
-      alert('Failed to approve question: ' + error.message);
+      showToast('Failed to approve question: ' + error.message, 'error');
     } else {
       // Notify submitter
       const q = pendingQuestions.find(q => q.id === questionId);
@@ -374,7 +383,7 @@ function AdminDashboard({ onBack, currentUserId }) {
     const { error } = await supabase.from('custom_questions').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', questionId);
     if (error) {
       console.error('Error rejecting question:', error);
-      alert('Failed to reject question: ' + error.message);
+      showToast('Failed to reject question: ' + error.message, 'error');
     } else {
       // Notify submitter
       const q = pendingQuestions.find(q => q.id === questionId);
@@ -395,38 +404,44 @@ function AdminDashboard({ onBack, currentUserId }) {
 
   // Users tab logic
 
-  const handlePlatformRoleChange = async (userId, username, newRole) => {
+  const handlePlatformRoleChange = (userId, username, newRole) => {
     if (userId === currentUserId) return;
     const labels = { user: 'User', admin: 'Admin', super_admin: 'Super Admin' };
-    if (!window.confirm(`Change ${username}'s platform role to ${labels[newRole]}? ${newRole === 'super_admin' ? 'Super admins have full platform access.' : ''}`)) return;
-    try {
-      // Update both new and legacy columns for backward compatibility
-      const updates = { platform_role: newRole };
-      if (newRole === 'super_admin') {
-        updates.super_admin = true;
-        updates.role = 'admin';
-      } else if (newRole === 'admin') {
-        updates.super_admin = false;
-        updates.role = 'admin';
-      } else {
-        updates.super_admin = false;
-        updates.role = 'user';
+    setConfirmAction({
+      message: `Change ${username}'s platform role to ${labels[newRole]}?${newRole === 'super_admin' ? ' Super admins have full platform access.' : ''}`,
+      confirmLabel: 'Change Role',
+      destructive: newRole === 'super_admin',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        try {
+          const updates = { platform_role: newRole };
+          if (newRole === 'super_admin') {
+            updates.super_admin = true;
+            updates.role = 'admin';
+          } else if (newRole === 'admin') {
+            updates.super_admin = false;
+            updates.role = 'admin';
+          } else {
+            updates.super_admin = false;
+            updates.role = 'user';
+          }
+          const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+          if (error) { showToast('Failed to change role: ' + error.message, 'error'); return; }
+          setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+          showToast(`${username} is now ${labels[newRole]}`);
+        } catch (err) {
+          showToast('Failed to change role', 'error');
+        }
       }
-      const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
-      if (error) { showToast('Failed to change role: ' + error.message, 'error'); return; }
-      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
-      showToast(`${username} is now ${labels[newRole]}`);
-    } catch (err) {
-      showToast('Failed to change role', 'error');
-    }
+    });
   };
 
   const handleViewActivity = async (userId) => {
     if (expandedUser === userId) { setExpandedUser(null); setExpandedData(null); return; }
     setExpandedUser(userId);
     try {
-      const { data: games } = await supabase.from('games').select('score, total_questions, created_at').eq('user_id', userId).order('created_at', { ascending: false });
-      const { data: memberships } = await supabase.from('community_members').select('communities(name)').eq('user_id', userId);
+      const { data: games } = await supabase.from('games').select('score, total_questions, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(500);
+      const { data: memberships } = await supabase.from('community_members').select('communities(name)').eq('user_id', userId).limit(100);
       const totalGames = games?.length || 0;
       const avgPct = totalGames > 0
         ? Math.round(games.reduce((sum, g) => sum + (g.total_questions > 0 ? (g.score / g.total_questions) * 100 : 0), 0) / totalGames)
@@ -566,6 +581,15 @@ function AdminDashboard({ onBack, currentUserId }) {
         <div className={`admin-toast ${toast.type}`}>
           {toast.msg}
         </div>
+      )}
+      {confirmAction && (
+        <ConfirmModal
+          message={confirmAction.message}
+          confirmLabel={confirmAction.confirmLabel || 'Confirm'}
+          destructive={confirmAction.destructive || false}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
 
       <div className="admin-tabs">

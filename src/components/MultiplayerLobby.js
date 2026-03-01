@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import decodeHtml from '../utils/decodeHtml';
+import ConfirmModal from './ConfirmModal';
 import './MultiplayerLobby.css';
 import { TargetIcon, LightbulbIcon, BoltIcon } from './Icons';
 
@@ -56,6 +57,7 @@ function MultiplayerLobby({ user, username, onBack }) {
   const [joining, setJoining] = useState(false);
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   // Open rooms browser
   const [openRooms, setOpenRooms] = useState([]);
@@ -471,17 +473,24 @@ function MultiplayerLobby({ user, username, onBack }) {
     setView('menu');
   };
 
-  const handleCancelRoom = async () => {
-    if (!window.confirm('Cancel this room? All players will be removed.')) return;
-    const { error } = await supabase
-      .from('multiplayer_rooms')
-      .update({ status: 'cancelled' })
-      .eq('id', room.id);
-    if (error) { setError('Failed to cancel room: ' + error.message); return; }
-    cleanup();
-    setRoom(null);
-    setParticipants([]);
-    setView('menu');
+  const handleCancelRoom = () => {
+    setConfirmAction({
+      message: 'Cancel this room? All players will be removed.',
+      confirmLabel: 'Cancel Room',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        const { error } = await supabase
+          .from('multiplayer_rooms')
+          .update({ status: 'cancelled' })
+          .eq('id', room.id);
+        if (error) { setError('Failed to cancel room: ' + error.message); return; }
+        cleanup();
+        setRoom(null);
+        setParticipants([]);
+        setView('menu');
+      }
+    });
   };
 
   const handleStartGame = async () => {
@@ -1315,6 +1324,15 @@ function MultiplayerLobby({ user, username, onBack }) {
       </div>
 
       {error && <div className="mp-error">{error}</div>}
+      {confirmAction && (
+        <ConfirmModal
+          message={confirmAction.message}
+          confirmLabel={confirmAction.confirmLabel || 'Confirm'}
+          destructive={confirmAction.destructive || false}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
 
       <div className="mp-menu-cards">
         {/* Create Room Card */}
@@ -1417,7 +1435,7 @@ function MultiplayerLobby({ user, username, onBack }) {
                     role="switch"
                     aria-checked={speedBonus}
                     tabIndex={0}
-                    onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') setSpeedBonus(!speedBonus); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSpeedBonus(!speedBonus); }}
                   >
                     <span className="mp-switch-knob" />
                   </span>

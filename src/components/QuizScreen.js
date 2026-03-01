@@ -17,6 +17,7 @@ function QuizScreen({ config, onEnd }) {
   const [hintUsed, setHintUsed] = useState(false);
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
   const [answersLog, setAnswersLog] = useState([]);
+  const answersLogRef = useRef([]);
   const [timedOutCount, setTimedOutCount] = useState(0);
   const questionDisplayedAtRef = useRef(null);
 
@@ -242,7 +243,7 @@ function QuizScreen({ config, onEnd }) {
     const q = questions[currentQuestionIndex];
     const isCorrect = answer === q.correctAnswer;
     if (isCorrect) setScore(prev => prev + 1);
-    setAnswersLog(prev => [...prev, {
+    const newEntry = {
       question_text: q.question,
       correct_answer: q.correctAnswer,
       user_answer: answer,
@@ -252,7 +253,9 @@ function QuizScreen({ config, onEnd }) {
       video_url: q.video_url || null,
       answered_at: new Date(now).toISOString(),
       time_taken_ms: timeTaken
-    }]);
+    };
+    answersLogRef.current = [...answersLogRef.current, newEntry];
+    setAnswersLog(answersLogRef.current);
   };
 
   const handleNext = () => {
@@ -263,9 +266,10 @@ function QuizScreen({ config, onEnd }) {
       setHintUsed(false);
       setHiddenAnswers([]);
     } else {
-      // Compute final score from answersLog to avoid stale state
-      const finalScore = answersLog.filter(a => a.is_correct).length;
-      onEnd(finalScore, questions.length, answersLog, timedOutCount);
+      // Use ref to avoid stale closure
+      const log = answersLogRef.current;
+      const finalScore = log.filter(a => a.is_correct).length;
+      onEnd(finalScore, questions.length, log, timedOutCount);
     }
   };
 

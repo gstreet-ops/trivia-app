@@ -81,9 +81,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [renamingCategory, setRenamingCategory] = useState(null);
   const [renameCategoryValue, setRenameCategoryValue] = useState('');
 
+  const toastTimerRef = useRef(null);
   const showToast = (msg, type = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   };
 
   // AI Generation state
@@ -240,6 +242,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
       if (!hasCommunityRole(myRole, 'moderator') && !isLegacyCommissioner) {
         showToast('You are not authorized to access this page', 'error');
+        setLoading(false);
         onBack();
         return;
       }
@@ -282,20 +285,23 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .from('community_members')
         .select('*, profiles(username)')
         .eq('community_id', communityId)
-        .order('joined_at', { ascending: false });
+        .order('joined_at', { ascending: false })
+        .limit(1000);
       setMembers(membersData || []);
 
       const { data: questionsData } = await supabase
         .from('community_questions')
         .select('*')
         .eq('community_id', communityId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(5000);
       setQuestions(questionsData || []);
 
       const { data: gamesData } = await supabase
         .from('games')
         .select('user_id')
-        .eq('community_id', communityId);
+        .eq('community_id', communityId)
+        .limit(10000);
 
       const uniqueActivePlayers = new Set(gamesData?.map(g => g.user_id) || []);
 
@@ -1299,7 +1305,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { data: gamesData, error: gamesError } = await supabase
         .from('games')
         .select('id')
-        .eq('community_id', communityId);
+        .eq('community_id', communityId)
+        .limit(10000);
 
       if (gamesError || !gamesData || gamesData.length === 0) {
         setAnalytics(null);
@@ -1312,13 +1319,15 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       const { data: answersData } = await supabase
         .from('game_answers')
         .select('question_id, is_correct')
-        .in('game_id', gameIds);
+        .in('game_id', gameIds)
+        .limit(50000);
 
       // Fetch questions directly (don't rely on state - may not be loaded yet)
       const { data: questionsData } = await supabase
         .from('community_questions')
         .select('id, category, difficulty, tags')
-        .eq('community_id', communityId);
+        .eq('community_id', communityId)
+        .limit(10000);
 
       const questionUsage = {};
       const questionPerformance = {};
@@ -2311,7 +2320,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                 ))}
                                 {editingQuestionId === question.id ? (
                                   <div className="tag-input-wrapper">
-                                    <input type="text" className="tag-input" placeholder="Add tag..." value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') handleAddTag(question.id, newTag); }} />
+                                    <input type="text" className="tag-input" placeholder="Add tag..." value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(question.id, newTag); }} />
                                     <button className="add-tag-btn" onClick={() => handleAddTag(question.id, newTag)}>Add</button>
                                     <button className="cancel-tag-btn" onClick={() => { setEditingQuestionId(null); setNewTag(''); }}>Cancel</button>
                                   </div>
@@ -2425,7 +2434,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         <button className="qt-bulk-btn" onClick={() => setShowBulkTagging(!showBulkTagging)}><TagIcon size={13} color="#fff" /> Add Tag</button>
                         {showBulkTagging && (
                           <div className="qt-bulk-tag-input" onClick={(e) => e.stopPropagation()}>
-                            <input type="text" placeholder="Tag name..." value={bulkTagInput} onChange={(e) => setBulkTagInput(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') { handleBulkAddTag(); } }} />
+                            <input type="text" placeholder="Tag name..." value={bulkTagInput} onChange={(e) => setBulkTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { handleBulkAddTag(); } }} />
                             <button onClick={handleBulkAddTag}>Add</button>
                           </div>
                         )}
@@ -2720,17 +2729,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       disabled={inviteSending || !inviteEmail.trim()}
                       onClick={async () => {
                         setInviteSending(true);
-                        sendInvitationEmail(
-                          inviteEmail.trim(),
-                          community.name,
-                          community.invite_code,
-                          community.description || '',
-                          inviteMessage.trim()
-                        );
-                        showToast('Invitation sent to ' + inviteEmail.trim());
-                        setInviteEmail('');
-                        setInviteMessage('');
-                        setShowInviteModal(false);
+                        try {
+                          await sendInvitationEmail(
+                            inviteEmail.trim(),
+                            community.name,
+                            community.invite_code,
+                            community.description || '',
+                            inviteMessage.trim()
+                          );
+                          showToast('Invitation sent to ' + inviteEmail.trim());
+                          setInviteEmail('');
+                          setInviteMessage('');
+                          setShowInviteModal(false);
+                        } catch (err) {
+                          showToast('Failed to send invitation: ' + err.message, 'error');
+                        }
                         setInviteSending(false);
                       }}
                     >
@@ -2790,7 +2803,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         role="switch"
                         aria-checked={editForm.visibility === 'public'}
                         tabIndex={0}
-                        onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, visibility: editForm.visibility === 'public' ? 'private' : 'public' }); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, visibility: editForm.visibility === 'public' ? 'private' : 'public' }); }}
                       >
                         <span className="visibility-toggle-knob" />
                       </span>
@@ -2823,7 +2836,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                         role="switch"
                         aria-checked={editForm.timer_enabled}
                         tabIndex={0}
-                        onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, timer_enabled: !editForm.timer_enabled }); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditForm({ ...editForm, timer_enabled: !editForm.timer_enabled }); }}
                       >
                         <span className="visibility-toggle-knob" />
                       </span>

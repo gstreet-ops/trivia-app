@@ -1,6 +1,8 @@
-export const checkAchievements = async (userId, supabase) => {
+export const checkAchievements = async (userId, supabase, { publicOnly = false } = {}) => {
   const earnedBadges = [];
-  const { data: games } = await supabase.from('games').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(500);
+  let query = supabase.from('games').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(500);
+  if (publicOnly) query = query.eq('visibility', 'public');
+  const { data: games } = await query;
   if (!games || games.length === 0) return earnedBadges;
 
   // Perfect score: 100% on any game (any question count)

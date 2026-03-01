@@ -101,7 +101,7 @@ function Settings({ user, onBack, onNavigate }) {
         {passwordMessage && <div role="alert" className={passwordMessage.includes('Error') ? 'error-message' : 'success-message'}>{passwordMessage}</div>}
         <div className="form-group">
           <label htmlFor="settings-new-password">New Password</label>
-          <input id="settings-new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" />
+          <input id="settings-new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 8 characters" />
         </div>
         <div className="form-group">
           <label htmlFor="settings-confirm-password">Confirm New Password</label>
