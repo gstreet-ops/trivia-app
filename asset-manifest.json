@@ -1,13 +1,19 @@
 {
   "files": {
     "main.css": "/trivia-app/static/css/main.ece130fd.css",
-    "main.js": "/trivia-app/static/js/main.a4457717.js",
+    "main.js": "/trivia-app/static/js/main.3042e1e4.js",
+    "static/js/460.9547b355.chunk.js": "/trivia-app/static/js/460.9547b355.chunk.js",
+    "static/js/924.5450f74e.chunk.js": "/trivia-app/static/js/924.5450f74e.chunk.js",
+    "static/js/710.7d15800b.chunk.js": "/trivia-app/static/js/710.7d15800b.chunk.js",
     "index.html": "/trivia-app/index.html",
     "main.ece130fd.css.map": "/trivia-app/static/css/main.ece130fd.css.map",
-    "main.a4457717.js.map": "/trivia-app/static/js/main.a4457717.js.map"
+    "main.3042e1e4.js.map": "/trivia-app/static/js/main.3042e1e4.js.map",
+    "460.9547b355.chunk.js.map": "/trivia-app/static/js/460.9547b355.chunk.js.map",
+    "924.5450f74e.chunk.js.map": "/trivia-app/static/js/924.5450f74e.chunk.js.map",
+    "710.7d15800b.chunk.js.map": "/trivia-app/static/js/710.7d15800b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ece130fd.css",
-    "static/js/main.a4457717.js"
+    "static/js/main.3042e1e4.js"
   ]
 }
