@@ -16,7 +16,7 @@ function QuizScreen({ config, onEnd }) {
   const [error, setError] = useState(null);
   const [hintUsed, setHintUsed] = useState(false);
   const [hiddenAnswers, setHiddenAnswers] = useState([]);
-  const [answersLog, setAnswersLog] = useState([]);
+  const [, setAnswersLog] = useState([]);
   const answersLogRef = useRef([]);
   const [timedOutCount, setTimedOutCount] = useState(0);
   const questionDisplayedAtRef = useRef(null);
