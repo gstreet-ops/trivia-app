@@ -84,7 +84,7 @@
 - [x] Question Generator integration — community categories shown in generator wizard category dropdown
 
 ### Commissioner Dashboard
-- [x] Tabbed navigation (Overview, Announcements, Questions, Members, Settings, Analytics, Media Library)
+- [x] Tabbed navigation (Overview, Announcements, Questions, Members, Settings, Analytics, Media Library, Embed)
 - [x] Overview stats (total games, active members, question bank size, quick action buttons, recent import history)
 - [x] CSV bulk question upload with row-level validation (max 500 rows)
 - [x] CSV upload preview (first 5 rows before confirming)
@@ -266,6 +266,36 @@
 - [x] Join confirmation email — sent automatically when a user joins a community via invite code
 - [x] Admin action emails — email notifications alongside in-app notifications for question approvals/rejections, AI request approvals/rejections, community request approvals/rejections
 - [x] Fire-and-forget pattern — emails never block UI; errors logged to console
+
+### Embeddable Quiz Widget
+- [x] Embed Configurator — Commissioner Dashboard "Embed" tab with visual theme builder (5 color pickers), behavior settings (question count, difficulty, timer, leaderboard mode, category filter, font), and live iframe preview
+- [x] Snippet generator — produces `<iframe>` or `<script>` embed code with `v=1` version pin, copy-to-clipboard
+- [x] Google Fonts integration — 20 font options with live preview in configurator
+- [x] Embed analytics dashboard — total games split by source (app vs embed), host domain breakdown, 7-day trend chart, average score comparison
+- [x] Source tracking — `games.source` (`'app'` or `'embed'`) and `games.host_origin` columns track where games are played
+- [x] Webhook URL configuration — optional webhook for embed game completion events, saved to `communities.settings.webhook_url`
+- [x] Save/load embed settings — persisted to `communities.settings` JSONB
+
+### Code Quality & Security (Code Review Fixes)
+- [x] Auth gate on CommissionerDashboard — verifies commissioner_id + community role before fetching data (prevents unauthorized data access)
+- [x] MIME type validation on question image uploads (PNG, JPEG, WebP, GIF only)
+- [x] Supabase credentials moved to env vars with fallback (`.env.example` template added)
+- [x] Race condition prevention — `fetchIdRef` pattern prevents stale data from out-of-order responses
+- [x] Stale closure fix — `genRequestsRef` for polling intervals
+- [x] CSV formula injection prevention — strips `=`, `+`, `-`, `@`, `\t`, `\r` from imported text
+- [x] Bulk import batching — inserts in groups of 100 with per-batch error reporting
+- [x] Query limits on AdminDashboard (10k games, 5k profiles) and achievementChecker (500 games)
+- [x] Fetch timeout (8s) on QuizScreen API calls via `AbortSignal.timeout`
+- [x] Null-safe `incorrect_answers` guard in QuizScreen
+- [x] Community ID type consistency — `Number()` on load, `String()` on save to localStorage
+- [x] WCAG AA contrast ratio validation (4.5:1) in commissioner theme color picker
+- [x] ARIA dialog attributes on all 9 CommissionerDashboard modals (`role="dialog"`, `aria-modal`, `aria-labelledby`)
+- [x] Keyboard-navigable community dropdown in top bar (ArrowDown/Up, Home, End, Escape)
+- [x] Reusable `ConfirmModal` component replacing all 15 `window.confirm()` calls
+- [x] `loading="lazy"` on CommunityDetail banner and logo images
+- [x] Screen-reader-only labels (`.sr-only`) and `htmlFor`/`id` form input associations
+- [x] Removed dead exports from `permissions.js`
+- [x] Standardized error messages to template literals
 
 ### Infrastructure
 - [x] GitHub Pages deployment (`npm run deploy`)

@@ -109,7 +109,7 @@ ORDER BY avg_pct DESC
 LIMIT 10;
 ```
 
-**Queried by:** `App.js`, `Dashboard.js`, `GameReview.js`, `MyStats.js`, `UserProfile.js`, `CommunityDetail.js`, `CommunityFeed.js`, `CommissionerDashboard.js`, `AdminDashboard.js`, `achievementChecker.js`
+**Queried by:** `App.js`, `Dashboard.js`, `GameReview.js`, `MyStats.js`, `UserProfile.js`, `CommunityDetail.js`, `CommunityFeed.js`, `CommissionerDashboard.js`, `EmbedConfigurator.js`, `AdminDashboard.js`, `achievementChecker.js`
 
 ---
 
@@ -169,7 +169,8 @@ A community (league) groups members and maintains a shared question bank.
   "logo_url": "https://...",
   "banner_url": "https://...",
   "welcome_message": "Welcome to our community!",
-  "categories": ["General Knowledge", "History", "Science"]
+  "categories": ["General Knowledge", "History", "Science"],
+  "webhook_url": "https://example.com/webhook"
 }
 ```
 
@@ -182,8 +183,9 @@ A community (league) groups members and maintains a shared question bank.
 - Default season length at creation: 30 days
 - `visibility = 'public'` makes the community appear in the Community Marketplace
 - `settings.categories` stores the dynamic list of community-specific categories (managed by commissioner)
+- `settings.webhook_url` stores an optional webhook URL for embed game completion notifications
 
-**Queried by:** `CommunitiesList.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `QuizSourceSelector.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+**Queried by:** `CommunitiesList.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `QuizSourceSelector.js`, `CommissionerDashboard.js`, `EmbedConfigurator.js`, `AdminDashboard.js`
 
 ---
 
@@ -265,7 +267,7 @@ Question bank owned by a specific community. Used when quiz source is "Community
 }
 ```
 
-**Queried by:** `QuizScreen.js`, `QuizSourceSelector.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+**Queried by:** `QuizScreen.js`, `QuizSourceSelector.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `EmbedConfigurator.js`, `AdminDashboard.js`
 
 ---
 
@@ -396,22 +398,33 @@ In-app notifications for users. Triggered by admin actions (question/AI request/
 
 ### `season_archives`
 
-Archived season leaderboards. Created when a commissioner resets a season.
+Archived season leaderboards. Created when a commissioner resets a season via the `reset_season` RPC.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` | Primary key |
 | `community_id` | `uuid` | FK → `communities.id` |
 | `season_number` | `integer` | The archived season number |
-| `leaderboard_data` | `jsonb` | Frozen leaderboard snapshot (array of player rankings) |
+| `season_start` | `timestamptz` | Start date of the archived season |
+| `season_end` | `timestamptz` | End date of the archived season |
+| `total_games` | `integer` | Total games played during the season |
+| `total_questions_played` | `integer` | Total questions answered during the season |
+| `top_player_id` | `uuid` | FK → `profiles.id` (season MVP, nullable) |
+| `top_player_username` | `text` | Denormalized MVP username (nullable) |
+| `top_player_avg` | `numeric` | MVP's average score percentage (nullable) |
+| `leaderboard_snapshot` | `jsonb` | Frozen leaderboard — array of `{rank, user_id, username, avg_score, total_games}` |
+| `archived_by` | `uuid` | FK → `profiles.id` (commissioner who triggered reset) |
 | `created_at` | `timestamptz` | Archive timestamp |
 
 **Relationships:**
 - `community_id` → `communities.id`
+- `top_player_id` → `profiles.id`
+- `archived_by` → `profiles.id`
 
 **Notes:**
-- Created automatically by the `reset_season` RPC function
+- Created atomically by the `reset_season` RPC function
 - Viewable by all community members on the community detail page
+- Expandable accordion cards show season dates, total games, MVP, and full leaderboard snapshot
 
 **Queried by:** `CommunityDetail.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
 
@@ -427,7 +440,7 @@ Commissioner-posted announcements visible to all community members.
 | `community_id` | `uuid` | FK → `communities.id` |
 | `author_id` | `uuid` | FK → `profiles.id` (commissioner) |
 | `title` | `text` | Announcement title |
-| `content` | `text` | Announcement body |
+| `body` | `text` | Announcement body |
 | `pinned` | `boolean` | Whether pinned to top (default false) |
 | `created_at` | `timestamptz` | Creation timestamp |
 | `updated_at` | `timestamptz` | Last edit timestamp |
