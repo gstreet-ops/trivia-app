@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
 import { ShieldIcon, UsersIcon, GamepadIcon, ChartIcon, StarIcon, PlusIcon } from './Icons';
-import { isSuperAdmin, getPlatformRole } from '../utils/permissions';
+import { isSuperAdmin, isPlatformAdmin, getPlatformRole } from '../utils/permissions';
 import { sendGenericEmail, sendQuestionNotification } from '../utils/emailService';
 
 function AdminDashboard({ onBack, currentUserId }) {
@@ -48,12 +48,7 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [flaggedUsers, setFlaggedUsers] = useState([]);
   const [unflaggingId, setUnflaggingId] = useState(null);
 
-  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCurrentProfile(); fetchCommunityRequests(); fetchFlaggedUsers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const fetchCurrentProfile = async () => {
-    const { data } = await supabase.from('profiles').select('id, platform_role, super_admin, role').eq('id', currentUserId).single();
-    setCurrentAdminProfile(data);
-  };
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCommunityRequests(); fetchFlaggedUsers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -62,6 +57,15 @@ function AdminDashboard({ onBack, currentUserId }) {
 
   const fetchAdminData = async () => {
     try {
+      // --- Authorization gate: verify admin role BEFORE fetching data ---
+      const { data: profileCheck } = await supabase.from('profiles').select('platform_role, super_admin, role').eq('id', currentUserId).single();
+      if (!isPlatformAdmin(profileCheck)) {
+        setLoading(false);
+        onBack();
+        return;
+      }
+      setCurrentAdminProfile(profileCheck);
+
       const [
         { data: allGames },
         { data: profilesData },
@@ -450,59 +454,62 @@ function AdminDashboard({ onBack, currentUserId }) {
   const handleConfirmDelete = async () => {
     if (!deleteTarget || deleteConfirmText !== deleteTarget.username) return;
     setDeleteLoading(true);
-    const errors = [];
     const userId = deleteTarget.id;
 
-    const tryDelete = async (label, queryFn) => {
-      try { const { error } = await queryFn(); if (error) errors.push(`${label}: ${error.message}`); }
-      catch (err) { errors.push(`${label}: ${err.message}`); }
+    // Abort-on-error: throws on first failure to prevent partial corrupt state
+    const delStep = async (label, queryFn) => {
+      const { error } = await queryFn();
+      if (error) throw new Error(`${label}: ${error.message}`);
     };
 
-    // 1. Delete user's direct data
-    await tryDelete('game_answers', () => supabase.from('game_answers').delete().eq('user_id', userId));
-    await tryDelete('games', () => supabase.from('games').delete().eq('user_id', userId));
-    await tryDelete('community_members', () => supabase.from('community_members').delete().eq('user_id', userId));
-    await tryDelete('custom_questions', () => supabase.from('custom_questions').delete().eq('creator_id', userId));
-    await tryDelete('notifications', () => supabase.from('notifications').delete().eq('user_id', userId));
-    await tryDelete('multiplayer_answers', () => supabase.from('multiplayer_answers').delete().eq('user_id', userId));
-    await tryDelete('multiplayer_participants', () => supabase.from('multiplayer_participants').delete().eq('user_id', userId));
-    await tryDelete('community_messages', () => supabase.from('community_messages').delete().eq('user_id', userId));
-    await tryDelete('multiplayer_rooms', () => supabase.from('multiplayer_rooms').delete().eq('host_id', userId));
-    await tryDelete('generation_requests', () => supabase.from('generation_requests').delete().eq('requested_by', userId));
+    try {
+      // 1. Delete user's direct data
+      await delStep('game_answers', () => supabase.from('game_answers').delete().eq('user_id', userId));
+      await delStep('games', () => supabase.from('games').delete().eq('user_id', userId));
+      await delStep('community_members', () => supabase.from('community_members').delete().eq('user_id', userId));
+      await delStep('custom_questions', () => supabase.from('custom_questions').delete().eq('creator_id', userId));
+      await delStep('notifications', () => supabase.from('notifications').delete().eq('user_id', userId));
+      await delStep('multiplayer_answers', () => supabase.from('multiplayer_answers').delete().eq('user_id', userId));
+      await delStep('multiplayer_participants', () => supabase.from('multiplayer_participants').delete().eq('user_id', userId));
+      await delStep('community_messages', () => supabase.from('community_messages').delete().eq('user_id', userId));
+      await delStep('multiplayer_rooms', () => supabase.from('multiplayer_rooms').delete().eq('host_id', userId));
+      await delStep('generation_requests', () => supabase.from('generation_requests').delete().eq('requested_by', userId));
 
-    // 2. Delete commissioner-owned communities and their data
-    for (const comm of deleteCommissioned) {
-      const cid = comm.id;
-      await tryDelete(`community_members (${comm.name})`, () => supabase.from('community_members').delete().eq('community_id', cid));
-      // Delete game_answers for games in this community
-      const { data: communityGames } = await supabase.from('games').select('id').eq('community_id', cid);
-      if (communityGames?.length > 0) {
-        const gameIds = communityGames.map(g => g.id);
-        await tryDelete(`game_answers (${comm.name})`, () => supabase.from('game_answers').delete().in('game_id', gameIds));
+      // 2. Delete commissioner-owned communities and their data
+      for (const comm of deleteCommissioned) {
+        const cid = comm.id;
+        await delStep(`community_members (${comm.name})`, () => supabase.from('community_members').delete().eq('community_id', cid));
+        // Delete game_answers for games in this community
+        const { data: communityGames } = await supabase.from('games').select('id').eq('community_id', cid);
+        if (communityGames?.length > 0) {
+          const gameIds = communityGames.map(g => g.id);
+          await delStep(`game_answers (${comm.name})`, () => supabase.from('game_answers').delete().in('game_id', gameIds));
+        }
+        await delStep(`games (${comm.name})`, () => supabase.from('games').delete().eq('community_id', cid));
+        await delStep(`generation_requests (${comm.name})`, () => supabase.from('generation_requests').delete().eq('community_id', cid));
+        await delStep(`question_templates (${comm.name})`, () => supabase.from('question_templates').delete().eq('community_id', cid));
+        await delStep(`community_questions (${comm.name})`, () => supabase.from('community_questions').delete().eq('community_id', cid));
+        await delStep(`community_announcements (${comm.name})`, () => supabase.from('community_announcements').delete().eq('community_id', cid));
+        await delStep(`season_archives (${comm.name})`, () => supabase.from('season_archives').delete().eq('community_id', cid));
+        await delStep(`community_messages (${comm.name})`, () => supabase.from('community_messages').delete().eq('community_id', cid));
+        await delStep(`media_library (${comm.name})`, () => supabase.from('media_library').delete().eq('community_id', cid));
+        await delStep(`multiplayer_rooms (${comm.name})`, () => supabase.from('multiplayer_rooms').delete().eq('community_id', cid));
+        await delStep(`community (${comm.name})`, () => supabase.from('communities').delete().eq('id', cid));
       }
-      await tryDelete(`games (${comm.name})`, () => supabase.from('games').delete().eq('community_id', cid));
-      await tryDelete(`generation_requests (${comm.name})`, () => supabase.from('generation_requests').delete().eq('community_id', cid));
-      await tryDelete(`question_templates (${comm.name})`, () => supabase.from('question_templates').delete().eq('community_id', cid));
-      await tryDelete(`community_questions (${comm.name})`, () => supabase.from('community_questions').delete().eq('community_id', cid));
-      await tryDelete(`community_announcements (${comm.name})`, () => supabase.from('community_announcements').delete().eq('community_id', cid));
-      await tryDelete(`season_archives (${comm.name})`, () => supabase.from('season_archives').delete().eq('community_id', cid));
-      await tryDelete(`community_messages (${comm.name})`, () => supabase.from('community_messages').delete().eq('community_id', cid));
-      await tryDelete(`multiplayer_rooms (${comm.name})`, () => supabase.from('multiplayer_rooms').delete().eq('community_id', cid));
-      await tryDelete(`community (${comm.name})`, () => supabase.from('communities').delete().eq('id', cid));
+
+      // 3. Delete profile
+      await delStep('profile', () => supabase.from('profiles').delete().eq('id', userId));
+
+      // Note: auth.users row is orphaned — anon key cannot call supabase.auth.admin.deleteUser()
+
+      showToast(`${deleteTarget.username} permanently deleted`);
+    } catch (err) {
+      console.error('User deletion aborted:', err);
+      showToast(`Deletion aborted: ${err.message}`, 'error');
     }
-
-    // 3. Delete profile
-    await tryDelete('profile', () => supabase.from('profiles').delete().eq('id', userId));
-
-    // Note: auth.users row is orphaned — anon key cannot call supabase.auth.admin.deleteUser()
 
     setDeleteTarget(null);
     setDeleteLoading(false);
-    if (errors.length > 0) {
-      showToast(`Deleted with ${errors.length} error(s): ${errors[0]}`, 'error');
-    } else {
-      showToast(`${deleteTarget.username} permanently deleted`);
-    }
     fetchAdminData();
   };
 

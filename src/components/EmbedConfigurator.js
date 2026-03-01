@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { isSafeUrl } from '../utils/sanitizeUrl';
 
 const EMBED_BASE_URL = 'https://gstreet-ops.github.io/gstreet-ops-quiz-embed';
 
@@ -190,6 +191,7 @@ function EmbedConfigurator({ communityId, community, showToast }) {
 </iframe>
 <script>
   window.addEventListener('message', (e) => {
+    if (e.origin !== 'https://gstreet-ops.github.io') return;
     if (e.data.type === 'quiz-embed-resize') {
       document.querySelector('iframe[src*="quiz-embed"]').style.height = e.data.height + 'px';
     }
@@ -221,8 +223,11 @@ function EmbedConfigurator({ communityId, community, showToast }) {
       const updatedSettings = {
         ...currentSettings,
         embed_theme: { theme, behavior },
-        webhook_url: webhookUrl.trim() || null,
+        webhook_url: (webhookUrl.trim() && isSafeUrl(webhookUrl.trim())) ? webhookUrl.trim() : null,
       };
+      if (webhookUrl.trim() && !isSafeUrl(webhookUrl.trim())) {
+        if (showToast) showToast('Webhook URL must start with https:// — skipped', 'error');
+      }
       const { error } = await supabase
         .from('communities')
         .update({ settings: updatedSettings })

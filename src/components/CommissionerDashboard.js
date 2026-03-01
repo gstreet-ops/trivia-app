@@ -8,6 +8,7 @@ import EmbedConfigurator from './EmbedConfigurator';
 import ConfirmModal from './ConfirmModal';
 import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership } from '../utils/permissions';
 import { sendInvitationEmail } from '../utils/emailService';
+import { isSafeUrl } from '../utils/sanitizeUrl';
 
 function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [community, setCommunity] = useState(null);
@@ -60,6 +61,11 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [transferTarget, setTransferTarget] = useState('');
   const [transferConfirmText, setTransferConfirmText] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
+  const [showDeleteCommunityModal, setShowDeleteCommunityModal] = useState(false);
+  const [deleteCommunityConfirmText, setDeleteCommunityConfirmText] = useState('');
+  const [deleteCommunityLoading, setDeleteCommunityLoading] = useState(false);
+  const [templateNameModal, setTemplateNameModal] = useState(null); // { questionId }
+  const [templateNameValue, setTemplateNameValue] = useState('');
   const [announcements, setAnnouncements] = useState([]);
   const [annForm, setAnnForm] = useState({ title: '', body: '', pinned: false });
   const [annEditing, setAnnEditing] = useState(null);
@@ -741,31 +747,44 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   };
 
   const handleDeleteCommunity = () => {
-    setConfirmDialog({
-      message: `Permanently delete "${community?.name}"? This will delete ALL community data including questions, games, members, and announcements. This cannot be undone.`,
-      destructive: true,
-      confirmLabel: 'Delete Community',
-      onConfirm: async () => {
-        const final = window.prompt('Type the community name to confirm deletion:');
-        if (final !== community?.name) { showToast('Community name did not match', 'error'); return; }
-        try {
-          await supabase.from('community_messages').delete().eq('community_id', communityId);
-          await supabase.from('community_announcements').delete().eq('community_id', communityId);
-          await supabase.from('question_templates').delete().eq('community_id', communityId);
-          await supabase.from('generation_requests').delete().eq('community_id', communityId);
-          await supabase.from('season_archives').delete().eq('community_id', communityId);
-          await supabase.from('community_questions').delete().eq('community_id', communityId);
-          await supabase.from('community_members').delete().eq('community_id', communityId);
-          const { error } = await supabase.from('communities').delete().eq('id', communityId);
-          if (error) throw error;
-          showToast('Community deleted');
-          onBack();
-        } catch (err) {
-          console.error('Error deleting community:', err);
-          showToast(`Failed to delete community: ${err.message || err}`, 'error');
-        }
+    setDeleteCommunityConfirmText('');
+    setShowDeleteCommunityModal(true);
+  };
+
+  const executeDeleteCommunity = async () => {
+    if (deleteCommunityConfirmText !== community?.name) { showToast('Community name did not match', 'error'); return; }
+    setDeleteCommunityLoading(true);
+    try {
+      const delStep = async (table, filter) => {
+        const { error } = await supabase.from(table).delete().eq(filter[0], filter[1]);
+        if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
+      };
+      // Delete game_answers for games in this community
+      const { data: communityGames } = await supabase.from('games').select('id').eq('community_id', communityId);
+      if (communityGames?.length > 0) {
+        const gameIds = communityGames.map(g => g.id);
+        const { error: gaErr } = await supabase.from('game_answers').delete().in('game_id', gameIds);
+        if (gaErr) throw new Error(`Failed to delete game_answers: ${gaErr.message}`);
       }
-    });
+      await delStep('games', ['community_id', communityId]);
+      await delStep('community_messages', ['community_id', communityId]);
+      await delStep('community_announcements', ['community_id', communityId]);
+      await delStep('question_templates', ['community_id', communityId]);
+      await delStep('generation_requests', ['community_id', communityId]);
+      await delStep('season_archives', ['community_id', communityId]);
+      await delStep('media_library', ['community_id', communityId]);
+      await delStep('community_questions', ['community_id', communityId]);
+      await delStep('community_members', ['community_id', communityId]);
+      const { error } = await supabase.from('communities').delete().eq('id', communityId);
+      if (error) throw error;
+      setShowDeleteCommunityModal(false);
+      showToast('Community deleted');
+      onBack();
+    } catch (err) {
+      console.error('Error deleting community:', err);
+      showToast(`Delete failed: ${err.message || err}`, 'error');
+    }
+    setDeleteCommunityLoading(false);
   };
 
   const handleDeleteQuestion = (questionId) => {
@@ -857,8 +876,14 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
           category: stripFormula(row.category.trim()),
           difficulty: row.difficulty.toLowerCase().trim()
         };
-        if (row.image_url?.trim()) q.image_url = row.image_url.trim();
-        if (row.video_url?.trim()) q.video_url = row.video_url.trim();
+        if (row.image_url?.trim()) {
+          if (isSafeUrl(row.image_url.trim())) { q.image_url = row.image_url.trim(); }
+          else { errors.push(`Row ${index + 1}: image_url must start with https://`); }
+        }
+        if (row.video_url?.trim()) {
+          if (isSafeUrl(row.video_url.trim())) { q.video_url = row.video_url.trim(); }
+          else { errors.push(`Row ${index + 1}: video_url must start with https://`); }
+        }
         if (row.explanation?.trim()) q.explanation = stripFormula(row.explanation.trim());
         validQuestions.push(q);
       }
@@ -1139,15 +1164,19 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
-  const saveAsTemplate = async (questionId) => {
-    const question = questions.find(q => q.id === questionId);
+  const saveAsTemplate = (questionId) => {
+    setTemplateNameValue('');
+    setTemplateNameModal({ questionId });
+  };
+
+  const executeSaveAsTemplate = async () => {
+    if (!templateNameModal || !templateNameValue.trim()) return;
+    const question = questions.find(q => q.id === templateNameModal.questionId);
     if (!question) return;
-    const templateName = prompt('Enter a name for this template:');
-    if (!templateName) return;
     try {
       const { error } = await supabase.from('question_templates').insert([{
         community_id: communityId,
-        name: templateName,
+        name: templateNameValue.trim(),
         question_text: question.question_text,
         correct_answer: question.correct_answer,
         incorrect_answers: question.incorrect_answers,
@@ -1160,6 +1189,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     } catch (error) {
       console.error('Error saving template:', error);
     }
+    setTemplateNameModal(null);
   };
 
   const createFromTemplate = (templateId) => {
@@ -3275,6 +3305,78 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                   >
                     {transferLoading ? 'Transferring...' : 'Transfer Ownership'}
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Community Confirmation Modal */}
+        {showDeleteCommunityModal && (
+          <div className="cd-modal-overlay" onClick={() => !deleteCommunityLoading && setShowDeleteCommunityModal(false)}>
+            <div className="cd-modal" role="dialog" aria-modal="true" aria-labelledby="modal-delete-community-title" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <div className="cd-modal-header">
+                <h2 id="modal-delete-community-title">Delete Community</h2>
+                <button className="cd-modal-close" onClick={() => !deleteCommunityLoading && setShowDeleteCommunityModal(false)}>×</button>
+              </div>
+              <div className="cd-modal-body">
+                <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca', marginBottom: '16px', fontSize: '13px', color: '#991b1b' }}>
+                  This will permanently delete <strong>{community?.name}</strong> and ALL associated data including questions, games, members, announcements, and media. This cannot be undone.
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                    Type <strong>{community?.name}</strong> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteCommunityConfirmText}
+                    onChange={(e) => setDeleteCommunityConfirmText(e.target.value)}
+                    placeholder={community?.name}
+                    disabled={deleteCommunityLoading}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--input-border)', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button className="btn-primary" style={{ background: '#E8ECF0', color: '#54585A' }} onClick={() => setShowDeleteCommunityModal(false)} disabled={deleteCommunityLoading}>Cancel</button>
+                  <button
+                    className="btn-primary"
+                    style={{ background: '#C41E3A' }}
+                    disabled={deleteCommunityConfirmText !== community?.name || deleteCommunityLoading}
+                    onClick={executeDeleteCommunity}
+                  >
+                    {deleteCommunityLoading ? 'Deleting...' : 'Delete Community'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Template Name Modal */}
+        {templateNameModal && (
+          <div className="cd-modal-overlay" onClick={() => setTemplateNameModal(null)}>
+            <div className="cd-modal" role="dialog" aria-modal="true" aria-labelledby="modal-template-name-title" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '380px' }}>
+              <div className="cd-modal-header">
+                <h2 id="modal-template-name-title">Save as Template</h2>
+                <button className="cd-modal-close" onClick={() => setTemplateNameModal(null)}>×</button>
+              </div>
+              <div className="cd-modal-body">
+                <div style={{ marginBottom: '14px' }}>
+                  <label htmlFor="template-name-input" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Template Name</label>
+                  <input
+                    id="template-name-input"
+                    type="text"
+                    value={templateNameValue}
+                    onChange={(e) => setTemplateNameValue(e.target.value)}
+                    placeholder="Enter a name for this template"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter' && templateNameValue.trim()) executeSaveAsTemplate(); }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--input-border)', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button className="btn-primary" style={{ background: '#E8ECF0', color: '#54585A' }} onClick={() => setTemplateNameModal(null)}>Cancel</button>
+                  <button className="btn-primary" disabled={!templateNameValue.trim()} onClick={executeSaveAsTemplate}>Save Template</button>
                 </div>
               </div>
             </div>

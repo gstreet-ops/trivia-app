@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import './QuizScreen.css';
 import decodeHtml from '../utils/decodeHtml';
+import { isSafeUrl } from '../utils/sanitizeUrl';
 import { LightbulbIcon } from './Icons';
 
 function QuizScreen({ config, onEnd }) {
@@ -331,12 +332,12 @@ function QuizScreen({ config, onEnd }) {
       )}
 
       <div className="question-container">
-        {currentQuestion.image_url && (
+        {currentQuestion.image_url && isSafeUrl(currentQuestion.image_url) && (
           <div className="question-media">
             <img src={currentQuestion.image_url} alt="Question media" className="question-media-img" />
           </div>
         )}
-        {currentQuestion.video_url && (() => {
+        {currentQuestion.video_url && isSafeUrl(currentQuestion.video_url) && (() => {
           const vidMatch = currentQuestion.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
           return vidMatch ? (
             <div className="question-media">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './GameReview.css';
 import decodeHtml from '../utils/decodeHtml';
+import { isSafeUrl } from '../utils/sanitizeUrl';
 import { BoltIcon, LightbulbIcon } from './Icons';
 
 function GameReview({ gameId, onBack }) {
@@ -50,12 +51,12 @@ function GameReview({ gameId, onBack }) {
         {answers.map((answer, index) => (
           <div key={index} className={'answer-card ' + (answer.is_correct ? 'correct' : 'incorrect')} aria-label={`Question ${index + 1}: ${answer.is_correct ? 'Correct' : 'Incorrect'}`}>
             <div className="question-number">Question {index + 1}</div>
-            {answer.image_url && (
+            {answer.image_url && isSafeUrl(answer.image_url) && (
               <div className="review-media">
                 <img src={answer.image_url} alt="Question media" className="review-media-img" />
               </div>
             )}
-            {answer.video_url && (() => {
+            {answer.video_url && isSafeUrl(answer.video_url) && (() => {
               const vidMatch = answer.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               return vidMatch ? (
                 <div className="review-media">
