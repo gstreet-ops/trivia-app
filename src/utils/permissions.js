@@ -103,8 +103,6 @@ function canTransferOwnership(role) {
 }
 
 export {
-  PLATFORM_HIERARCHY,
-  COMMUNITY_HIERARCHY,
   getPlatformRole,
   hasPlatformRole,
   hasCommunityRole,

@@ -162,13 +162,13 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
 
       {bannerUrl && (
         <div className="cd-banner">
-          <img src={bannerUrl} alt={`${community.name} banner`} />
+          <img src={bannerUrl} alt={`${community.name} banner`} loading="lazy" />
         </div>
       )}
 
       <div className="community-header">
         {logoUrl && (
-          <img src={logoUrl} alt={`${community.name} logo`} className="cd-logo" />
+          <img src={logoUrl} alt={`${community.name} logo`} className="cd-logo" loading="lazy" />
         )}
         <h1>{community.name}</h1>
         {community.current_season && <span className="cd-season-badge">Season {community.current_season}</span>}

@@ -5,6 +5,7 @@ import './CommissionerDashboard.css';
 import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon, CodeIcon } from './Icons';
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 import EmbedConfigurator from './EmbedConfigurator';
+import ConfirmModal from './ConfirmModal';
 import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership } from '../utils/permissions';
 import { sendInvitationEmail } from '../utils/emailService';
 
@@ -64,6 +65,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [annEditing, setAnnEditing] = useState(null);
   const [annEditForm, setAnnEditForm] = useState({ title: '', body: '', pinned: false });
   const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm, confirmLabel?, destructive? }
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
@@ -327,7 +329,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('id', communityId);
 
       if (error) {
-        showToast('Failed to update settings: ' + error.message, 'error');
+        showToast(`Failed to update settings: ${error.message}`, 'error');
       } else {
         showToast('Settings updated successfully!');
         setEditMode(false);
@@ -382,7 +384,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       .update({ category: newName })
       .eq('community_id', communityId)
       .eq('category', oldName);
-    if (qError) { showToast('Failed to rename questions: ' + qError.message, 'error'); return; }
+    if (qError) { showToast(`Failed to rename questions: ${qError.message}`, 'error'); return; }
     // Update the defined categories list
     const existing = community.settings?.categories || [];
     const updated = existing.map(c => c === oldName ? newName : c).sort();
@@ -444,7 +446,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         .eq('id', communityId);
 
       if (error) {
-        showToast('Failed to save appearance: ' + error.message, 'error');
+        showToast(`Failed to save appearance: ${error.message}`, 'error');
       } else {
         showToast('Appearance saved!');
         fetchCommissionerData();
@@ -637,69 +639,82 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       fetchSeasonData();
     } catch (err) {
       console.error('Error resetting season:', err);
-      showToast('Failed to reset season: ' + err.message, 'error');
+      showToast(`Failed to reset season: ${err.message}`, 'error');
     }
     setResetting(false);
   };
 
-  const handleRegenerateInviteCode = async () => {
-    if (!window.confirm('Generate a new invite code? The current code will stop working immediately.')) return;
-    setRegenerating(true);
-    try {
-      const { data: newCode, error: rpcError } = await supabase.rpc('generate_invite_code');
-      if (rpcError) throw rpcError;
-      const { error: updateError } = await supabase
-        .from('communities')
-        .update({ invite_code: newCode })
-        .eq('id', communityId);
-      if (updateError) throw updateError;
-      await fetchCommissionerData();
-    } catch (err) {
-      showToast('Failed to regenerate invite code: ' + err.message, 'error');
-    }
-    setRegenerating(false);
-  };
-
-  const handleRemoveMember = async (userId, username) => {
-    if (!window.confirm(`Are you sure you want to remove ${username} from this community?`)) return;
-    try {
-      const { error } = await supabase
-        .from('community_members')
-        .delete()
-        .eq('community_id', communityId)
-        .eq('user_id', userId);
-
-      if (error) {
-        showToast('Failed to remove member: ' + error.message, 'error');
-      } else {
-        showToast(`${username} has been removed from the community`);
-        fetchCommissionerData();
+  const handleRegenerateInviteCode = () => {
+    setConfirmDialog({
+      message: 'Generate a new invite code? The current code will stop working immediately.',
+      onConfirm: async () => {
+        setRegenerating(true);
+        try {
+          const { data: newCode, error: rpcError } = await supabase.rpc('generate_invite_code');
+          if (rpcError) throw rpcError;
+          const { error: updateError } = await supabase
+            .from('communities')
+            .update({ invite_code: newCode })
+            .eq('id', communityId);
+          if (updateError) throw updateError;
+          await fetchCommissionerData();
+        } catch (err) {
+          showToast(`Failed to regenerate invite code: ${err.message}`, 'error');
+        }
+        setRegenerating(false);
       }
-    } catch (error) {
-      console.error('Error removing member:', error);
-      showToast('Failed to remove member', 'error');
-    }
+    });
   };
 
-  const handleRoleChange = async (userId, username, newRole) => {
+  const handleRemoveMember = (userId, username) => {
+    setConfirmDialog({
+      message: `Are you sure you want to remove ${username} from this community?`,
+      destructive: true,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('community_members')
+            .delete()
+            .eq('community_id', communityId)
+            .eq('user_id', userId);
+          if (error) {
+            showToast(`Failed to remove member: ${error.message}`, 'error');
+          } else {
+            showToast(`${username} has been removed from the community`);
+            fetchCommissionerData();
+          }
+        } catch (error) {
+          console.error('Error removing member:', error);
+          showToast('Failed to remove member', 'error');
+        }
+      }
+    });
+  };
+
+  const handleRoleChange = (userId, username, newRole) => {
     const roleLabels = { member: 'Member', moderator: 'Moderator', commissioner: 'Commissioner', owner: 'Owner' };
-    if (!window.confirm(`Change ${username}'s role to ${roleLabels[newRole]}?`)) return;
-    try {
-      const { error } = await supabase
-        .from('community_members')
-        .update({ role: newRole })
-        .eq('community_id', communityId)
-        .eq('user_id', userId);
-      if (error) {
-        showToast('Failed to change role: ' + error.message, 'error');
-      } else {
-        showToast(`${username} is now ${roleLabels[newRole]}`);
-        fetchCommissionerData();
+    setConfirmDialog({
+      message: `Change ${username}'s role to ${roleLabels[newRole]}?`,
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('community_members')
+            .update({ role: newRole })
+            .eq('community_id', communityId)
+            .eq('user_id', userId);
+          if (error) {
+            showToast(`Failed to change role: ${error.message}`, 'error');
+          } else {
+            showToast(`${username} is now ${roleLabels[newRole]}`);
+            fetchCommissionerData();
+          }
+        } catch (err) {
+          console.error('Error changing role:', err);
+          showToast('Failed to change role', 'error');
+        }
       }
-    } catch (err) {
-      console.error('Error changing role:', err);
-      showToast('Failed to change role', 'error');
-    }
+    });
   };
 
   const handleTransferOwnership = async () => {
@@ -725,47 +740,56 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setTransferLoading(false);
   };
 
-  const handleDeleteCommunity = async () => {
-    if (!window.confirm(`Are you sure you want to permanently delete "${community?.name}"? This cannot be undone.`)) return;
-    if (!window.confirm('This will delete ALL community data including questions, games, members, and announcements. Type OK in the next prompt to confirm.')) return;
-    const final = window.prompt('Type the community name to confirm deletion:');
-    if (final !== community?.name) { showToast('Community name did not match', 'error'); return; }
-    try {
-      // Delete dependent data first
-      await supabase.from('community_messages').delete().eq('community_id', communityId);
-      await supabase.from('community_announcements').delete().eq('community_id', communityId);
-      await supabase.from('question_templates').delete().eq('community_id', communityId);
-      await supabase.from('generation_requests').delete().eq('community_id', communityId);
-      await supabase.from('season_archives').delete().eq('community_id', communityId);
-      await supabase.from('community_questions').delete().eq('community_id', communityId);
-      await supabase.from('community_members').delete().eq('community_id', communityId);
-      const { error } = await supabase.from('communities').delete().eq('id', communityId);
-      if (error) throw error;
-      showToast('Community deleted');
-      onBack();
-    } catch (err) {
-      console.error('Error deleting community:', err);
-      showToast('Failed to delete community: ' + (err.message || err), 'error');
-    }
+  const handleDeleteCommunity = () => {
+    setConfirmDialog({
+      message: `Permanently delete "${community?.name}"? This will delete ALL community data including questions, games, members, and announcements. This cannot be undone.`,
+      destructive: true,
+      confirmLabel: 'Delete Community',
+      onConfirm: async () => {
+        const final = window.prompt('Type the community name to confirm deletion:');
+        if (final !== community?.name) { showToast('Community name did not match', 'error'); return; }
+        try {
+          await supabase.from('community_messages').delete().eq('community_id', communityId);
+          await supabase.from('community_announcements').delete().eq('community_id', communityId);
+          await supabase.from('question_templates').delete().eq('community_id', communityId);
+          await supabase.from('generation_requests').delete().eq('community_id', communityId);
+          await supabase.from('season_archives').delete().eq('community_id', communityId);
+          await supabase.from('community_questions').delete().eq('community_id', communityId);
+          await supabase.from('community_members').delete().eq('community_id', communityId);
+          const { error } = await supabase.from('communities').delete().eq('id', communityId);
+          if (error) throw error;
+          showToast('Community deleted');
+          onBack();
+        } catch (err) {
+          console.error('Error deleting community:', err);
+          showToast(`Failed to delete community: ${err.message || err}`, 'error');
+        }
+      }
+    });
   };
 
-  const handleDeleteQuestion = async (questionId) => {
-    if (!window.confirm('Are you sure you want to delete this question?')) return;
-    try {
-      const { error } = await supabase
-        .from('community_questions')
-        .delete()
-        .eq('id', questionId)
-        .eq('community_id', communityId);
-
-      if (error) {
-        showToast('Failed to delete question: ' + error.message, 'error');
-      } else {
-        fetchCommissionerData();
+  const handleDeleteQuestion = (questionId) => {
+    setConfirmDialog({
+      message: 'Are you sure you want to delete this question?',
+      destructive: true,
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('community_questions')
+            .delete()
+            .eq('id', questionId)
+            .eq('community_id', communityId);
+          if (error) {
+            showToast(`Failed to delete question: ${error.message}`, 'error');
+          } else {
+            fetchCommissionerData();
+          }
+        } catch (error) {
+          console.error('Error deleting question:', error);
+        }
       }
-    } catch (error) {
-      console.error('Error deleting question:', error);
-    }
+    });
   };
 
   const handleFileUpload = (event) => {
@@ -783,7 +807,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       header: true,
       skipEmptyLines: true,
       complete: (results) => { validateAndPreviewCSV(results.data); },
-      error: (error) => { showToast('Error parsing CSV: ' + error.message, 'error'); }
+      error: (error) => { showToast(`Error parsing CSV: ${error.message}`, 'error'); }
     });
   };
 
@@ -845,10 +869,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setCsvPreview(validQuestions.slice(0, 5));
   };
 
-  const handleBulkImport = async () => {
+  const handleBulkImport = () => {
     if (csvData.length === 0) { showToast('No valid questions to import', 'error'); return; }
-    if (!window.confirm(`Are you sure you want to import ${csvData.length} questions?`)) return;
+    setConfirmDialog({
+      message: `Are you sure you want to import ${csvData.length} questions?`,
+      confirmLabel: 'Import',
+      onConfirm: async () => { await executeBulkImport(); }
+    });
+  };
 
+  const executeBulkImport = async () => {
     setUploading(true);
     try {
       const importTimestamp = new Date().toISOString();
@@ -981,21 +1011,27 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setShowBulkTagging(false);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
-    if (!window.confirm(`Are you sure you want to delete ${selectedQuestions.length} questions?`)) return;
-    try {
-      const { error } = await supabase.from('community_questions').delete().in('id', selectedQuestions).eq('community_id', communityId);
-      if (error) {
-        showToast('Failed to delete questions: ' + error.message, 'error');
-      } else {
-        setSelectedQuestions([]);
-        setSelectAllPages(false);
-        fetchCommissionerData();
+    setConfirmDialog({
+      message: `Are you sure you want to delete ${selectedQuestions.length} questions?`,
+      destructive: true,
+      confirmLabel: 'Delete All',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('community_questions').delete().in('id', selectedQuestions).eq('community_id', communityId);
+          if (error) {
+            showToast(`Failed to delete questions: ${error.message}`, 'error');
+          } else {
+            setSelectedQuestions([]);
+            setSelectAllPages(false);
+            fetchCommissionerData();
+          }
+        } catch (error) {
+          console.error('Error deleting questions:', error);
+        }
       }
-    } catch (error) {
-      console.error('Error deleting questions:', error);
-    }
+    });
   };
 
   const filteredQuestions = useMemo(() => questions.filter(q => {
@@ -1038,7 +1074,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const updatedTags = [...currentTags, tag.trim()];
     await createVersionHistory(questionId, 'tag_added', { tag: tag.trim() });
     const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { showToast('Failed to add tag: ' + error.message, 'error'); } else { setNewTag(''); fetchCommissionerData(); }
+    if (error) { showToast(`Failed to add tag: ${error.message}`, 'error'); } else { setNewTag(''); fetchCommissionerData(); }
   };
 
   const handleRemoveTag = async (questionId, tag) => {
@@ -1046,7 +1082,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     const updatedTags = (question.tags || []).filter(t => t !== tag);
     await createVersionHistory(questionId, 'tag_removed', { tag });
     const { error } = await supabase.from('community_questions').update({ tags: updatedTags }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { showToast('Failed to remove tag: ' + error.message, 'error'); } else { fetchCommissionerData(); }
+    if (error) { showToast(`Failed to remove tag: ${error.message}`, 'error'); } else { fetchCommissionerData(); }
   };
 
   const toggleTagFilter = (tag) => {
@@ -1076,18 +1112,22 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setShowVersionHistory(questionId);
   };
 
-  const restoreVersion = async (questionId, versionSnapshot) => {
-    if (!window.confirm('Are you sure you want to restore this version?')) return;
-    await createVersionHistory(questionId, 'version_restored', { restored_from: versionSnapshot.version_number });
-    const { error } = await supabase.from('community_questions').update({
-      question_text: versionSnapshot.question_text,
-      correct_answer: versionSnapshot.correct_answer,
-      incorrect_answers: versionSnapshot.incorrect_answers,
-      category: versionSnapshot.category,
-      difficulty: versionSnapshot.difficulty,
-      tags: versionSnapshot.tags || []
-    }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { showToast('Failed to restore version: ' + error.message, 'error'); } else { setShowVersionHistory(null); fetchCommissionerData(); }
+  const restoreVersion = (questionId, versionSnapshot) => {
+    setConfirmDialog({
+      message: 'Are you sure you want to restore this version?',
+      onConfirm: async () => {
+        await createVersionHistory(questionId, 'version_restored', { restored_from: versionSnapshot.version_number });
+        const { error } = await supabase.from('community_questions').update({
+          question_text: versionSnapshot.question_text,
+          correct_answer: versionSnapshot.correct_answer,
+          incorrect_answers: versionSnapshot.incorrect_answers,
+          category: versionSnapshot.category,
+          difficulty: versionSnapshot.difficulty,
+          tags: versionSnapshot.tags || []
+        }).eq('id', questionId).eq('community_id', communityId);
+        if (error) { showToast(`Failed to restore version: ${error.message}`, 'error'); } else { setShowVersionHistory(null); fetchCommissionerData(); }
+      }
+    });
   };
 
   const fetchTemplates = async () => {
@@ -1116,40 +1156,50 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         tags: question.tags || [],
         created_by: currentUserId
       }]);
-      if (error) { showToast('Failed to save template: ' + error.message, 'error'); } else { showToast('Template saved!'); fetchTemplates(); }
+      if (error) { showToast(`Failed to save template: ${error.message}`, 'error'); } else { showToast('Template saved!'); fetchTemplates(); }
     } catch (error) {
       console.error('Error saving template:', error);
     }
   };
 
-  const createFromTemplate = async (templateId) => {
+  const createFromTemplate = (templateId) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
-    if (!window.confirm(`Create a new question from template "${template.name}"?`)) return;
-    try {
-      const { error } = await supabase.from('community_questions').insert([{
-        community_id: communityId,
-        question_text: template.question_text,
-        correct_answer: template.correct_answer,
-        incorrect_answers: template.incorrect_answers,
-        category: template.category,
-        difficulty: template.difficulty,
-        tags: template.tags || []
-      }]);
-      if (error) { showToast('Failed to create question: ' + error.message, 'error'); } else { fetchCommissionerData(); }
-    } catch (error) {
-      console.error('Error creating from template:', error);
-    }
+    setConfirmDialog({
+      message: `Create a new question from template "${template.name}"?`,
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('community_questions').insert([{
+            community_id: communityId,
+            question_text: template.question_text,
+            correct_answer: template.correct_answer,
+            incorrect_answers: template.incorrect_answers,
+            category: template.category,
+            difficulty: template.difficulty,
+            tags: template.tags || []
+          }]);
+          if (error) { showToast(`Failed to create question: ${error.message}`, 'error'); } else { fetchCommissionerData(); }
+        } catch (error) {
+          console.error('Error creating from template:', error);
+        }
+      }
+    });
   };
 
-  const deleteTemplate = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) return;
-    try {
-      const { error } = await supabase.from('question_templates').delete().eq('id', templateId);
-      if (error) { showToast('Failed to delete template: ' + error.message, 'error'); } else { fetchTemplates(); }
-    } catch (error) {
-      console.error('Error deleting template:', error);
-    }
+  const deleteTemplate = (templateId) => {
+    setConfirmDialog({
+      message: 'Are you sure you want to delete this template?',
+      destructive: true,
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('question_templates').delete().eq('id', templateId);
+          if (error) { showToast(`Failed to delete template: ${error.message}`, 'error'); } else { fetchTemplates(); }
+        } catch (error) {
+          console.error('Error deleting template:', error);
+        }
+      }
+    });
   };
 
   const handleBulkAddTag = async () => {
@@ -1179,36 +1229,38 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       fetchCommissionerData();
     } catch (error) {
       console.error('Error adding bulk tags:', error);
-      showToast('Failed to add tags: ' + error.message, 'error');
+      showToast(`Failed to add tags: ${error.message}`, 'error');
     }
   };
 
-  const handleBulkRemoveTag = async (tag) => {
+  const handleBulkRemoveTag = (tag) => {
     if (selectedQuestions.length === 0) { showToast('No questions selected', 'error'); return; }
-    if (!window.confirm(`Remove tag "${tag}" from ${selectedQuestions.length} selected questions?`)) return;
-    try {
-      // Filter to questions that actually have this tag
-      const toUpdate = selectedQuestions
-        .map(id => questions.find(q => q.id === id))
-        .filter(q => q && (q.tags || []).includes(tag));
-      if (toUpdate.length === 0) { showToast('No selected questions have this tag', 'error'); return; }
-      // Update all in parallel
-      const results = await Promise.all(toUpdate.map(q =>
-        supabase.from('community_questions')
-          .update({ tags: (q.tags || []).filter(t => t !== tag) })
-          .eq('id', q.id).eq('community_id', communityId)
-      ));
-      const failures = results.filter(r => r.error);
-      if (failures.length > 0) {
-        showToast(`Removed tag from ${results.length - failures.length} questions. ${failures.length} failed.`, 'error');
-      } else {
-        showToast(`Tag "${tag}" removed from ${results.length} questions`);
+    setConfirmDialog({
+      message: `Remove tag "${tag}" from ${selectedQuestions.length} selected questions?`,
+      onConfirm: async () => {
+        try {
+          const toUpdate = selectedQuestions
+            .map(id => questions.find(q => q.id === id))
+            .filter(q => q && (q.tags || []).includes(tag));
+          if (toUpdate.length === 0) { showToast('No selected questions have this tag', 'error'); return; }
+          const results = await Promise.all(toUpdate.map(q =>
+            supabase.from('community_questions')
+              .update({ tags: (q.tags || []).filter(t => t !== tag) })
+              .eq('id', q.id).eq('community_id', communityId)
+          ));
+          const failures = results.filter(r => r.error);
+          if (failures.length > 0) {
+            showToast(`Removed tag from ${results.length - failures.length} questions. ${failures.length} failed.`, 'error');
+          } else {
+            showToast(`Tag "${tag}" removed from ${results.length} questions`);
+          }
+          fetchCommissionerData();
+        } catch (error) {
+          console.error('Error removing bulk tags:', error);
+          showToast(`Failed to remove tags: ${error.message}`, 'error');
+        }
       }
-      fetchCommissionerData();
-    } catch (error) {
-      console.error('Error removing bulk tags:', error);
-      showToast('Failed to remove tags: ' + error.message, 'error');
-    }
+    });
   };
 
   const fetchAnalytics = async () => {
@@ -1337,7 +1389,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         fetchGenRequests();
       });
     } catch (err) {
-      showToast('Failed to retry: ' + err.message, 'error');
+      showToast(`Failed to retry: ${err.message}`, 'error');
     }
   };
 
@@ -1358,7 +1410,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setGenForm({ theme: '', difficulty: 'mixed', question_count: 10, special_instructions: '' });
       fetchGenRequests();
     } catch (err) {
-      showToast('Failed to submit request: ' + err.message, 'error');
+      showToast(`Failed to submit request: ${err.message}`, 'error');
     }
     setGenSubmitting(false);
   };
@@ -1397,7 +1449,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       await supabase.from('generation_requests').update({ questions_accepted: newAccepted.length }).eq('id', requestId);
       fetchCommissionerData();
     } catch (err) {
-      showToast('Failed to add question: ' + err.message, 'error');
+      showToast(`Failed to add question: ${err.message}`, 'error');
     }
   };
 
@@ -1443,7 +1495,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       await supabase.from('generation_requests').update({ questions_accepted: newAccepted.length }).eq('id', req.id);
       fetchCommissionerData();
     } catch (err) {
-      showToast('Failed to add questions: ' + err.message, 'error');
+      showToast(`Failed to add questions: ${err.message}`, 'error');
     }
   };
 
@@ -1506,7 +1558,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       fetchCommissionerData();
       fetchCategoryCounts();
     } catch (err) {
-      showToast('Failed to add question: ' + err.message, 'error');
+      showToast(`Failed to add question: ${err.message}`, 'error');
     }
     setAddQSubmitting(false);
   };
@@ -1536,21 +1588,27 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       if (error) throw error;
       fetchCommissionerData();
     } catch (err) {
-      showToast('Failed to upload image: ' + err.message, 'error');
+      showToast(`Failed to upload image: ${err.message}`, 'error');
     }
     setMediaUploading(false);
   };
 
-  const handleRemoveImage = async (questionId) => {
-    if (!window.confirm('Remove image from this question?')) return;
-    const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { showToast('Failed to remove image: ' + error.message, 'error'); } else { fetchCommissionerData(); }
+  const handleRemoveImage = (questionId) => {
+    setConfirmDialog({
+      message: 'Remove image from this question?',
+      destructive: true,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        const { error } = await supabase.from('community_questions').update({ image_url: null }).eq('id', questionId).eq('community_id', communityId);
+        if (error) { showToast(`Failed to remove image: ${error.message}`, 'error'); } else { fetchCommissionerData(); }
+      }
+    });
   };
 
   const handleSaveVideoUrl = async (questionId, url) => {
     if (url && !isValidYouTubeUrl(url)) { showToast('Invalid YouTube URL. Use youtube.com/watch?v=... or youtu.be/... format.', 'error'); return; }
     const { error } = await supabase.from('community_questions').update({ video_url: url || null }).eq('id', questionId).eq('community_id', communityId);
-    if (error) { showToast('Failed to save video URL: ' + error.message, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); }
+    if (error) { showToast(`Failed to save video URL: ${error.message}`, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); }
   };
 
   // --- Media Library handlers ---
@@ -1604,7 +1662,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       showToast('Image uploaded to library!');
       fetchMediaLibrary();
     } catch (err) {
-      showToast('Upload failed: ' + err.message, 'error');
+      showToast(`Upload failed: ${err.message}`, 'error');
     }
     setMediaUploadingLib(false);
   };
@@ -1627,28 +1685,34 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       showToast('Video added to library!');
       fetchMediaLibrary();
     } catch (err) {
-      showToast('Failed to add video: ' + err.message, 'error');
+      showToast(`Failed to add video: ${err.message}`, 'error');
     }
   };
 
-  const handleMediaLibraryDelete = async (item) => {
+  const handleMediaLibraryDelete = (item) => {
     const usage = getMediaUsageCount(item.file_url);
     const msg = usage > 0
       ? `This media is used by ${usage} question(s). Deleting it will NOT remove it from those questions. Continue?`
       : 'Delete this media asset?';
-    if (!window.confirm(msg)) return;
-    try {
-      if (item.storage_path) {
-        await supabase.storage.from('community-media').remove([item.storage_path]);
+    setConfirmDialog({
+      message: msg,
+      destructive: true,
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          if (item.storage_path) {
+            await supabase.storage.from('community-media').remove([item.storage_path]);
+          }
+          const { error } = await supabase.from('media_library').delete().eq('id', item.id);
+          if (error) throw error;
+          showToast('Media deleted.');
+          fetchMediaLibrary();
+          if (mediaPreviewItem?.id === item.id) setMediaPreviewItem(null);
+        } catch (err) {
+          showToast(`Delete failed: ${err.message}`, 'error');
+        }
       }
-      const { error } = await supabase.from('media_library').delete().eq('id', item.id);
-      if (error) throw error;
-      showToast('Media deleted.');
-      fetchMediaLibrary();
-      if (mediaPreviewItem?.id === item.id) setMediaPreviewItem(null);
-    } catch (err) {
-      showToast('Delete failed: ' + err.message, 'error');
-    }
+    });
   };
 
   const filteredMediaLibrary = mediaLibrary.filter(item => {
@@ -1673,7 +1737,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         body: annForm.body.trim(),
         pinned: annForm.pinned
       }]);
-      if (error) { showToast('Failed to post: ' + error.message, 'error'); return; }
+      if (error) { showToast(`Failed to post: ${error.message}`, 'error'); return; }
       setAnnForm({ title: '', body: '', pinned: false });
       fetchAnnouncements();
     } catch (error) {
@@ -1693,7 +1757,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         pinned: annEditForm.pinned,
         updated_at: new Date().toISOString()
       }).eq('id', id);
-      if (error) { showToast('Failed to update: ' + error.message, 'error'); return; }
+      if (error) { showToast(`Failed to update: ${error.message}`, 'error'); return; }
       setAnnEditing(null);
       fetchAnnouncements();
     } catch (error) {
@@ -1701,15 +1765,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     }
   };
 
-  const handleDeleteAnnouncement = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
-    try {
-      const { error } = await supabase.from('community_announcements').delete().eq('id', id);
-      if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
-      fetchAnnouncements();
-    } catch (error) {
-      console.error('Error deleting announcement:', error);
-    }
+  const handleDeleteAnnouncement = (id) => {
+    setConfirmDialog({
+      message: 'Are you sure you want to delete this announcement?',
+      destructive: true,
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('community_announcements').delete().eq('id', id);
+          if (error) { showToast(`Failed to delete: ${error.message}`, 'error'); return; }
+          fetchAnnouncements();
+        } catch (error) {
+          console.error('Error deleting announcement:', error);
+        }
+      }
+    });
   };
 
   const handleTogglePin = async (id, currentPinned) => {
@@ -1718,7 +1788,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         pinned: !currentPinned,
         updated_at: new Date().toISOString()
       }).eq('id', id);
-      if (error) { showToast('Failed to update: ' + error.message, 'error'); return; }
+      if (error) { showToast(`Failed to update: ${error.message}`, 'error'); return; }
       fetchAnnouncements();
     } catch (error) {
       console.error('Error toggling pin:', error);
@@ -1903,14 +1973,18 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             <div className="commissioner-section">
               <h2>Post Announcement</h2>
               <div className="ann-form">
+                <label htmlFor="ann-title" className="sr-only">Announcement title</label>
                 <input
+                  id="ann-title"
                   type="text"
                   className="ann-title-input"
                   placeholder="Announcement title"
                   value={annForm.title}
                   onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
                 />
+                <label htmlFor="ann-body" className="sr-only">Announcement body</label>
                 <textarea
+                  id="ann-body"
                   className="ann-body-input"
                   placeholder="Write your announcement..."
                   value={annForm.body}
@@ -2029,7 +2103,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 <>
                   <div className="search-section">
                     <div className="search-input-wrapper">
+                      <label htmlFor="q-search" className="sr-only">Search questions</label>
                       <input
+                        id="q-search"
                         type="text"
                         className="search-input"
                         placeholder="Search questions, answers, or categories..."
@@ -2245,7 +2321,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                       <div className="media-upload-row">
                                         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id={`img-upload-${question.id}`} style={{ display: 'none' }} onChange={(e) => { if (e.target.files[0]) handleImageUpload(question.id, e.target.files[0]); }} />
                                         <label htmlFor={`img-upload-${question.id}`} className="btn-secondary media-upload-btn">{mediaUploading ? 'Uploading...' : 'Upload Image'}</label>
-                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('image'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ image_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast('Failed: ' + error.message, 'error'); } else { fetchCommissionerData(); } }); }}>Browse Library</button>
+                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('image'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ image_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast(`Failed: ${error.message}`, 'error'); } else { fetchCommissionerData(); } }); }}>Browse Library</button>
                                         <span className="media-hint">PNG, JPEG, WebP, GIF — max 500KB</span>
                                       </div>
                                     )}
@@ -2262,7 +2338,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                       <div className="media-upload-row">
                                         <input type="text" className="media-video-input" placeholder="https://www.youtube.com/watch?v=..." onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(question.id, e.target.value); }} />
                                         <button className="btn-secondary" onClick={(e) => { const input = e.target.previousElementSibling; handleSaveVideoUrl(question.id, input.value); }}>Save</button>
-                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('video'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ video_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast('Failed: ' + error.message, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); } }); }}>Browse Library</button>
+                                        <button className="btn-secondary ml-browse-btn" onClick={() => { const qId = question.id; setMediaBrowseTarget('video'); setMediaBrowseCallback(() => async (url) => { const { error } = await supabase.from('community_questions').update({ video_url: url }).eq('id', qId).eq('community_id', communityId); if (error) { showToast(`Failed: ${error.message}`, 'error'); } else { fetchCommissionerData(); setEditingMediaId(null); } }); }}>Browse Library</button>
                                       </div>
                                     )}
                                   </div>
@@ -2658,22 +2734,22 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
               {editMode ? (
                 <div className="settings-edit-form">
                   <div className="form-group">
-                    <label>Community Name</label>
-                    <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                    <label htmlFor="setting-name">Community Name</label>
+                    <input id="setting-name" type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Season Start Date</label>
-                      <input type="date" value={editForm.season_start} onChange={(e) => setEditForm({ ...editForm, season_start: e.target.value })} />
+                      <label htmlFor="setting-season-start">Season Start Date</label>
+                      <input id="setting-season-start" type="date" value={editForm.season_start} onChange={(e) => setEditForm({ ...editForm, season_start: e.target.value })} />
                     </div>
                     <div className="form-group">
-                      <label>Season End Date</label>
-                      <input type="date" value={editForm.season_end} onChange={(e) => setEditForm({ ...editForm, season_end: e.target.value })} />
+                      <label htmlFor="setting-season-end">Season End Date</label>
+                      <input id="setting-season-end" type="date" value={editForm.season_end} onChange={(e) => setEditForm({ ...editForm, season_end: e.target.value })} />
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>Max Members</label>
-                    <input type="number" value={editForm.max_members} onChange={(e) => setEditForm({ ...editForm, max_members: parseInt(e.target.value) })} min="1" max="200" />
+                    <label htmlFor="setting-max-members">Max Members</label>
+                    <input id="setting-max-members" type="number" value={editForm.max_members} onChange={(e) => setEditForm({ ...editForm, max_members: parseInt(e.target.value) })} min="1" max="200" />
                   </div>
                   <div className="form-group">
                     <label style={{display:'flex', alignItems:'center', gap:'12px'}}>
@@ -2694,8 +2770,9 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                     </label>
                   </div>
                   <div className="form-group">
-                    <label>Community Description</label>
+                    <label htmlFor="setting-description">Community Description</label>
                     <textarea
+                      id="setting-description"
                       value={editForm.description}
                       onChange={(e) => { if (e.target.value.length <= 300) setEditForm({ ...editForm, description: e.target.value }); }}
                       placeholder="Describe your community for the marketplace..."
@@ -3839,6 +3916,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmModal
+          message={confirmDialog.message}
+          confirmLabel={confirmDialog.confirmLabel}
+          destructive={confirmDialog.destructive}
+          onConfirm={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );
