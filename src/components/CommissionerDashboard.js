@@ -187,31 +187,38 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
 
   const fetchCommissionerData = async () => {
     try {
-      const { data: communityData } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('id', communityId)
-        .single();
-
-      // Fetch current user's community membership for role check
-      const { data: myMembership } = await supabase
-        .from('community_members')
-        .select('role')
-        .eq('community_id', communityId)
-        .eq('user_id', currentUserId)
-        .single();
+      // --- Authorization gate: check BEFORE fetching any sensitive data ---
+      const [{ data: authCheck }, { data: myMembership }] = await Promise.all([
+        supabase
+          .from('communities')
+          .select('commissioner_id')
+          .eq('id', communityId)
+          .single(),
+        supabase
+          .from('community_members')
+          .select('role')
+          .eq('community_id', communityId)
+          .eq('user_id', currentUserId)
+          .single()
+      ]);
 
       const myRole = myMembership?.role || null;
       setUserCommunityRole(myRole);
 
-      // Also check legacy commissioner_id for backward compatibility
-      const isLegacyCommissioner = communityData.commissioner_id === currentUserId;
+      const isLegacyCommissioner = authCheck?.commissioner_id === currentUserId;
 
       if (!hasCommunityRole(myRole, 'moderator') && !isLegacyCommissioner) {
         showToast('You are not authorized to access this page', 'error');
         onBack();
         return;
       }
+
+      // --- Authorized: now fetch full community data ---
+      const { data: communityData } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', communityId)
+        .single();
 
       setCommunity(communityData);
 
@@ -1398,6 +1405,8 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     if (!addQForm.difficulty) errors.push('Difficulty is required');
     if (addQForm.video_url.trim() && !isValidYouTubeUrl(addQForm.video_url.trim())) errors.push('Invalid YouTube URL format');
     if (addQImageFile && addQImageFile.size > 500 * 1024) errors.push('Image must be under 500KB');
+    const allowedImageTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (addQImageFile && !allowedImageTypes.includes(addQImageFile.type)) errors.push('Invalid file type. Use PNG, JPEG, WebP, or GIF.');
     setAddQErrors(errors);
     if (errors.length > 0) return;
 
@@ -1406,7 +1415,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       let imageUrl = null;
       if (addQImageFile) {
         const path = `${communityId}/${Date.now()}-${addQImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const { error: uploadError } = await supabase.storage.from('question-images').upload(path, addQImageFile);
+        const { error: uploadError } = await supabase.storage.from('question-images').upload(path, addQImageFile, { contentType: addQImageFile.type });
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(path);
         imageUrl = urlData.publicUrl;
