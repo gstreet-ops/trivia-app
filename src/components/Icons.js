@@ -231,3 +231,15 @@ export const CodeIcon = ({ size = 18, color = 'currentColor' }) => (
     <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
   </svg>
 );
+
+export const CrownIcon = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 20h20" /><path d="M4 17l2-12 6 5 6-5 2 12H4z" />
+  </svg>
+);
+
+export const UsersGroupIcon = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);

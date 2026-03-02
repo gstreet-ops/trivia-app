@@ -30,5 +30,13 @@ export const checkAchievements = async (userId, supabase, { publicOnly = false }
   const perfectCount = games.filter(g => g.total_questions > 0 && g.score === g.total_questions).length;
   if (perfectCount >= 3) earnedBadges.push('triple_perfect');
 
+  // Community Champion: 25+ community games
+  const communityGames = games.filter(g => g.community_id != null).length;
+  if (communityGames >= 25) earnedBadges.push('community_champion');
+
+  // Grand Master: earned all 6 original badges (must be last — depends on above checks)
+  const originalBadges = ['perfect_score', 'five_games', 'ten_games', 'category_master', 'speed_demon', 'triple_perfect'];
+  if (originalBadges.every(b => earnedBadges.includes(b))) earnedBadges.push('grand_master');
+
   return earnedBadges;
 };

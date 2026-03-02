@@ -183,8 +183,8 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 ## Trivia Platform Backlog
 
 ### Near-term
-- [ ] Grand Master badge — earn all 6 badges
-- [ ] Community engagement badge — play X community games
+- [x] Grand Master badge — earn all 6 original badges
+- [x] Community Champion badge — play 25 community games
 
 ### Medium-term
 - [ ] Member question submissions with approval flow
