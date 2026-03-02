@@ -19,6 +19,7 @@ import CommunityMarketplace from './components/CommunityMarketplace';
 import HelpCenter from './components/HelpCenter';
 import MyStats from './components/MyStats';
 import MultiplayerLobby from './components/MultiplayerLobby';
+import ScheduledQuizPlay from './components/ScheduledQuizPlay';
 import NotificationBell from './components/NotificationBell';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -29,7 +30,7 @@ const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
   'community', 'createQuestion', 'quizConfig', 'quiz',
   'review', 'communityDetail', 'commissionerDashboard', 'userProfile',
-  'marketplace', 'multiplayer', 'resetPassword', 'terms', 'privacy'
+  'marketplace', 'multiplayer', 'scheduledQuiz', 'resetPassword', 'terms', 'privacy'
 ]);
 
 function parseHash(hash) {
@@ -109,6 +110,7 @@ function App() {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [appToast, setAppToast] = useState(null);
+  const [scheduledQuizId, setScheduledQuizId] = useState(null);
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -176,6 +178,7 @@ function App() {
     if (params.username != null) setViewUsername(params.username);
     if (params.returnScreen != null) setUserProfileReturn(params.returnScreen);
     if (params.quizConfig != null) setQuizConfig(params.quizConfig);
+    if (params.scheduledQuizId != null) setScheduledQuizId(params.scheduledQuizId);
 
     // Build hash: screen + optional ID param
     let hash = screenName;
@@ -192,7 +195,7 @@ function App() {
     const { screen: hashScreen, param } = parseHash(window.location.hash);
 
     // Quiz config and multiplayer lobby can't be restored on refresh — redirect to dashboard
-    if (hashScreen === 'quiz' || hashScreen === 'multiplayer') {
+    if (hashScreen === 'quiz' || hashScreen === 'multiplayer' || hashScreen === 'scheduledQuiz') {
       window.location.hash = 'dashboard';
       setScreen('dashboard');
       return;
@@ -614,6 +617,15 @@ function App() {
           onBack={() => navigateTo('communities')}
           onStartQuiz={(commId) => navigateTo('quizConfig', { communityId: commId })}
           onManageCommunity={(commId) => navigateTo('commissionerDashboard', { communityId: commId })}
+          onPlayScheduledQuiz={(sqId) => navigateTo('scheduledQuiz', { scheduledQuizId: sqId })}
+        />
+      )}
+      {screen === 'scheduledQuiz' && scheduledQuizId && (
+        <ScheduledQuizPlay
+          quizId={scheduledQuizId}
+          user={session.user}
+          username={appUsername}
+          onBack={() => navigateTo('communityDetail')}
         />
       )}
       {screen === 'commissionerDashboard' && (

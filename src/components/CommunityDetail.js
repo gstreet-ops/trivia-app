@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './CommunityDetail.css';
 import CommunityChat from './CommunityChat';
-import { SettingsIcon, PinIcon, TrophyIcon, UsersIcon, FileIcon, MessageIcon } from './Icons';
+import { SettingsIcon, PinIcon, TrophyIcon, UsersIcon, FileIcon, MessageIcon, CalendarIcon } from './Icons';
 import { hasCommunityRole } from '../utils/permissions';
 
-function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQuiz, onManageCommunity }) {
+function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQuiz, onManageCommunity, onPlayScheduledQuiz }) {
   const [community, setCommunity] = useState(null);
   const [members, setMembers] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -18,6 +18,7 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [userCommunityRole, setUserCommunityRole] = useState(null);
+  const [scheduledQuizzes, setScheduledQuizzes] = useState([]);
 
   useEffect(() => {
     fetchCommunityData();
@@ -118,6 +119,21 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
           .limit(10);
         setRecentActivity(activityData || []);
       }
+
+      // Fetch scheduled quizzes + auto-transition statuses
+      const now = new Date().toISOString();
+      const { data: toActivate } = await supabase.from('scheduled_quizzes').select('id').eq('community_id', communityId).eq('status', 'scheduled').lte('starts_at', now);
+      if (toActivate?.length) await supabase.from('scheduled_quizzes').update({ status: 'live', updated_at: now }).in('id', toActivate.map(q => q.id));
+      const { data: toComplete } = await supabase.from('scheduled_quizzes').select('id').eq('community_id', communityId).eq('status', 'live').lte('ends_at', now);
+      if (toComplete?.length) await supabase.from('scheduled_quizzes').update({ status: 'completed', updated_at: now }).in('id', toComplete.map(q => q.id));
+
+      const { data: sqData } = await supabase
+        .from('scheduled_quizzes')
+        .select('*, scheduled_quiz_attempts!left(id, user_id, score, total_questions, completed_at)')
+        .eq('community_id', communityId)
+        .in('status', ['scheduled', 'live'])
+        .order('starts_at', { ascending: true });
+      setScheduledQuizzes(sqData || []);
     } catch (error) {
       console.error('Error fetching community:', error);
       setFetchError('Failed to load community data. Please try again.');
@@ -237,6 +253,56 @@ function CommunityDetail({ communityId, currentUserId, session, onBack, onStartQ
               View all {announcements.length} announcements
             </button>
           )}
+        </div>
+      )}
+
+      {/* Scheduled Quizzes — Live & Upcoming */}
+      {scheduledQuizzes.length > 0 && (
+        <div style={{ marginBottom: '16px' }}>
+          {scheduledQuizzes.filter(q => q.status === 'live').map(q => {
+            const myAttempt = (q.scheduled_quiz_attempts || []).find(a => a.user_id === currentUserId && a.completed_at);
+            return (
+              <div key={q.id} style={{ padding: '16px', borderRadius: '10px', border: '2px solid #059669', background: '#F0FDF4', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#059669', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                  <strong style={{ color: '#041E42', fontSize: '1rem' }}>{q.title}</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Live Now</span>
+                </div>
+                {q.description && <p style={{ fontSize: '0.8125rem', color: '#54585A', margin: '0 0 10px' }}>{q.description}</p>}
+                <div style={{ fontSize: '0.8125rem', color: '#6B7280', marginBottom: '10px' }}>
+                  {q.category} · {q.difficulty} · {q.question_count} questions · Ends {new Date(q.ends_at).toLocaleString()}
+                </div>
+                {myAttempt ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', fontWeight: 600, fontSize: '0.875rem' }}>
+                    ✓ Completed — {myAttempt.score}/{myAttempt.total_questions}
+                  </div>
+                ) : (
+                  <button className="start-community-quiz-btn" style={{ margin: 0, background: '#059669' }} onClick={() => onPlayScheduledQuiz && onPlayScheduledQuiz(q.id)}>
+                    Play Now
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {scheduledQuizzes.filter(q => q.status === 'scheduled').slice(0, 2).map(q => {
+            const startsAt = new Date(q.starts_at);
+            const diff = startsAt - new Date();
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            const countdown = diff > 0 ? `${days > 0 ? days + 'd ' : ''}${hours}h ${mins}m` : 'Starting soon';
+            return (
+              <div key={q.id} style={{ padding: '14px 16px', borderRadius: '10px', border: '1px solid #E5E7EB', background: '#FFFFFF', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <CalendarIcon size={16} />
+                  <strong style={{ color: '#041E42' }}>{q.title}</strong>
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: '#6B7280' }}>
+                  {q.category} · {q.difficulty} · {q.question_count} questions · Starts in <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#041E42' }}>{countdown}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

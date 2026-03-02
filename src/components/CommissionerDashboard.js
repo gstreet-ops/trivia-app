@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
-import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon, CodeIcon, ShieldIcon } from './Icons';
+import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon, CodeIcon, ShieldIcon, CalendarIcon } from './Icons';
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 import EmbedConfigurator from './EmbedConfigurator';
 import ConfirmModal from './ConfirmModal';
@@ -129,6 +129,13 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [expandedArchive, setExpandedArchive] = useState(null);
   const [seasonStats, setSeasonStats] = useState({ gamesThisSeason: 0, activePlayers: 0, topPlayer: null });
 
+  // Scheduled Quizzes state
+  const [scheduledQuizzes, setScheduledQuizzes] = useState([]);
+  const [scheduleForm, setScheduleForm] = useState({ title: '', description: '', starts_at: '', duration: '24', category: 'Random/Mixed', difficulty: 'mixed', question_count: 10, timer_seconds: 30, question_source: 'community', curated_question_ids: [], notify: true });
+  const [scheduleCreating, setScheduleCreating] = useState(false);
+  const [scheduleSearch, setScheduleSearch] = useState('');
+  const [scheduleResults, setScheduleResults] = useState(null);
+
   // Add Question form state
   const [addQForm, setAddQForm] = useState({ question_text: '', correct_answer: '', incorrect_1: '', incorrect_2: '', incorrect_3: '', category: '', difficulty: 'medium', tags: '', image_url: '', video_url: '', explanation: '' });
   const [addQErrors, setAddQErrors] = useState([]);
@@ -144,6 +151,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     fetchGenRequests();
     fetchSeasonData();
     fetchMediaLibrary();
+    fetchScheduledQuizzes();
     fetchCategoryCounts();
   }, [communityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1686,6 +1694,82 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setMediaLibraryLoading(false);
   };
 
+  // ─── Scheduled Quizzes ────────────────────────────────────────────
+  const fetchScheduledQuizzes = async () => {
+    // Auto-transition statuses on fetch
+    const now = new Date().toISOString();
+    const { data: toActivate } = await supabase.from('scheduled_quizzes').select('id').eq('community_id', communityId).eq('status', 'scheduled').lte('starts_at', now);
+    if (toActivate?.length) await supabase.from('scheduled_quizzes').update({ status: 'live', updated_at: now }).in('id', toActivate.map(q => q.id));
+    const { data: toComplete } = await supabase.from('scheduled_quizzes').select('id').eq('community_id', communityId).eq('status', 'live').lte('ends_at', now);
+    if (toComplete?.length) await supabase.from('scheduled_quizzes').update({ status: 'completed', updated_at: now }).in('id', toComplete.map(q => q.id));
+
+    const { data } = await supabase.from('scheduled_quizzes').select('*').eq('community_id', communityId).order('starts_at', { ascending: false });
+    setScheduledQuizzes(data || []);
+  };
+
+  const handleCreateScheduledQuiz = async () => {
+    if (!scheduleForm.title.trim() || !scheduleForm.starts_at) { showToast('Title and start time are required', 'error'); return; }
+    const startsAt = new Date(scheduleForm.starts_at);
+    if (startsAt <= new Date()) { showToast('Start time must be in the future', 'error'); return; }
+    setScheduleCreating(true);
+
+    const durationHours = { '1': 1, '4': 4, '12': 12, '24': 24, '48': 48, '168': 168 };
+    const hours = durationHours[scheduleForm.duration] || 24;
+    const endsAt = new Date(startsAt.getTime() + hours * 3600000);
+
+    const qCount = scheduleForm.question_source === 'curated' ? scheduleForm.curated_question_ids.length : scheduleForm.question_count;
+    if (qCount < 3) { showToast('At least 3 questions required', 'error'); setScheduleCreating(false); return; }
+
+    const { error } = await supabase.from('scheduled_quizzes').insert({
+      community_id: communityId, created_by: currentUserId, title: scheduleForm.title.trim(),
+      description: scheduleForm.description.trim() || null, category: scheduleForm.category,
+      difficulty: scheduleForm.difficulty, question_count: qCount, timer_seconds: scheduleForm.timer_seconds,
+      question_source: scheduleForm.question_source,
+      curated_question_ids: scheduleForm.question_source === 'curated' ? scheduleForm.curated_question_ids : [],
+      starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(),
+    });
+
+    if (error) { showToast('Failed to create quiz: ' + error.message, 'error'); setScheduleCreating(false); return; }
+
+    // Send notifications to all members
+    if (scheduleForm.notify) {
+      const { data: membersList } = await supabase.from('community_members').select('user_id').eq('community_id', communityId);
+      if (membersList?.length) {
+        const notifications = membersList.filter(m => m.user_id !== currentUserId).map(m => ({
+          user_id: m.user_id, type: 'scheduled_quiz', title: 'Quiz Night Scheduled!',
+          message: `${scheduleForm.title.trim()} starts ${startsAt.toLocaleDateString()} at ${startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Don't miss it!`,
+          link_screen: `communityDetail/${communityId}`,
+        }));
+        if (notifications.length) await supabase.from('notifications').insert(notifications);
+      }
+    }
+
+    setScheduleForm({ title: '', description: '', starts_at: '', duration: '24', category: 'Random/Mixed', difficulty: 'mixed', question_count: 10, timer_seconds: 30, question_source: 'community', curated_question_ids: [], notify: true });
+    await fetchScheduledQuizzes();
+    showToast('Scheduled quiz created!', 'success');
+    setScheduleCreating(false);
+  };
+
+  const handleCancelScheduledQuiz = async (quizId) => {
+    await supabase.from('scheduled_quizzes').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', quizId);
+    await fetchScheduledQuizzes();
+    showToast('Quiz cancelled', 'success');
+  };
+
+  const handleGoLiveEarly = async (quizId) => {
+    await supabase.from('scheduled_quizzes').update({ status: 'live', updated_at: new Date().toISOString() }).eq('id', quizId);
+    await fetchScheduledQuizzes();
+    showToast('Quiz is now live!', 'success');
+  };
+
+  const handleViewScheduleResults = async (quizId) => {
+    if (scheduleResults === quizId) { setScheduleResults(null); return; }
+    const { data } = await supabase.from('scheduled_quiz_attempts').select('*, profiles(username)').eq('quiz_id', quizId).not('completed_at', 'is', null).order('score', { ascending: false }).order('time_taken_ms', { ascending: true }).limit(10);
+    setScheduleResults(quizId);
+    // store temporarily — reuse scheduleSearch as a hack would be messy, let's just store in a state-like way
+    setScheduledQuizzes(prev => prev.map(q => q.id === quizId ? { ...q, _results: data || [] } : q));
+  };
+
   const getMediaUsageCount = (fileUrl) => {
     return questions.filter(q => q.image_url === fileUrl || q.video_url === fileUrl).length;
   };
@@ -1939,6 +2023,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 canManageQuestions(userCommunityRole) && { id: 'media', label: `Media (${mediaLibrary.length})`, icon: <ImageIcon size={16} /> },
                 canManageMembers(userCommunityRole) && { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
                 canViewRoles(userCommunityRole) && { id: 'roles', label: 'Roles', icon: <ShieldIcon size={16} /> },
+                canManageSettings(userCommunityRole) && { id: 'scheduled', label: 'Scheduled Quizzes', icon: <CalendarIcon size={16} /> },
                 canManageSettings(userCommunityRole) && { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
                 canViewAnalytics(userCommunityRole) && { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> },
                 canManageSettings(userCommunityRole) && { id: 'embed', label: 'Embed', icon: <CodeIcon size={16} /> }
@@ -2777,6 +2862,218 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
         {activeTab === 'roles' && canViewRoles(userCommunityRole) && (
           <div className="tab-pane">
             <RolesTab communityId={communityId} currentUserId={currentUserId} userRole={userCommunityRole} showToast={showToast} />
+          </div>
+        )}
+
+        {/* SCHEDULED QUIZZES TAB */}
+        {activeTab === 'scheduled' && canManageSettings(userCommunityRole) && (
+          <div className="tab-pane">
+            <div className="commissioner-section">
+              <div className="section-header"><h2><CalendarIcon size={20} /> Scheduled Quizzes</h2></div>
+
+              {/* Create form */}
+              <div style={{ background: '#F9FAFB', borderRadius: '10px', padding: '20px', marginBottom: '24px', border: '1px solid #E5E7EB' }}>
+                <h3 style={{ margin: '0 0 16px', color: '#041E42', fontSize: '1rem' }}>Schedule a Quiz Night</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Title *</label>
+                    <input className="form-input" placeholder="Friday Quiz Night" value={scheduleForm.title} onChange={e => setScheduleForm(f => ({ ...f, title: e.target.value }))} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Description</label>
+                    <textarea className="form-input" rows={2} placeholder="Optional description shown to members" value={scheduleForm.description} onChange={e => setScheduleForm(f => ({ ...f, description: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="form-label">Start Date & Time *</label>
+                    <input className="form-input" type="datetime-local" value={scheduleForm.starts_at} onChange={e => setScheduleForm(f => ({ ...f, starts_at: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="form-label">Duration</label>
+                    <select className="form-input" value={scheduleForm.duration} onChange={e => setScheduleForm(f => ({ ...f, duration: e.target.value }))}>
+                      <option value="1">1 hour</option><option value="4">4 hours</option><option value="12">12 hours</option>
+                      <option value="24">24 hours (default)</option><option value="48">48 hours</option><option value="168">1 week</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Category</label>
+                    <select className="form-input" value={scheduleForm.category} onChange={e => setScheduleForm(f => ({ ...f, category: e.target.value }))}>
+                      {['Random/Mixed', 'General Knowledge', 'Science', 'History', 'Geography', 'Entertainment', 'Sports', 'Art & Literature', 'Technology'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Difficulty</label>
+                    <select className="form-input" value={scheduleForm.difficulty} onChange={e => setScheduleForm(f => ({ ...f, difficulty: e.target.value }))}>
+                      <option value="mixed">Mixed</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Questions</label>
+                    <select className="form-input" value={scheduleForm.question_count} onChange={e => setScheduleForm(f => ({ ...f, question_count: Number(e.target.value) }))}>
+                      {[5, 10, 15, 20].map(n => <option key={n} value={n}>{n} questions</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Timer per Question</label>
+                    <select className="form-input" value={scheduleForm.timer_seconds} onChange={e => setScheduleForm(f => ({ ...f, timer_seconds: Number(e.target.value) }))}>
+                      {[15, 20, 30, 45, 60].map(n => <option key={n} value={n}>{n} seconds</option>)}
+                    </select>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Question Source</label>
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                      {[{ v: 'community', l: 'Random from community bank' }, { v: 'api', l: 'Random from Trivia API' }, { v: 'curated', l: 'Hand-pick questions' }].map(opt => (
+                        <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', cursor: 'pointer' }}>
+                          <input type="radio" name="qsource" checked={scheduleForm.question_source === opt.v} onChange={() => setScheduleForm(f => ({ ...f, question_source: opt.v }))} /> {opt.l}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {scheduleForm.question_source === 'curated' && (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label className="form-label">Select Questions ({scheduleForm.curated_question_ids.length} selected)</label>
+                      <input className="form-input" placeholder="Search questions..." value={scheduleSearch} onChange={e => setScheduleSearch(e.target.value)} style={{ marginBottom: '8px' }} />
+                      <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '6px', background: '#FFFFFF' }}>
+                        {questions.filter(q => !scheduleSearch || q.question_text?.toLowerCase().includes(scheduleSearch.toLowerCase())).slice(0, 50).map(q => (
+                          <label key={q.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderBottom: '1px solid #F3F4F6', cursor: 'pointer', fontSize: '0.8125rem' }}>
+                            <input type="checkbox" checked={scheduleForm.curated_question_ids.includes(q.id)} onChange={() => setScheduleForm(f => {
+                              const ids = f.curated_question_ids.includes(q.id) ? f.curated_question_ids.filter(id => id !== q.id) : [...f.curated_question_ids, q.id];
+                              return { ...f, curated_question_ids: ids };
+                            })} />
+                            <span style={{ color: '#374151' }}>{q.question_text}</span>
+                            <span style={{ marginLeft: 'auto', color: '#9CA3AF', fontSize: '0.75rem' }}>{q.category}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={scheduleForm.notify} onChange={e => setScheduleForm(f => ({ ...f, notify: e.target.checked }))} /> Notify all members
+                    </label>
+                  </div>
+                </div>
+                <button className="btn-primary" style={{ marginTop: '16px' }} onClick={handleCreateScheduledQuiz} disabled={scheduleCreating}>
+                  {scheduleCreating ? 'Creating...' : 'Schedule Quiz'}
+                </button>
+              </div>
+
+              {/* Quiz lists */}
+              {(() => {
+                const live = scheduledQuizzes.filter(q => q.status === 'live');
+                const upcoming = scheduledQuizzes.filter(q => q.status === 'scheduled').sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+                const past = scheduledQuizzes.filter(q => q.status === 'completed' || q.status === 'cancelled').slice(0, 10);
+                return (
+                  <>
+                    {/* Live Now */}
+                    {live.length > 0 && (
+                      <div style={{ marginBottom: '24px' }}>
+                        <h3 style={{ color: '#059669', fontSize: '1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#059669', display: 'inline-block', animation: 'pulse 2s infinite' }} /> Live Now
+                        </h3>
+                        {live.map(q => (
+                          <div key={q.id} style={{ padding: '14px 16px', borderRadius: '8px', border: '2px solid #059669', background: '#F0FDF4', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div>
+                                <strong style={{ color: '#041E42' }}>{q.title}</strong>
+                                <div style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '2px' }}>
+                                  {q.category} · {q.difficulty} · {q.question_count} questions · {q.participant_count || 0} players
+                                </div>
+                              </div>
+                              <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Ends {new Date(q.ends_at).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upcoming */}
+                    {upcoming.length > 0 && (
+                      <div style={{ marginBottom: '24px' }}>
+                        <h3 style={{ color: '#041E42', fontSize: '1rem', marginBottom: '12px' }}>Upcoming</h3>
+                        {upcoming.map(q => {
+                          const startsAt = new Date(q.starts_at);
+                          const diff = startsAt - new Date();
+                          const days = Math.floor(diff / 86400000);
+                          const hours = Math.floor((diff % 86400000) / 3600000);
+                          const mins = Math.floor((diff % 3600000) / 60000);
+                          const countdown = diff > 0 ? `${days > 0 ? days + 'd ' : ''}${hours}h ${mins}m` : 'Starting soon';
+                          return (
+                            <div key={q.id} style={{ padding: '14px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#FFFFFF', marginBottom: '8px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                <div>
+                                  <strong style={{ color: '#041E42' }}>{q.title}</strong>
+                                  <div style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '2px' }}>
+                                    {q.category} · {q.difficulty} · {q.question_count} questions · Starts {startsAt.toLocaleString()}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', color: '#041E42', fontWeight: 600 }}>{countdown}</span>
+                                  <button className="btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleGoLiveEarly(q.id)}>Go Live</button>
+                                  <button className="btn-danger" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleCancelScheduledQuiz(q.id)}>Cancel</button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Past */}
+                    {past.length > 0 && (
+                      <div>
+                        <h3 style={{ color: '#54585A', fontSize: '1rem', marginBottom: '12px' }}>Past Quizzes</h3>
+                        {past.map(q => (
+                          <div key={q.id} style={{ padding: '14px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#FAFAFA', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div>
+                                <strong style={{ color: '#374151' }}>{q.title}</strong>
+                                {q.status === 'cancelled' && <span style={{ marginLeft: '8px', fontSize: '0.6875rem', padding: '1px 8px', borderRadius: '10px', background: '#FEE2E2', color: '#991B1B' }}>Cancelled</span>}
+                                <div style={{ fontSize: '0.8125rem', color: '#9CA3AF', marginTop: '2px' }}>
+                                  {q.category} · {q.difficulty} · {q.question_count} questions · {q.participant_count || 0} players · {new Date(q.starts_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                              {q.status === 'completed' && (
+                                <button className="btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleViewScheduleResults(q.id)}>
+                                  {scheduleResults === q.id ? 'Hide Results' : 'View Results'}
+                                </button>
+                              )}
+                            </div>
+                            {scheduleResults === q.id && q._results && (
+                              <div style={{ marginTop: '12px', borderTop: '1px solid #E5E7EB', paddingTop: '12px' }}>
+                                {q._results.length === 0 ? <p style={{ fontSize: '0.8125rem', color: '#9CA3AF' }}>No results yet.</p> : (
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                                    <thead><tr style={{ borderBottom: '2px solid #E5E7EB' }}>
+                                      <th style={{ textAlign: 'left', padding: '4px 8px', color: '#6B7280' }}>#</th>
+                                      <th style={{ textAlign: 'left', padding: '4px 8px', color: '#6B7280' }}>Player</th>
+                                      <th style={{ textAlign: 'left', padding: '4px 8px', color: '#6B7280' }}>Score</th>
+                                      <th style={{ textAlign: 'left', padding: '4px 8px', color: '#6B7280' }}>Time</th>
+                                    </tr></thead>
+                                    <tbody>
+                                      {q._results.map((r, i) => (
+                                        <tr key={r.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                                          <td style={{ padding: '4px 8px' }}>{i + 1}</td>
+                                          <td style={{ padding: '4px 8px' }}>{r.profiles?.username || 'Anonymous'}</td>
+                                          <td style={{ padding: '4px 8px', fontWeight: 600 }}>{r.score}/{r.total_questions}</td>
+                                          <td style={{ padding: '4px 8px' }}>{r.time_taken_ms ? `${(r.time_taken_ms / 1000).toFixed(1)}s` : '—'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {live.length === 0 && upcoming.length === 0 && past.length === 0 && (
+                      <p style={{ color: '#9CA3AF', textAlign: 'center', padding: '32px 0' }}>No scheduled quizzes yet. Create one above!</p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
           </div>
         )}
 

@@ -30,6 +30,9 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `community_requests` | User requests for new community creation (admin approval) |
 | `email_integrations` | Email platform sync configs per community (Mailchimp, ConvertKit, Beehiiv, webhook) |
 | `email_sync_logs` | Sync attempt log for debugging email platform delivery |
+| `scheduled_quizzes` | Scheduled quiz events per community (Quiz Night) |
+| `scheduled_quiz_attempts` | Individual player attempts on scheduled quizzes |
+| `scheduled_quiz_answers` | Per-answer records for scheduled quiz attempts |
 
 ---
 
@@ -715,6 +718,86 @@ Log of each email platform sync attempt for debugging.
 - INSERT: open (service role inserts via Edge Function)
 
 **Queried by:** `IntegrationsTab.js`
+
+---
+
+### `scheduled_quizzes`
+
+Scheduled quiz events (Quiz Night) per community.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `created_by` | `uuid` | FK → `profiles.id` (commissioner who created) |
+| `title` | `text` | Quiz title (NOT NULL) |
+| `description` | `text` | Optional description shown to members |
+| `category` | `text` | Quiz category (default `'Random/Mixed'`) |
+| `difficulty` | `text` | `'easy'`, `'medium'`, `'hard'`, or `'mixed'` |
+| `question_count` | `integer` | Number of questions (3–25, default 10) |
+| `timer_seconds` | `integer` | Seconds per question (10–120, default 30) |
+| `question_source` | `text` | `'community'`, `'api'`, or `'curated'` |
+| `curated_question_ids` | `uuid[]` | Hand-picked question IDs (if source is curated) |
+| `starts_at` | `timestamptz` | When quiz goes live |
+| `ends_at` | `timestamptz` | When quiz closes |
+| `status` | `text` | `'scheduled'`, `'live'`, `'completed'`, or `'cancelled'` |
+| `participant_count` | `integer` | Number of completed attempts |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
+
+**RLS Policies:**
+- SELECT: community members
+- ALL: commissioners+ of the community
+
+**Queried by:** `CommissionerDashboard.js`, `CommunityDetail.js`, `ScheduledQuizPlay.js`
+
+---
+
+### `scheduled_quiz_attempts`
+
+Individual player attempts on scheduled quizzes. One attempt per user per quiz.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `quiz_id` | `uuid` | FK → `scheduled_quizzes.id` (CASCADE) |
+| `user_id` | `uuid` | FK → `profiles.id` |
+| `score` | `integer` | Number of correct answers (default 0) |
+| `total_questions` | `integer` | Total questions in this attempt |
+| `time_taken_ms` | `integer` | Total time to complete (nullable) |
+| `started_at` | `timestamptz` | When attempt began |
+| `completed_at` | `timestamptz` | When attempt finished (nullable) |
+
+**Constraints:** UNIQUE(quiz_id, user_id)
+
+**RLS Policies:**
+- SELECT: own attempts + commissioners can view all
+- INSERT/UPDATE: own attempts only
+
+**Queried by:** `ScheduledQuizPlay.js`, `CommissionerDashboard.js`
+
+---
+
+### `scheduled_quiz_answers`
+
+Per-answer records for scheduled quiz attempts.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `attempt_id` | `uuid` | FK → `scheduled_quiz_attempts.id` (CASCADE) |
+| `question_index` | `integer` | Question position (0-based) |
+| `question_text` | `text` | The question text |
+| `correct_answer` | `text` | The correct answer |
+| `user_answer` | `text` | What the user selected (nullable if timed out) |
+| `is_correct` | `boolean` | Whether the answer was correct |
+| `time_taken_ms` | `integer` | Time taken for this question |
+| `created_at` | `timestamptz` | Timestamp |
+
+**RLS Policies:**
+- ALL: own answers (via attempt ownership) + commissioners can view all
+
+**Queried by:** `ScheduledQuizPlay.js`
 
 ---
 

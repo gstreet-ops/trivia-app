@@ -193,7 +193,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 - [ ] Admin undo approve/reject
 
 ### Longer-term
-- [ ] Scheduled quizzes
+- [x] Scheduled quizzes — Quiz Night feature with commissioner scheduling, countdown, live play, leaderboard
 - [ ] Streak tracking with badges
 - [ ] Question difficulty voting
 - [ ] Mobile app (React Native)
