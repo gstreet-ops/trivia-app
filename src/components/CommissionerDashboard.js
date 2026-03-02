@@ -6,7 +6,7 @@ import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, 
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 import EmbedConfigurator from './EmbedConfigurator';
 import ConfirmModal from './ConfirmModal';
-import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership, canManageRoles, canViewRoles } from '../utils/permissions';
+import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership, canViewRoles } from '../utils/permissions';
 import RolesTab from './RolesTab';
 import { sendInvitationEmail } from '../utils/emailService';
 import { isSafeUrl } from '../utils/sanitizeUrl';

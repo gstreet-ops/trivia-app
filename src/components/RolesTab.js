@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
-import { PERMISSIONS, PERMISSION_CATEGORIES, hasCommunityRole, canManageRoles } from '../utils/permissions';
+import { PERMISSIONS, PERMISSION_CATEGORIES, canManageRoles } from '../utils/permissions';
 import { ShieldIcon } from './Icons';
 import './RolesTab.css';
 
@@ -139,7 +139,7 @@ export default function RolesTab({ communityId, currentUserId, userRole, showToa
     }
   }, [selectedRole]);
 
-  function togglePermission(key) {
+  function togglePermission(key) { // eslint-disable-line no-unused-vars
     setEditedPermissions(prev => {
       const next = { ...prev, [key]: !prev[key] };
       setHasChanges(JSON.stringify(next) !== JSON.stringify(selectedRole.permissions));
@@ -204,7 +204,7 @@ export default function RolesTab({ communityId, currentUserId, userRole, showToa
   }
 
   async function saveEditorRole() {
-    const { name, slug, description, color, hierarchy_level, permissions } = editorData;
+    const { name, description, color, hierarchy_level, permissions } = editorData;
     if (!name.trim()) { showToast('Name is required', 'error'); return; }
 
     setSaving(true);
