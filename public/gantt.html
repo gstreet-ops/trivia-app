@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GStreet Platform — Project Timeline</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#041E42;--gray:#54585A;--gray-light:#8B8F92;--blue:#2E86AB;--teal:#2CA58D;--purple:#A23B72;--orange:#F18F01;--red:#C41E3A;--gold:#B8860B;--bg:#F4F5F7;--border:#E2E5E9}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh}
+.header{background:var(--navy);padding:28px 40px 20px}
+.header h1{font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.header .subtitle{font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.header-stats{display:flex;gap:32px;margin-top:16px}
+.header-stat .num{font-size:26px;font-weight:700;color:#fff}
+.header-stat .label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>GStreet Platform — Project Timeline</h1>
+<div class="subtitle">gstreet-ops/trivia-app · Feb 7 – Mar 2, 2026</div>
+<div class="header-stats">
+<div class="header-stat"><div class="num">97</div><div class="label">Commits</div></div>
+<div class="header-stat"><div class="num">53</div><div class="label">Features</div></div>
+<div class="header-stat"><div class="num">14</div><div class="label">Dev Days</div></div>
+<div class="header-stat"><div class="num">27</div><div class="label">DB Tables</div></div>
+</div>
+</div>
+<div style="padding:16px 40px;display:flex;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--border)" id="controls"></div>
+<div style="padding:24px 40px 60px;overflow-x:auto"><div style="display:grid;grid-template-columns:260px 1fr;min-width:1100px" id="gantt"></div></div>
+<div style="padding:20px 40px;display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff" id="legend"></div>
+<script>
+const C={'Foundation':{c:'#041E42'},'Core Quiz':{c:'#2E86AB'},'Community':{c:'#2CA58D'},'Commissioner':{c:'#A23B72'},'Admin':{c:'#F18F01'},'Multiplayer':{c:'#C41E3A'},'Embed':{c:'#6C5CE7'},'Polish':{c:'#54585A'},'Security':{c:'#E17055'},'Permissions':{c:'#B8860B'}};
+const F=[
+{n:'Initial Setup & Auth',c:'Foundation',s:'2026-02-07',e:'2026-02-14',k:4},
+{n:'Supabase Schema & Triggers',c:'Foundation',s:'2026-02-14',e:'2026-02-15',k:3},
+{n:'Documentation Suite',c:'Foundation',s:'2026-02-17',e:'2026-02-17',k:1},
+{n:'GitHub Pages Deploy',c:'Foundation',s:'2026-02-14',e:'2026-02-14',k:1},
+{n:'PWA Support',c:'Foundation',s:'2026-02-24',e:'2026-02-24',k:1},
+{n:'Capacitor Android',c:'Foundation',s:'2026-03-01',e:'2026-03-01',k:1},
+{n:'Quiz Engine (API + Categories)',c:'Core Quiz',s:'2026-02-14',e:'2026-02-15',k:3},
+{n:'50/50 Hints & Timer',c:'Core Quiz',s:'2026-02-15',e:'2026-02-16',k:2},
+{n:'Question Explanations',c:'Core Quiz',s:'2026-02-24',e:'2026-02-25',k:3},
+{n:'Media Questions (Image + Video)',c:'Core Quiz',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Multi-Source Quiz Selector',c:'Core Quiz',s:'2026-02-15',e:'2026-02-15',k:1},
+{n:'Communities & Leagues',c:'Community',s:'2026-02-14',e:'2026-02-15',k:3},
+{n:'Community Detail & Leaderboard',c:'Community',s:'2026-02-15',e:'2026-02-16',k:3},
+{n:'Community Theming',c:'Community',s:'2026-02-24',e:'2026-02-24',k:1},
+{n:'Real-time Chat',c:'Community',s:'2026-02-24',e:'2026-02-24',k:1},
+{n:'Community Marketplace',c:'Community',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Dynamic Categories',c:'Community',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Community Feed',c:'Community',s:'2026-02-15',e:'2026-02-15',k:1},
+{n:'Commissioner Dashboard',c:'Commissioner',s:'2026-02-16',e:'2026-02-17',k:5},
+{n:'CSV Import/Export',c:'Commissioner',s:'2026-02-16',e:'2026-02-16',k:2},
+{n:'Question Tags & Templates',c:'Commissioner',s:'2026-02-16',e:'2026-02-17',k:2},
+{n:'Analytics Tab',c:'Commissioner',s:'2026-02-16',e:'2026-02-17',k:2},
+{n:'Season Reset & Archives',c:'Commissioner',s:'2026-02-24',e:'2026-02-24',k:2},
+{n:'Media Library',c:'Commissioner',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Question Generator (Prompt)',c:'Commissioner',s:'2026-02-25',e:'2026-02-25',k:3},
+{n:'AI Generation Request Flow',c:'Commissioner',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Announcements',c:'Commissioner',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Admin Dashboard',c:'Admin',s:'2026-02-15',e:'2026-02-16',k:2},
+{n:'Custom Question Review',c:'Admin',s:'2026-02-16',e:'2026-02-16',k:1},
+{n:'User Management & Roles',c:'Admin',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Community Requests Queue',c:'Admin',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Flagged Users (Bot Detection)',c:'Admin',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Multiplayer Rooms & Lobby',c:'Multiplayer',s:'2026-02-24',e:'2026-02-25',k:3},
+{n:'Live Game & Scoring',c:'Multiplayer',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Embed Configurator',c:'Embed',s:'2026-02-26',e:'2026-02-26',k:5},
+{n:'Embed Analytics',c:'Embed',s:'2026-02-26',e:'2026-02-26',k:1},
+{n:'Webhook Configuration',c:'Embed',s:'2026-02-26',e:'2026-02-26',k:1},
+{n:'Dark Mode',c:'Polish',s:'2026-02-24',e:'2026-02-24',k:1},
+{n:'SVG Icon System',c:'Polish',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Notification System',c:'Polish',s:'2026-02-24',e:'2026-02-24',k:1},
+{n:'Email System (Resend)',c:'Polish',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'Legal (ToS + Privacy)',c:'Polish',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Help Center',c:'Polish',s:'2026-02-19',e:'2026-02-19',k:1},
+{n:'Achievement Badges',c:'Polish',s:'2026-02-19',e:'2026-02-19',k:1},
+{n:'Code Review Round 1',c:'Security',s:'2026-02-24',e:'2026-02-24',k:4},
+{n:'Code Review Round 2',c:'Security',s:'2026-02-26',e:'2026-02-26',k:10},
+{n:'Critical Security Fixes',c:'Security',s:'2026-03-01',e:'2026-03-01',k:5},
+{n:'A11y Improvements',c:'Security',s:'2026-02-19',e:'2026-02-19',k:4},
+{n:'Bot Prevention',c:'Security',s:'2026-02-25',e:'2026-02-25',k:2},
+{n:'RLS Hardening',c:'Security',s:'2026-02-26',e:'2026-02-26',k:2},
+{n:'Role System Foundation',c:'Permissions',s:'2026-02-25',e:'2026-02-25',k:1},
+{n:'Granular Permissions Schema',c:'Permissions',s:'2026-03-02',e:'2026-03-02',k:1},
+{n:'Roles Tab UI',c:'Permissions',s:'2026-03-02',e:'2026-03-02',k:1},
+{n:'Members Tab Integration',c:'Permissions',s:'2026-03-02',e:'2026-03-02',k:1},
+];
+const MS=[{n:'First Commit',d:'2026-02-07'},{n:'MVP Live',d:'2026-02-14'},{n:'Commissioner Dashboard',d:'2026-02-17'},{n:'Multiplayer + Dark Mode',d:'2026-02-24'},{n:'Embed System',d:'2026-02-26'},{n:'Granular RBAC',d:'2026-03-02'}];
+const S=new Date('2026-02-07'),E=new Date('2026-03-03'),TD=Math.ceil((E-S)/864e5);
+function dO(ds){return Math.max(0,Math.ceil((new Date(ds)-S)/864e5))}
+function p(d){return(d/TD*100)+'%'}
+// Controls
+const ctrl=document.getElementById('controls');
+function mkBtn(t,cat){const b=document.createElement('button');b.textContent=t;b.dataset.cat=cat;b.style.cssText='padding:6px 14px;border:1px solid #E2E5E9;border-radius:20px;background:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:500;color:#54585A;cursor:pointer';if(cat==='all')b.style.cssText+='background:#041E42;color:#fff;border-color:#041E42';b.onmouseover=()=>{if(b.dataset.cat!==af)b.style.borderColor='#041E42'};b.onmouseout=()=>{if(b.dataset.cat!==af)b.style.borderColor='#E2E5E9'};return b}
+let af='all';
+const ab=mkBtn('All','all');ctrl.appendChild(ab);
+Object.keys(C).forEach(c=>{ctrl.appendChild(mkBtn(c,c))});
+ctrl.onclick=e=>{const b=e.target;if(!b.dataset||!b.dataset.cat)return;af=b.dataset.cat;ctrl.querySelectorAll('button').forEach(x=>{x.style.background=x.dataset.cat===af?'#041E42':'#fff';x.style.color=x.dataset.cat===af?'#fff':'#54585A';x.style.borderColor=x.dataset.cat===af?'#041E42':'#E2E5E9'});document.querySelectorAll('[data-row-cat]').forEach(r=>{r.style.display=(af==='all'||r.dataset.rowCat===af)?'':'none'});document.querySelectorAll('[data-phase-cat]').forEach(r=>{r.style.display=(af==='all'||r.dataset.phaseCat===af)?'':'none'})};
+// Gantt
+const g=document.getElementById('gantt');
+// Date header
+const hs=document.createElement('div');hs.style.cssText='grid-column:1;border-bottom:2px solid #041E42';g.appendChild(hs);
+const dh=document.createElement('div');dh.style.cssText='grid-column:2;display:flex;border-bottom:2px solid #041E42;margin-bottom:4px';
+const dates=[];let dd=new Date(S);while(dd<=E){dates.push(new Date(dd));dd.setDate(dd.getDate()+1)}
+const wks=[];dates.forEach((dt,i)=>{if(dt.getDay()===1||i===0)wks.push({d:dt,i:i})});
+wks.forEach((w,i)=>{const col=document.createElement('div');col.style.cssText='text-align:center;padding:8px 0;font-size:11px;font-weight:600;color:#54585A;font-family:JetBrains Mono,monospace;letter-spacing:0.3px;position:relative;border-right:1px solid #E2E5E9';col.textContent=w.d.toLocaleDateString('en-US',{month:'short',day:'numeric'});const ni=(i<wks.length-1)?wks[i+1].i:dates.length;col.style.flex=(ni-w.i);dh.appendChild(col)});
+g.appendChild(dh);
+// Milestones
+const mr1=document.createElement('div');mr1.style.cssText='padding:6px 12px 6px 0;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f1f3';mr1.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:#B8860B;flex-shrink:0"></span>Milestones';
+g.appendChild(mr1);
+const mr2=document.createElement('div');mr2.style.cssText='position:relative;border-bottom:1px solid #f0f1f3;height:36px';
+MS.forEach(m=>{const o=dO(m.d);const d=document.createElement('div');d.style.cssText='position:absolute;top:10px;width:12px;height:12px;background:#B8860B;transform:rotate(45deg);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);cursor:pointer;z-index:15';d.style.left=p(o);d.title=m.n+' — '+m.d;mr2.appendChild(d)});
+const tl=document.createElement('div');tl.style.cssText='position:absolute;top:0;bottom:0;width:2px;background:#C41E3A;z-index:20;pointer-events:none';tl.style.left=p(dO('2026-03-02'));mr2.appendChild(tl);
+g.appendChild(mr2);
+// Feature rows
+const grouped={};Object.keys(C).forEach(c=>{grouped[c]=[]});F.forEach(f=>{if(grouped[f.c])grouped[f.c].push(f)});
+Object.entries(grouped).forEach(([cat,features])=>{
+if(!features.length)return;
+const ci=C[cat];
+const lbl=document.createElement('div');lbl.style.cssText='grid-column:1/-1;padding:16px 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#8B8F92;border-bottom:1px solid #E2E5E9';lbl.dataset.phaseCat=cat;
+lbl.innerHTML='<span style="color:'+ci.c+'">●</span> '+cat+' <span style="font-weight:400;color:#8B8F92">('+features.length+' items, '+features.reduce((s,f)=>s+f.k,0)+' commits)</span>';
+g.appendChild(lbl);
+features.forEach(f=>{
+const rl=document.createElement('div');rl.style.cssText='padding:6px 12px 6px 0;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f1f3';rl.dataset.rowCat=cat;
+rl.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+ci.c+';flex-shrink:0"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+f.n+'</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#8B8F92;margin-left:auto;flex-shrink:0">'+f.k+'c</span>';
+g.appendChild(rl);
+const ba=document.createElement('div');ba.style.cssText='position:relative;border-bottom:1px solid #f0f1f3;height:32px';ba.dataset.rowCat=cat;
+const so=dO(f.s),eo=dO(f.e),dur=Math.max(1,eo-so+1);
+const bar=document.createElement('div');bar.style.cssText='position:absolute;top:6px;height:20px;border-radius:4px;opacity:0.85;cursor:pointer;min-width:6px;transition:opacity 0.15s,transform 0.15s';bar.style.left=p(so);bar.style.width=p(dur);bar.style.background=ci.c;
+bar.title=f.n+' · '+f.s+' → '+f.e+' · '+f.k+' commits';
+bar.onmouseover=()=>{bar.style.opacity='1';bar.style.transform='scaleY(1.15)'};
+bar.onmouseout=()=>{bar.style.opacity='0.85';bar.style.transform='scaleY(1)'};
+ba.appendChild(bar);g.appendChild(ba);
+});
+});
+// Legend
+const leg=document.getElementById('legend');
+Object.entries(C).forEach(([cat,info])=>{const i=document.createElement('div');i.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;color:#54585A';i.innerHTML='<div style="width:14px;height:10px;border-radius:2px;background:'+info.c+'"></div>'+cat;leg.appendChild(i)});
+const ml=document.createElement('div');ml.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;color:#54585A';ml.innerHTML='<div style="width:10px;height:10px;background:#B8860B;transform:rotate(45deg)"></div>Milestone';leg.appendChild(ml);
+</script>
+</body>
+</html>
