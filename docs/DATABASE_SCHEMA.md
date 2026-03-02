@@ -32,6 +32,7 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `email_sync_logs` | Sync attempt log for debugging email platform delivery |
 | `email_templates` | Reusable email templates per community |
 | `email_campaigns` | Persistent campaign history with segmentation and send tracking |
+| `community_sites` | Generated single-page sites per community (Site Builder) |
 | `scheduled_quizzes` | Scheduled quiz events per community (Quiz Night) |
 | `scheduled_quiz_attempts` | Individual player attempts on scheduled quizzes |
 | `scheduled_quiz_answers` | Per-answer records for scheduled quiz attempts |
@@ -782,6 +783,35 @@ Persistent campaign history with segmentation criteria and send tracking.
 
 ---
 
+### `community_sites`
+
+Generated single-page sites per community, built via the Site Builder wizard.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `template_id` | `text` | Which template was used (e.g. `trivia-league`, `classroom`) |
+| `config` | `jsonb` | Full site config: name, tagline, widgets, colors, sections |
+| `rendered_html` | `text` | Pre-rendered standalone HTML document |
+| `slug` | `text` | Globally unique slug for public URL |
+| `status` | `text` | `'draft'` or `'published'` |
+| `custom_domain` | `text` | Reserved for future custom domain support (nullable) |
+| `published_at` | `timestamptz` | When site was last published (nullable) |
+| `created_by` | `uuid` | FK → `profiles.id` |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
+
+**Constraints:** UNIQUE on `community_id` (one site per community), UNIQUE on `slug`
+
+**RLS Policies:**
+- SELECT: anyone for published sites; commissioners+ for drafts
+- ALL: commissioners+ of the community
+
+**Queried by:** `PagesTab.js`, `SiteBuilderWizard.js`, `SiteRenderer.js`
+
+---
+
 ### `scheduled_quizzes`
 
 Scheduled quiz events (Quiz Night) per community.
@@ -887,6 +917,7 @@ auth.users
             │       ├── season_archives (community_id)
             │       ├── email_templates (community_id)
             │       ├── email_campaigns (community_id)
+            │       ├── community_sites (community_id)
             │       └── media_library (community_id, uploaded_by)
             │
             ├── custom_questions (creator_id)
