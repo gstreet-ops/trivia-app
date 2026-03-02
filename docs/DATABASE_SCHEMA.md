@@ -30,6 +30,8 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `community_requests` | User requests for new community creation (admin approval) |
 | `email_integrations` | Email platform sync configs per community (Mailchimp, ConvertKit, Beehiiv, webhook) |
 | `email_sync_logs` | Sync attempt log for debugging email platform delivery |
+| `email_templates` | Reusable email templates per community |
+| `email_campaigns` | Persistent campaign history with segmentation and send tracking |
 | `scheduled_quizzes` | Scheduled quiz events per community (Quiz Night) |
 | `scheduled_quiz_attempts` | Individual player attempts on scheduled quizzes |
 | `scheduled_quiz_answers` | Per-answer records for scheduled quiz attempts |
@@ -727,6 +729,59 @@ Log of each email platform sync attempt for debugging.
 
 ---
 
+### `email_templates`
+
+Reusable email templates per community for the campaign composer.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `name` | `text` | Template display name |
+| `subject` | `text` | Email subject line |
+| `body` | `text` | Email body (plain text) |
+| `created_by` | `uuid` | FK → `auth.users.id` (SET NULL on delete) |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
+
+**Indexes:** `idx_email_templates_community` on `community_id`
+
+**RLS Policies:**
+- ALL: commissioners+ of the community
+
+**Queried by:** `CampaignComposer.js`
+
+---
+
+### `email_campaigns`
+
+Persistent campaign history with segmentation criteria and send tracking.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `subject` | `text` | Campaign email subject |
+| `body` | `text` | Campaign email body |
+| `status` | `text` | `'draft'`, `'scheduled'`, `'sending'`, `'sent'`, or `'cancelled'` |
+| `segment_criteria` | `jsonb` | Filter criteria used to select recipients |
+| `recipient_count` | `integer` | Total targeted recipients |
+| `success_count` | `integer` | Successfully sent count |
+| `fail_count` | `integer` | Failed send count |
+| `scheduled_for` | `timestamptz` | Scheduled delivery time (nullable) |
+| `sent_at` | `timestamptz` | When send completed (nullable) |
+| `sent_by` | `uuid` | FK → `auth.users.id` (SET NULL on delete) |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Indexes:** `idx_email_campaigns_community` on `(community_id, created_at DESC)`, `idx_email_campaigns_status` on `status` where `IN ('scheduled', 'sending')`
+
+**RLS Policies:**
+- ALL: commissioners+ of the community
+
+**Queried by:** `SubscribersTab.js`, `CampaignComposer.js`
+
+---
+
 ### `scheduled_quizzes`
 
 Scheduled quiz events (Quiz Night) per community.
@@ -830,6 +885,8 @@ auth.users
             │       ├── question_templates (community_id)
             │       ├── generation_requests (community_id, requested_by)
             │       ├── season_archives (community_id)
+            │       ├── email_templates (community_id)
+            │       ├── email_campaigns (community_id)
             │       └── media_library (community_id, uploaded_by)
             │
             ├── custom_questions (creator_id)

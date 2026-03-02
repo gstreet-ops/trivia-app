@@ -173,7 +173,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 
 ## Phase 3 — Depth (Demand-driven)
 
-- [ ] Campaign email builder with segmentation
+- [x] Campaign email builder with segmentation
 - [ ] Visual workflow builder
 - [ ] Full engagement analytics (cohorts, funnels, heatmaps)
 - [ ] Widget studio with conditional display
