@@ -154,7 +154,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 |------|--------|
 | GA4 setup wizard | ✅ Shipped — IntegrationsTab with per-platform instructions |
 | Email platform connection (CSV import) | ✅ Shipped — Mailchimp, ConvertKit, Beehiiv import guides |
-| Email platform auto-sync (API) | 🟡 Placeholder UI — needs actual API integration |
+| Email platform auto-sync (API) | ✅ Shipped — Edge Function + admin UI (Mailchimp, ConvertKit, Beehiiv, webhook) |
 | Zapier webhook templates | ✅ Shipped — 4 Zap templates + webhook payload example |
 | SEO health check | ✅ Shipped — 10-item interactive checklist with per-platform fixes |
 | Meta tag generator | ✅ Shipped — OG, Twitter Card, canonical URL generator |
@@ -163,7 +163,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 | Stripe membership payments | 🟡 Placeholder UI — needs Stripe Connect integration |
 
 ### Remaining Phase 2
-- [ ] Email platform auto-sync — live Mailchimp/ConvertKit/Beehiiv API connection (vs CSV export)
+- [x] Email platform auto-sync — Edge Function + admin config UI + widget-side fire-and-forget sync
 - [ ] Stripe membership payments + revenue dashboard — Stripe Connect, Edge Function webhooks
 - [ ] Player retention metrics — returning vs new sessions in Analytics tab
 

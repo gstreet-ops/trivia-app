@@ -28,6 +28,8 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `multiplayer_answers` | Per-player answers in a multiplayer game |
 | `media_library` | Centralized media assets per community |
 | `community_requests` | User requests for new community creation (admin approval) |
+| `email_integrations` | Email platform sync configs per community (Mailchimp, ConvertKit, Beehiiv, webhook) |
+| `email_sync_logs` | Sync attempt log for debugging email platform delivery |
 
 ---
 
@@ -660,6 +662,62 @@ User-submitted requests to create a new community. Super admins approve or rejec
 
 ---
 
+### `email_integrations`
+
+Email platform sync configuration per community. One row per community+platform pair.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (NOT NULL, CASCADE) |
+| `platform` | `text` | `'mailchimp'`, `'convertkit'`, `'beehiiv'`, or `'webhook'` |
+| `enabled` | `boolean` | Whether auto-sync is active (default `false`) |
+| `config` | `jsonb` | Platform-specific config (API keys, list IDs, etc.) |
+| `last_sync_at` | `timestamptz` | Timestamp of last sync attempt |
+| `last_sync_status` | `text` | `'success'` or `'error'` |
+| `last_sync_error` | `text` | Error message from last sync (nullable) |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
+
+**Constraints:** UNIQUE(community_id, platform)
+
+**Config shapes:**
+- mailchimp: `{ "api_key": "xxx-us21", "server": "us21", "list_id": "abc123" }`
+- convertkit: `{ "api_key": "xxx", "form_id": "12345" }`
+- beehiiv: `{ "api_key": "xxx", "publication_id": "pub_xxx" }`
+- webhook: `{ "url": "https://...", "secret": "optional-hmac-secret" }`
+
+**RLS Policies:**
+- ALL: commissioners+ of the community
+
+**Queried by:** `IntegrationsTab.js`, `sync-subscriber` Edge Function
+
+---
+
+### `email_sync_logs`
+
+Log of each email platform sync attempt for debugging.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | PK (gen_random_uuid) |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `integration_id` | `uuid` | FK → `email_integrations.id` (CASCADE) |
+| `subscriber_email` | `text` | The email that was synced |
+| `platform` | `text` | Which platform was targeted |
+| `status` | `text` | `'success'`, `'error'`, or `'skipped'` |
+| `response_code` | `integer` | HTTP response code from the platform |
+| `error_message` | `text` | Error details (nullable) |
+| `created_at` | `timestamptz` | When the sync was attempted |
+
+**RLS Policies:**
+- SELECT: commissioners+ of the community
+- INSERT: open (service role inserts via Edge Function)
+
+**Queried by:** `IntegrationsTab.js`
+
+---
+
 ## Relationships Diagram
 
 ```
@@ -841,6 +899,7 @@ Atomically transfers community ownership in a single transaction:
 |----------|---------|----------|
 | `generate-questions` | AI question generation; receives `request_id`, generates questions, populates `generation_requests.generated_questions` | `AdminDashboard.js` (on approval), `CommissionerDashboard.js` (on retry) |
 | `send-email` | Email delivery via Resend API; supports invitation, join confirmation, question notification, and generic templates | `emailService.js` |
+| `sync-subscriber` | Syncs new subscribers to email platforms (Mailchimp, ConvertKit, Beehiiv, webhook); supports test mode for config validation | `gstreet-subscribe-element.js`, `IntegrationsTab.js` |
 
 ---
 
