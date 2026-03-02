@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunktrivia_app=self.webpackChunktrivia_app||[]).push([[710],{3710(s,a,e){e.d(a,{SplashScreenWeb:()=>c});var p=e(6385);class c extends p.E_{async show(s){}async hide(s){}}}}]);
+//# sourceMappingURL=710.7d15800b.chunk.js.map
