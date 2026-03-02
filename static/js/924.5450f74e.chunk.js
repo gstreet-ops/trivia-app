@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunktrivia_app=self.webpackChunktrivia_app||[]).push([[924],{3924(e,n,p){p.d(n,{SplashScreen:()=>a});const a=(0,p(6385).F3)("SplashScreen",{web:()=>p.e(710).then(p.bind(p,3710)).then(e=>new e.SplashScreenWeb)})}}]);
-//# sourceMappingURL=924.5450f74e.chunk.js.map
