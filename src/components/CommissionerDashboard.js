@@ -58,6 +58,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
   const [activeModal, setActiveModal] = useState(null); // 'add' | 'import' | 'ai' | null
   const [showGenerator, setShowGenerator] = useState(false);
   const [userCommunityRole, setUserCommunityRole] = useState(null);
+  const [communityRoles, setCommunityRoles] = useState([]);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferTarget, setTransferTarget] = useState('');
   const [transferConfirmText, setTransferConfirmText] = useState('');
@@ -282,13 +283,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
       setThemeColor(communityData.settings?.theme_color || '#041E42');
       setWelcomeMessage(communityData.settings?.welcome_message || '');
 
-      const { data: membersData } = await supabase
-        .from('community_members')
-        .select('*, profiles(username)')
-        .eq('community_id', communityId)
-        .order('joined_at', { ascending: false })
-        .limit(1000);
+      const [{ data: membersData }, { data: rolesData }] = await Promise.all([
+        supabase
+          .from('community_members')
+          .select('*, profiles(username)')
+          .eq('community_id', communityId)
+          .order('joined_at', { ascending: false })
+          .limit(1000),
+        supabase
+          .from('community_roles')
+          .select('*')
+          .eq('community_id', communityId)
+          .order('hierarchy_level', { ascending: false }),
+      ]);
       setMembers(membersData || []);
+      setCommunityRoles(rolesData || []);
 
       const { data: questionsData } = await supabase
         .from('community_questions')
@@ -705,21 +714,30 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     });
   };
 
-  const handleRoleChange = (userId, username, newRole) => {
-    const roleLabels = { member: 'Member', moderator: 'Moderator', commissioner: 'Commissioner', owner: 'Owner' };
+  const handleRoleChange = (userId, username, newRoleId) => {
+    const roleObj = communityRoles.find(r => r.id === newRoleId);
+    if (!roleObj) return;
     setConfirmDialog({
-      message: `Change ${username}'s role to ${roleLabels[newRole]}?`,
+      message: `Change ${username}'s role to ${roleObj.name}?`,
       onConfirm: async () => {
         try {
           const { error } = await supabase
             .from('community_members')
-            .update({ role: newRole })
+            .update({ role: roleObj.slug, role_id: roleObj.id })
             .eq('community_id', communityId)
             .eq('user_id', userId);
           if (error) {
             showToast(`Failed to change role: ${error.message}`, 'error');
           } else {
-            showToast(`${username} is now ${roleLabels[newRole]}`);
+            await supabase.from('permission_audit_log').insert({
+              community_id: communityId,
+              actor_id: currentUserId,
+              action: 'role_assigned',
+              target_user_id: userId,
+              target_role_id: newRoleId,
+              details: { new_role: roleObj.slug },
+            });
+            showToast(`${username} is now ${roleObj.name}`);
             fetchCommissionerData();
           }
         } catch (err) {
@@ -2635,31 +2653,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       {members.map(member => {
                         const mRole = member.role || 'member';
                         const isSelf = member.user_id === currentUserId;
-                        const roleBadgeStyles = {
-                          owner: { background: '#B8860B', color: '#fff' },
-                          commissioner: { background: '#041E42', color: '#fff' },
-                          moderator: { background: '#0D7377', color: '#fff' },
-                          member: { background: '#E0E0E0', color: '#333' },
-                        };
-                        const badgeStyle = {
-                          ...roleBadgeStyles[mRole] || roleBadgeStyles.member,
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: '10px',
-                          textTransform: 'uppercase',
-                          fontWeight: 600,
-                          display: 'inline-block',
-                        };
-
-                        // Determine allowed role options for dropdown
+                        // Determine allowed role options for dropdown (dynamic from community_roles)
                         let roleOptions = null;
                         if (!isSelf) {
-                          if (userCommunityRole === 'owner' && mRole !== 'owner') {
-                            roleOptions = ['member', 'moderator', 'commissioner'];
-                          } else if (userCommunityRole === 'commissioner' && (mRole === 'member' || mRole === 'moderator')) {
-                            roleOptions = ['member', 'moderator'];
+                          const myRoleData = communityRoles.find(r => r.slug === userCommunityRole);
+                          const myLevel = myRoleData?.hierarchy_level || 0;
+                          const memberRoleData = communityRoles.find(r => r.id === member.role_id) || communityRoles.find(r => r.slug === mRole);
+                          const memberLevel = memberRoleData?.hierarchy_level || 0;
+                          if (myLevel > memberLevel) {
+                            roleOptions = communityRoles
+                              .filter(r => r.hierarchy_level < myLevel)
+                              .sort((a, b) => a.hierarchy_level - b.hierarchy_level);
                           }
                         }
+                        const roleColor = communityRoles.find(r => r.id === member.role_id)?.color || '#54585A';
+                        const displayRoleName = communityRoles.find(r => r.id === member.role_id)?.name || member.role || 'Member';
 
                         return (
                           <tr key={member.user_id}>
@@ -2670,16 +2678,16 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                             <td>
                               {roleOptions ? (
                                 <select
-                                  value={mRole}
+                                  value={member.role_id || ''}
                                   onChange={(e) => handleRoleChange(member.user_id, member.profiles?.username, e.target.value)}
                                   style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '6px', border: '1px solid #DEE2E6' }}
                                 >
                                   {roleOptions.map(r => (
-                                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                                    <option key={r.id} value={r.id}>{r.name}</option>
                                   ))}
                                 </select>
                               ) : (
-                                <span style={badgeStyle}>{mRole}</span>
+                                <span style={{ background: `${roleColor}20`, color: roleColor, padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, display: 'inline-block' }}>{displayRoleName}</span>
                               )}
                             </td>
                             <td>{new Date(member.joined_at).toLocaleDateString()}</td>
