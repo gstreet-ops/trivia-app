@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import Papa from 'papaparse';
 import './CommissionerDashboard.css';
-import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon, CodeIcon } from './Icons';
+import { HomeIcon, MegaphoneIcon, HelpIcon, UsersIcon, SettingsIcon, ChartIcon, GamepadIcon, StarIcon, PlusIcon, UploadIcon, SparklesIcon, DownloadIcon, TagIcon, ImageIcon, VideoIcon, FileIcon, LightbulbIcon, ChevronDownIcon, CodeIcon, ShieldIcon } from './Icons';
 import CommissionerGenerator from './questionGenerator/CommissionerGenerator';
 import EmbedConfigurator from './EmbedConfigurator';
 import ConfirmModal from './ConfirmModal';
-import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership } from '../utils/permissions';
+import { hasCommunityRole, canManageQuestions, canManageMembers, canManageSettings, canViewAnalytics, canDeleteCommunity, canTransferOwnership, canManageRoles, canViewRoles } from '../utils/permissions';
+import RolesTab from './RolesTab';
 import { sendInvitationEmail } from '../utils/emailService';
 import { isSafeUrl } from '../utils/sanitizeUrl';
 
@@ -1919,6 +1920,7 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 canManageQuestions(userCommunityRole) && { id: 'questions', label: `Questions (${questions.length})`, icon: <HelpIcon size={16} /> },
                 canManageQuestions(userCommunityRole) && { id: 'media', label: `Media (${mediaLibrary.length})`, icon: <ImageIcon size={16} /> },
                 canManageMembers(userCommunityRole) && { id: 'members', label: `Members (${members.length})`, icon: <UsersIcon size={16} /> },
+                canViewRoles(userCommunityRole) && { id: 'roles', label: 'Roles', icon: <ShieldIcon size={16} /> },
                 canManageSettings(userCommunityRole) && { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
                 canViewAnalytics(userCommunityRole) && { id: 'analytics', label: 'Analytics', icon: <ChartIcon size={16} /> },
                 canManageSettings(userCommunityRole) && { id: 'embed', label: 'Embed', icon: <CodeIcon size={16} /> }
@@ -2760,6 +2762,13 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ROLES TAB */}
+        {activeTab === 'roles' && canViewRoles(userCommunityRole) && (
+          <div className="tab-pane">
+            <RolesTab communityId={communityId} currentUserId={currentUserId} userRole={userCommunityRole} showToast={showToast} />
           </div>
         )}
 
