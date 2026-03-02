@@ -161,12 +161,13 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 | Meta tag generator | ✅ Shipped — OG, Twitter Card, canonical URL generator |
 | Cross-widget analytics | ✅ Shipped — 7-section unified analytics (business+ tier) |
 | Standalone widgets | ✅ Shipped — leaderboard, achievements, feed (web components + Vite configs) |
+| Player retention metrics | ✅ Shipped — returning/new players, retention rate, avg games/player in DashboardTab |
 | Stripe membership payments | 🟡 Placeholder UI — needs Stripe Connect integration |
 
 ### Remaining Phase 2
 - [x] Email platform auto-sync — Edge Function + admin config UI + widget-side fire-and-forget sync
+- [x] Player retention metrics — returning vs new players, retention rate, return frequency in embed DashboardTab
 - [ ] Stripe membership payments + revenue dashboard — Stripe Connect, Edge Function webhooks
-- [ ] Player retention metrics — returning vs new sessions in Analytics tab
 
 ---
 
