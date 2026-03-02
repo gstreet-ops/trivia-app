@@ -4,7 +4,8 @@ import './Dashboard.css';
 import Achievements from './Achievements';
 import { checkAchievements } from '../utils/achievementChecker';
 import decodeHtml from '../utils/decodeHtml';
-import { GamepadIcon, ChartIcon, TrophyIcon } from './Icons';
+import { GamepadIcon, ChartIcon, TrophyIcon, FlameIcon } from './Icons';
+import { isStreakActive, isStreakAtRisk } from '../utils/streakTracker';
 
 function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, onAdmin, onCreateQuestion, onCommunities, onViewUserProfile }) {
   const [stats, setStats] = useState({ totalGames: 0, avgScore: 0, bestScore: 0 });
@@ -16,6 +17,8 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   const [fetchError, setFetchError] = useState(null);
   const [expandedGameId, setExpandedGameId] = useState(null);
   const [gameAnswersCache, setGameAnswersCache] = useState({});
+  const [streakData, setStreakData] = useState({ currentStreak: 0, bestStreak: 0, lastPlayedDate: null });
+  const [playedDates, setPlayedDates] = useState(new Set());
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -28,8 +31,25 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
   }, [user]);
 
   const checkAdminStatus = async () => {
-    const { data } = await supabase.from('profiles').select('role, super_admin, username').eq('id', user.id).single();
+    const { data } = await supabase.from('profiles').select('role, super_admin, username, current_streak, best_streak, last_played_date').eq('id', user.id).single();
     setUsername(data?.username || 'User');
+    if (data) {
+      setStreakData({
+        currentStreak: data.current_streak || 0,
+        bestStreak: data.best_streak || 0,
+        lastPlayedDate: data.last_played_date || null,
+      });
+    }
+    // Fetch played dates for last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const { data: recentGames } = await supabase
+      .from('games')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: false });
+    setPlayedDates(new Set(recentGames?.map(g => new Date(g.created_at).toLocaleDateString('en-CA')) || []));
   };
 
   const loadAchievements = async () => {
@@ -135,7 +155,42 @@ function Dashboard({ user, onStartQuiz, onReviewGame, onSettings, onCommunity, o
           <div className="stat-number">{stats.bestScore}%</div>
           <div className="stat-label">Best</div>
         </div>
+        <div className={`stat-card streak-card ${isStreakActive(streakData.lastPlayedDate) ? 'streak-active' : isStreakAtRisk(streakData.lastPlayedDate) ? 'streak-risk' : ''}`}>
+          <div className="stat-icon" style={{ color: '#F97316' }}><FlameIcon size={22} /></div>
+          <div className="stat-number">{streakData.currentStreak}</div>
+          <div className="stat-label">
+            {isStreakActive(streakData.lastPlayedDate) ? 'Day Streak' : 'Day Streak'}
+          </div>
+          {streakData.bestStreak > 0 && (
+            <div className="streak-best">Best: {streakData.bestStreak}</div>
+          )}
+          {isStreakAtRisk(streakData.lastPlayedDate) && (
+            <div className="streak-warning">Play today!</div>
+          )}
+        </div>
       </div>
+
+      {/* Streak Calendar — last 30 days */}
+      {streakData.currentStreak > 0 || playedDates.size > 0 ? (
+        <div className="streak-calendar-section">
+          <div className="streak-calendar">
+            {Array.from({ length: 30 }, (_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() - (29 - i));
+              const dateStr = d.toLocaleDateString('en-CA');
+              const today = new Date().toLocaleDateString('en-CA');
+              return (
+                <div
+                  key={dateStr}
+                  className={`streak-dot ${playedDates.has(dateStr) ? 'played' : ''} ${dateStr === today ? 'today' : ''}`}
+                  title={dateStr}
+                />
+              );
+            })}
+          </div>
+          <div className="streak-calendar-label">Last 30 days</div>
+        </div>
+      ) : null}
 
       {/* Achievements */}
       <div className="dashboard-section">

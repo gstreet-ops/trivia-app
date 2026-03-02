@@ -106,7 +106,8 @@ All widgets use Shadow DOM, accept theming attributes (bg, surface, primary, acc
 - Multiplayer quiz (create/join rooms, live game, real-time scoring)
 - Role system (platform: user/admin/super_admin, community: owner/commissioner/moderator/member)
 - Granular RBAC with PermissionContext and permissions.js utility
-- Achievement badges (6 badges, any question count)
+- Achievement badges (11 badges: 6 original + Grand Master + Community Champion + 3 streak badges)
+- Daily play streak tracking with Dashboard visualization (30-day dot calendar)
 - In-app notifications, email notifications (Resend), dark mode
 - Admin dashboard (user management, question review, community requests, AI requests, flagged users)
 - Community marketplace (browse, search, filter, request new communities)
@@ -185,6 +186,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 ### Near-term
 - [x] Grand Master badge — earn all 6 original badges
 - [x] Community Champion badge — play 25 community games
+- [x] Streak tracking with badges — Duolingo-style daily play streaks, 3 streak badges (On Fire, Week Warrior, Unstoppable), Dashboard streak card + 30-day dot calendar, UserProfile streak display
 
 ### Medium-term
 - [ ] Member question submissions with approval flow
@@ -194,7 +196,6 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 
 ### Longer-term
 - [x] Scheduled quizzes — Quiz Night feature with commissioner scheduling, countdown, live play, leaderboard
-- [ ] Streak tracking with badges
 - [ ] Question difficulty voting
 - [ ] Mobile app (React Native)
 

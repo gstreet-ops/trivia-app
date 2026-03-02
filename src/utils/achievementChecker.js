@@ -34,6 +34,16 @@ export const checkAchievements = async (userId, supabase, { publicOnly = false }
   const communityGames = games.filter(g => g.community_id != null).length;
   if (communityGames >= 25) earnedBadges.push('community_champion');
 
+  // Streak badges (from cached profile data)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('best_streak')
+    .eq('id', userId)
+    .single();
+  if (profile?.best_streak >= 3) earnedBadges.push('streak_3');
+  if (profile?.best_streak >= 7) earnedBadges.push('streak_7');
+  if (profile?.best_streak >= 30) earnedBadges.push('streak_30');
+
   // Grand Master: earned all 6 original badges (must be last — depends on above checks)
   const originalBadges = ['perfect_score', 'five_games', 'ten_games', 'category_master', 'speed_demon', 'triple_perfect'];
   if (originalBadges.every(b => earnedBadges.includes(b))) earnedBadges.push('grand_master');

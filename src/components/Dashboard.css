@@ -44,7 +44,7 @@
 /* ===== Stats Grid ===== */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -416,6 +416,84 @@
   font-weight: 500;
 }
 
+/* ===== Streak Card ===== */
+.streak-card.streak-active::before {
+  background: #F97316;
+}
+.streak-card.streak-active {
+  border-color: #F97316;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.25);
+}
+.streak-card.streak-risk::before {
+  background: #F59E0B;
+  animation: streakPulse 2s infinite;
+}
+.streak-card.streak-risk {
+  border-color: #F59E0B;
+}
+
+.streak-best {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.streak-warning {
+  font-size: 0.55rem;
+  color: #F59E0B;
+  font-weight: 700;
+  margin-top: 2px;
+  animation: streakPulse 2s infinite;
+}
+
+@keyframes streakPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ===== Streak Calendar ===== */
+.streak-calendar-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 16px 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.streak-calendar {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.streak-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-light, #e5e7eb);
+  transition: background 0.2s;
+}
+
+.streak-dot.played {
+  background: #F97316;
+}
+
+.streak-dot.today {
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 3px #F97316;
+}
+
+.streak-calendar-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* ===== Mobile tweaks ===== */
 @media (max-width: 768px) {
   .recent-games-table .date-cell,
@@ -424,6 +502,12 @@
   }
   .recent-games-table td, .recent-games-table th {
     padding: 6px 8px;
+  }
+}
+
+@media (max-width: 500px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

@@ -25,6 +25,7 @@ import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import { ChartIcon, BoltIcon, TrophyIcon, HelpIcon, SettingsIcon, ShieldIcon, MoonIcon, SunIcon, ChevronDownIcon, CheckIcon } from './components/Icons';
 import { isPlatformAdmin, getPlatformRole } from './utils/permissions';
+import { updateStreak } from './utils/streakTracker';
 
 const KNOWN_SCREENS = new Set([
   'dashboard', 'settings', 'help', 'admin', 'myStats', 'communities',
@@ -370,6 +371,7 @@ function App() {
         community_id: quizConfig.communityId || null
       }]).select().single();
       if (error) throw error;
+      updateStreak(session.user.id, supabase).catch(() => {});
       if (answers.length > 0 && data?.id) {
         const { error: answerError } = await supabase.from('game_answers').insert(
           answers.map(a => ({ ...a, game_id: data.id, user_id: session.user.id }))

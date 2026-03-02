@@ -1,6 +1,6 @@
 import React from 'react';
 import './Achievements.css';
-import { TargetIcon, GamepadIcon, BoltIcon, TrophyIcon, StarIcon, CrownIcon, UsersGroupIcon } from './Icons';
+import { TargetIcon, GamepadIcon, BoltIcon, TrophyIcon, StarIcon, CrownIcon, UsersGroupIcon, FlameIcon } from './Icons';
 
 const BADGES = {
   perfect_score: { id: 'perfect_score', name: 'Perfect Score', icon: <TargetIcon size={24} />, description: 'Get 10/10 on any quiz', color: '#f39c12' },
@@ -11,6 +11,9 @@ const BADGES = {
   triple_perfect: { id: 'triple_perfect', name: 'Hat Trick', icon: <StarIcon size={24} />, description: 'Get 3 perfect scores', color: '#1abc9c' },
   community_champion: { id: 'community_champion', name: 'Community Champion', icon: <UsersGroupIcon size={24} />, description: 'Play 25 community games', color: '#059669' },
   grand_master: { id: 'grand_master', name: 'Grand Master', icon: <CrownIcon size={24} />, description: 'Earn all 6 original badges', color: '#041E42' },
+  streak_3: { id: 'streak_3', name: 'On Fire', icon: <FlameIcon size={24} />, description: 'Play 3 days in a row', color: '#F97316' },
+  streak_7: { id: 'streak_7', name: 'Week Warrior', icon: <FlameIcon size={24} />, description: 'Play 7 days in a row', color: '#EF4444' },
+  streak_30: { id: 'streak_30', name: 'Unstoppable', icon: <FlameIcon size={24} />, description: 'Play 30 days in a row', color: '#DC2626' },
 };
 
 function Achievements({ earnedBadges = [] }) {

@@ -55,6 +55,9 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 | `tos_accepted_at` | `timestamptz` | When user accepted Terms of Service (nullable) |
 | `privacy_accepted_at` | `timestamptz` | When user accepted Privacy Policy (nullable) |
 | `tos_version` | `text` | Version of ToS accepted (e.g., `'1.0'`) (nullable) |
+| `current_streak` | `integer` | Current consecutive daily play streak (default 0) |
+| `best_streak` | `integer` | Best-ever consecutive daily play streak (default 0) |
+| `last_played_date` | `date` | Calendar date of last game played (nullable) |
 | `bot_flags` | `jsonb` | Bot detection flags: `{flagged, reasons[], flagged_at}` (default unflagged) |
 | `created_at` | `timestamptz` | Row creation timestamp |
 
@@ -63,7 +66,10 @@ Extends Supabase Auth `auth.users`. Automatically created via trigger on signup.
 - `super_admin` platform role users additionally see the "Mixed (All Sources)" quiz option
 - Legacy columns `role` and `super_admin` are kept in sync by the app for backward compatibility but `platform_role` is the canonical source of truth
 
-**Queried by:** `App.js`, `Dashboard.js`, `Settings.js`, `StartScreen.js`, `CommunitiesList.js`, `CommunityChat.js`, `CommissionerDashboard.js`, `AdminDashboard.js`
+**Indexes:**
+- `idx_profiles_streak` — partial index on `current_streak DESC` where `current_streak > 0`
+
+**Queried by:** `App.js`, `Dashboard.js`, `Settings.js`, `StartScreen.js`, `CommunitiesList.js`, `CommunityChat.js`, `CommissionerDashboard.js`, `AdminDashboard.js`, `UserProfile.js`, `achievementChecker.js`
 
 ---
 

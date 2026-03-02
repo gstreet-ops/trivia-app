@@ -4,6 +4,7 @@ import decodeHtml from '../utils/decodeHtml';
 import ConfirmModal from './ConfirmModal';
 import './MultiplayerLobby.css';
 import { TargetIcon, LightbulbIcon, BoltIcon } from './Icons';
+import { updateStreak } from '../utils/streakTracker';
 
 const CATEGORIES = ['General Knowledge', 'Film', 'Music', 'Geography', 'History', 'Sports', 'Science & Nature', 'Arts & Literature', 'Random/Mixed'];
 
@@ -952,6 +953,7 @@ function MultiplayerLobby({ user, username, onBack }) {
     // else: keep current totalScores (accumulated locally via broadcast + submitAnswer)
 
     setView('results');
+    updateStreak(user.id, supabase).catch(() => {});
 
     // Host updates room status to completed
     if (isHost) {

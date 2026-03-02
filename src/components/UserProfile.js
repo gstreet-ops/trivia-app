@@ -8,6 +8,7 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
   const [stats, setStats] = useState(null);
   const [games, setGames] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
+  const [streakData, setStreakData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,15 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
           setEarnedBadges(badges);
           setStats({ totalGames, avgScore, categories, bestGame });
         }
+        // Fetch streak data from profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('current_streak, best_streak, profile_visibility')
+          .eq('id', userId)
+          .single();
+        if (!cancelled && profileData?.profile_visibility !== false) {
+          setStreakData({ currentStreak: profileData.current_streak || 0, bestStreak: profileData.best_streak || 0 });
+        }
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
@@ -56,6 +66,11 @@ function UserProfile({ userId, username, currentUserId, onBack, onViewGame }) {
         <div className="profile-stat-card"><div className="stat-number">{stats.categories}</div><div className="stat-label">Categories</div></div>
         <div className="profile-stat-card"><div className="stat-number">{stats.bestGame}%</div><div className="stat-label">Best Game</div></div>
       </div>
+      {streakData && streakData.currentStreak > 0 && (
+        <div className="profile-streak" style={{ textAlign: 'center', fontSize: '1rem', color: '#F97316', fontWeight: 600, margin: '8px 0 12px' }}>
+          <span role="img" aria-label="fire">&#128293;</span> {streakData.currentStreak} day streak (Best: {streakData.bestStreak})
+        </div>
+      )}
       <Achievements earnedBadges={earnedBadges} />
       <h3>Recent Games</h3>
       <div className="profile-games-grid">

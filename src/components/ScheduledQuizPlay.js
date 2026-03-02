@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import './ScheduledQuizPlay.css';
 import { TrophyIcon, BoltIcon, LightbulbIcon } from './Icons';
+import { updateStreak } from '../utils/streakTracker';
 
 function shuffleArray(arr) {
   const a = [...arr];
@@ -247,6 +248,7 @@ function ScheduledQuizPlay({ quizId, user, username, onBack }) {
           time_taken_ms: totalTimeRef.current,
           completed_at: new Date().toISOString(),
         }).eq('id', attemptId);
+        updateStreak(user.id, supabase).catch(() => {});
         // Update participant count
         const { count } = await supabase
           .from('scheduled_quiz_attempts')
