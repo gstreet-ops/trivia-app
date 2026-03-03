@@ -116,6 +116,22 @@
   .auth-container {
     padding: 20px;
   }
+  .auth-tabs button {
+    min-height: 44px;
+  }
+  .form-group input {
+    min-height: 44px;
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+  .auth-container form button[type='submit'] {
+    min-height: 48px;
+  }
+  .forgot-password-btn {
+    min-height: 44px;
+  }
+  .back-to-login-btn {
+    min-height: 44px;
+  }
 }
 .forgot-password-btn {
   width: 100%;

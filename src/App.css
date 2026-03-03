@@ -88,6 +88,10 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   transition: background-color 0.3s, color 0.3s;
+  overflow-x: hidden;
+}
+html {
+  overflow-x: hidden;
 }
 
 .App {
@@ -145,6 +149,7 @@ body {
   border: 1px solid rgba(139,157,195,0.5);
   border-radius: 12px;
   padding: 3px 10px;
+  min-height: 44px;
   font-size: 12px;
   color: #fff;
   font-weight: 500;
@@ -161,8 +166,10 @@ body {
   border: none;
   cursor: pointer;
   padding: 5px;
+  min-height: 44px;
+  min-width: 44px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
@@ -178,7 +185,8 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 12px;
+  padding: 8px 16px;
+  min-height: 44px;
   background: rgba(255,255,255,0.12);
   color: #fff;
   border: 1px solid rgba(255,255,255,0.2);
@@ -350,7 +358,10 @@ body {
   font-size: 0.8rem;
   cursor: pointer;
   text-decoration: none;
-  padding: 0;
+  padding: 8px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .footer-link:hover {
   color: var(--navy);
@@ -360,4 +371,15 @@ body {
   color: var(--text-muted);
   font-size: 0.8rem;
   margin: 0 8px;
+}
+
+/* ===== Mobile Touch Target Safety Net ===== */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+  }
 }

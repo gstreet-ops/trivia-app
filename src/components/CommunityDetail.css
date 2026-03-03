@@ -244,6 +244,7 @@
   @media (max-width: 768px) {
     .community-detail {
       padding: 20px;
+      border-radius: 12px;
     }
     .community-sections {
       grid-template-columns: 1fr;
@@ -257,6 +258,25 @@
     .cd-logo {
       width: 44px;
       height: 44px;
+    }
+    .back-btn {
+      min-height: 44px;
+    }
+    .manage-community-btn {
+      min-height: 48px;
+      font-size: 1rem;
+    }
+    .start-community-quiz-btn {
+      min-height: 48px;
+      font-size: 1.1rem;
+    }
+    .cd-ann-view-all {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .cd-archive-header {
+      min-height: 44px;
     }
   }
 

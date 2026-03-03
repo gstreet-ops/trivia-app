@@ -315,4 +315,26 @@
   .action-buttons {
     flex-direction: column;
   }
+  .communities-list {
+    padding: 20px;
+    border-radius: 12px;
+  }
+  .communities-list h1 {
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+  }
+  .create-btn, .join-btn, .browse-btn, .request-btn {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+  .community-card {
+    min-height: 44px;
+    padding: 16px;
+  }
+  .modal-buttons button {
+    min-height: 44px;
+  }
+  .my-requests-toggle {
+    min-height: 44px;
+  }
 }
