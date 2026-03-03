@@ -194,7 +194,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 - [ ] Member question submissions with approval flow
 - [ ] Server-side RLS role enforcement (Phase 2)
 - [ ] Question difficulty auto-rating
-- [ ] Admin undo approve/reject
+- [x] Admin undo approve/reject — "Revert to Pending" with confirmation + notification
 
 ### Longer-term
 - [x] Scheduled quizzes — Quiz Night feature with commissioner scheduling, countdown, live play, leaderboard
@@ -210,7 +210,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 | Community leaderboard staleness | Mitigated — live computation with season_start fallback |
 | GitHub Pages CSS caching | Workaround — inline styles for critical layout |
 | No email confirmation on signup | By design — frictionless onboarding |
-| Admin can't undo approve/reject | Open |
+| Admin can't undo approve/reject | Fixed — "Revert to Pending" in Recently Reviewed section |
 | Auth.users orphaned on user delete | Open — manual cleanup needed |
 | Sentry confirmation pending | Open |
 

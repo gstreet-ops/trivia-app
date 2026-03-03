@@ -45,12 +45,16 @@ function AdminDashboard({ onBack, currentUserId }) {
   const [crRejectingId, setCrRejectingId] = useState(null);
   const [crProcessingId, setCrProcessingId] = useState(null);
 
+  // Recently Reviewed questions state
+  const [reviewedQuestions, setReviewedQuestions] = useState([]);
+  const [reviewedExpanded, setReviewedExpanded] = useState(false);
+
   // Flagged Users tab state
   const [flaggedUsers, setFlaggedUsers] = useState([]);
   const [unflaggingId, setUnflaggingId] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCommunityRequests(); fetchFlaggedUsers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchAdminData(); fetchAiRequests(); fetchCommunityRequests(); fetchFlaggedUsers(); fetchReviewedQuestions(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toastTimerRef = useRef(null);
   const showToast = (msg, type = 'success') => {
@@ -402,6 +406,49 @@ function AdminDashboard({ onBack, currentUserId }) {
     }
   };
 
+  const fetchReviewedQuestions = async () => {
+    const { data } = await supabase
+      .from('custom_questions')
+      .select('*, profiles!custom_questions_creator_id_fkey(username)')
+      .in('status', ['approved', 'rejected'])
+      .order('reviewed_at', { ascending: false })
+      .limit(20);
+    if (data) setReviewedQuestions(data);
+  };
+
+  const handleRevert = (questionId) => {
+    const q = reviewedQuestions.find(q => q.id === questionId);
+    const preview = q?.question_text?.length > 50 ? q.question_text.slice(0, 50) + '...' : q?.question_text;
+    setConfirmAction({
+      message: `Revert "${preview}" back to pending? This will remove its ${q?.status} status.`,
+      confirmLabel: 'Revert to Pending',
+      destructive: false,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        const { error } = await supabase
+          .from('custom_questions')
+          .update({ status: 'pending', reviewed_at: null })
+          .eq('id', questionId);
+        if (error) {
+          showToast('Failed to revert: ' + error.message, 'error');
+        } else {
+          if (q?.creator_id) {
+            await supabase.from('notifications').insert([{
+              user_id: q.creator_id,
+              type: 'question_reverted',
+              title: 'Question Under Review',
+              message: `Your question "${preview}" has been moved back to pending review.`,
+              link_screen: 'dashboard'
+            }]);
+          }
+          showToast('Question reverted to pending');
+          fetchAdminData();
+          fetchReviewedQuestions();
+        }
+      }
+    });
+  };
+
   // Users tab logic
 
   const handlePlatformRoleChange = (userId, username, newRole) => {
@@ -664,6 +711,43 @@ function AdminDashboard({ onBack, currentUserId }) {
               </div>
             )}
           </div>
+
+          {reviewedQuestions.length > 0 && (
+            <div className="admin-section">
+              <button
+                className="reviewed-toggle"
+                onClick={() => setReviewedExpanded(!reviewedExpanded)}
+              >
+                <h2 style={{ margin: 0 }}>Recently Reviewed ({reviewedQuestions.length})</h2>
+                <span className="reviewed-chevron">{reviewedExpanded ? '▲' : '▼'}</span>
+              </button>
+              {reviewedExpanded && (
+                <div className="pending-questions" style={{ marginTop: 12 }}>
+                  {reviewedQuestions.map(q => (
+                    <div key={q.id} className="pending-question-card">
+                      <div className="question-header">
+                        <span className="admin-category-badge">{q.category}</span>
+                        <span className={`admin-difficulty-badge diff-${q.difficulty}`}>{q.difficulty}</span>
+                        <span className={`reviewed-status-badge reviewed-${q.status}`}>{q.status}</span>
+                      </div>
+                      <div className="question-text">
+                        {q.question_text.length > 120 ? q.question_text.slice(0, 120) + '...' : q.question_text}
+                      </div>
+                      <div className="question-footer">
+                        <span className="creator">
+                          By: {q.profiles?.username}
+                          {q.reviewed_at && (
+                            <span className="reviewed-date"> · {new Date(q.reviewed_at).toLocaleDateString()}</span>
+                          )}
+                        </span>
+                        <button className="revert-btn" onClick={() => handleRevert(q.id)}>↩ Revert to Pending</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="admin-section">
             <h2>Recent Users</h2>

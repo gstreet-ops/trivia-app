@@ -870,6 +870,70 @@
 .status-approved { background: #2D6A4F; color: #fff; }
 .status-rejected { background: #DC3545; color: #fff; }
 
+/* ===== Recently Reviewed Questions ===== */
+.reviewed-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.reviewed-toggle:hover .reviewed-chevron {
+  color: var(--navy);
+}
+
+.reviewed-chevron {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+
+.reviewed-status-badge {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.reviewed-approved {
+  background: #2D6A4F;
+  color: #fff;
+}
+
+.reviewed-rejected {
+  background: #DC3545;
+  color: #fff;
+}
+
+.reviewed-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.revert-btn {
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--navy);
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.revert-btn:hover {
+  background: var(--navy);
+  color: white;
+}
+
 /* ===== Flagged Users Tab ===== */
 .flag-reason-badge {
   padding: 2px 8px;
