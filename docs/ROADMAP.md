@@ -197,7 +197,7 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 
 ### Remaining
 - [ ] Member question submissions with approval flow
-- [ ] Server-side RLS role enforcement (Phase 2)
+- [x] Server-side RLS role enforcement — all community tables use check_community_permission() (March 5)
 - [ ] Mobile app (React Native / Capacitor)
 
 ### Completed (moved from backlog)

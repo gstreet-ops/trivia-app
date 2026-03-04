@@ -1049,30 +1049,44 @@ All buckets use RLS policies scoped to authenticated users. Public URLs are gene
 
 ## RLS Policies
 
-RLS (Row Level Security) is enabled on all tables. Policies are managed in Supabase. Based on app behavior:
+RLS (Row Level Security) is enabled on all tables. As of March 5, 2026, all community-scoped tables use `check_community_permission()` for write operations instead of legacy role text checks (`role IN ('owner', 'commissioner')`).
+
+### Granular Permission Enforcement (via `check_community_permission`)
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|-------|--------|--------|--------|--------|
+| `community_questions` | Community members | `manage_questions` | `manage_questions` | `manage_questions` |
+| `community_announcements` | Community members | `manage_announcements` | `manage_announcements` | `manage_announcements` |
+| `community_messages` | Community members | Members (own messages) | `moderate_chat` | — (soft-delete only) |
+| `community_members` | Community members | Self only (`user_id = auth.uid()`) | `manage_members` + hardening* | `manage_members` OR self-leave |
+| `communities` | All authenticated | All authenticated | `manage_settings` | `delete_community` |
+| `question_templates` | Community members | `manage_templates` | `manage_templates` | `manage_templates` |
+| `media_library` | Community members | `manage_media` | — | `manage_media` |
+| `generation_requests` | Own + `view_analytics` + admins | `request_ai_generation` | Platform admins only | — |
+| `season_archives` | Community members | `manage_settings` | — | — |
+| `community_sites` | Published = public; drafts = `manage_pages` | `manage_pages` | `manage_pages` | `manage_pages` |
+| `community_roles` | Community members | `manage_roles` | `manage_roles` | `manage_roles` (system roles protected) |
+| `permission_overrides` | `assign_roles` | `assign_roles` | `assign_roles` | `assign_roles` |
+| `permission_audit_log` | `view_analytics` | Own actor_id | — | — |
+
+*`community_members` UPDATE hardening: cannot update own role; only `transfer_ownership` holders can assign `'owner'` role; role must be a valid value.
+
+### User/Platform-Scoped Tables (unchanged)
 
 | Table | Read | Write |
 |-------|------|-------|
 | `profiles` | Own row always; others if `profile_visibility = true` | Own row only |
 | `games` | Own rows always; public rows if `visibility = 'public'` | Own rows only |
 | `game_answers` | Own rows; game owner | Own rows |
-| `communities` | All authenticated users | Commissioner only |
-| `community_members` | Members of same community | Own membership; commissioner for deletes |
-| `community_questions` | Members of community | Commissioner only |
 | `community_leaderboards` | Members of community | System/view |
 | `custom_questions` | Own rows; admins see all | Creator (insert); admin (update status) |
-| `question_templates` | Commissioner of community | Commissioner |
-| `community_announcements` | Members of community | Commissioner only |
-| `community_messages` | Members of community | Members (insert); commissioner (soft-delete) |
 | `multiplayer_rooms` | All authenticated users | Host (insert/update) |
 | `multiplayer_participants` | All authenticated users | Own rows (insert/update/delete) |
-| `generation_requests` | Commissioner of community; admins see all | Commissioner (insert); admin (update status) |
-| `notifications` | Own rows only | System (insert); own rows (update read status) |
-| `season_archives` | Members of community | System/RPC (insert) |
 | `multiplayer_questions` | All authenticated users | Host only (insert) |
 | `multiplayer_answers` | All authenticated users | Own rows (insert) |
-| `media_library` | Community members | Owner/commissioner/moderator (insert); owner/commissioner (delete) |
+| `notifications` | Own rows only | System (insert); own rows (update read status) |
 | `community_requests` | Own rows; super admins see all | Own rows (insert); super admins (update status) |
+| `question_difficulty_votes` | All authenticated | Own votes (insert/update) | Own votes | — |
 
 ---
 
@@ -1271,5 +1285,6 @@ These will also add `organization_id` FK to `communities`.
 | `20260302170000_email_campaigns` | `email_templates`, `email_campaigns` tables | Yes |
 | `20260302180000_community_sites` | `community_sites` table | Yes |
 | `20260304_difficulty_votes` | `question_difficulty_votes` table; `community_questions.difficulty_vote_counts`, `.computed_difficulty` | Yes |
+| `20260305_rls_granular_enforcement` | RLS policy replacement on 10 community tables — legacy `role IN (...)` → `check_community_permission()` | Yes |
 
-**Result:** All migrated tables and columns are now documented. No gaps.
+**Result:** All migrated tables, columns, and policies are now documented. No gaps.

@@ -27,7 +27,7 @@
 - Site Builder: `community_sites` table, 5 templates, hosted at `#/site/SLUG`
 - Question difficulty voting: `question_difficulty_votes` table + trigger, auto-computed difficulty
 
-## Recent Changes (March 2–4, 2026)
+## Recent Changes (March 2–5, 2026)
 
 - Campaign email builder with segmentation (March 2)
 - Site Builder wizard with templates (March 2)
@@ -37,6 +37,7 @@
 - Contact merge feature — find_duplicate_contacts + merge_contacts RPCs (March 3)
 - Question difficulty voting — post-answer feedback + commissioner mismatch analytics (March 4)
 - Comprehensive docs refresh — ROADMAP, DATABASE_SCHEMA, EMBED_ARCHITECTURE, README (March 4)
+- Server-side RLS granular enforcement — all 10 community tables now use check_community_permission() instead of legacy role text checks (March 5)
 
 ## New Direction
 
