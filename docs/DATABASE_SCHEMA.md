@@ -13,7 +13,11 @@ This document describes all Supabase tables used by the Trivia Quiz App, inferre
 | `game_answers` | Per-answer log for each game |
 | `communities` | League / community definitions |
 | `community_members` | Membership join table |
+| `community_roles` | Granular permission roles per community (system + custom) |
+| `permission_overrides` | Per-user permission overrides within a community |
+| `permission_audit_log` | Audit trail for permission-related actions |
 | `community_questions` | Community-owned question bank |
+| `question_difficulty_votes` | Player votes on question difficulty (one per user per question) |
 | `community_leaderboards` | Computed rankings per community |
 | `community_announcements` | Commissioner announcements per community |
 | `community_messages` | Real-time chat messages per community |
@@ -213,6 +217,7 @@ Join table connecting users to communities.
 | `community_id` | `uuid` | FK → `communities.id` |
 | `user_id` | `uuid` | FK → `profiles.id` |
 | `role` | `text` | `'owner'`, `'commissioner'`, `'moderator'`, or `'member'` (default) |
+| `role_id` | `uuid` | FK → `community_roles.id` (nullable; backfilled from `role` text) |
 | `joined_at` | `timestamptz` | Join timestamp |
 
 **Constraints:**
@@ -240,6 +245,79 @@ Join table connecting users to communities.
 
 ---
 
+### `community_roles`
+
+Granular permission roles per community. System roles (owner, commissioner, moderator, member) are auto-created via trigger on community insert. Custom roles can be added by users with `manage_roles` permission.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `name` | `text` | Display name (e.g., "Owner", "Commissioner") |
+| `slug` | `text` | Lowercase identifier (e.g., "owner", "commissioner") |
+| `description` | `text` | Role description |
+| `permissions` | `jsonb` | Permission key→boolean map (e.g., `{"manage_questions":true}`) |
+| `hierarchy_level` | `integer` | Rank for role ordering (owner=100, commissioner=75, moderator=50, member=0) |
+| `is_system` | `boolean` | `true` for built-in roles (cannot be deleted) |
+| `color` | `text` | Role badge color hex |
+| `created_at` | `timestamptz` | Creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
+
+**Constraints:** `UNIQUE (community_id, slug)`
+
+**Triggers:**
+- `on_community_created_roles` — AFTER INSERT on `communities`, creates 4 system roles (owner, commissioner, moderator, member)
+
+**RLS:** Members can read roles for their community. `manage_roles` permission required for insert/update/delete (system roles cannot be deleted).
+
+**Queried by:** `CommissionerDashboard.js`, `permissions.js`, `PermissionContext`
+
+---
+
+### `permission_overrides`
+
+Per-user permission overrides within a community. Allows granting or revoking specific permissions independent of role.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `user_id` | `uuid` | FK → `profiles.id` (CASCADE) |
+| `permission_key` | `text` | Permission being overridden (e.g., `manage_questions`) |
+| `granted` | `boolean` | `true` to grant, `false` to revoke |
+| `granted_by` | `uuid` | FK → `profiles.id` (nullable) |
+| `reason` | `text` | Optional reason for the override |
+| `created_at` | `timestamptz` | Creation timestamp |
+
+**Constraints:** `UNIQUE (community_id, user_id, permission_key)`
+
+**RLS:** Requires `assign_roles` permission for all operations.
+
+**Queried by:** `check_community_permission()` RPC, `get_user_permissions()` RPC, `CommissionerDashboard.js`
+
+---
+
+### `permission_audit_log`
+
+Audit trail for permission-related actions in communities.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `community_id` | `bigint` | FK → `communities.id` (CASCADE) |
+| `actor_id` | `uuid` | FK → `profiles.id` — who performed the action |
+| `action` | `text` | Action type (e.g., `role_assigned`, `override_granted`) |
+| `target_user_id` | `uuid` | FK → `profiles.id` (nullable) — affected user |
+| `target_role_id` | `uuid` | FK → `community_roles.id` (SET NULL on delete, nullable) |
+| `details` | `jsonb` | Additional context for the action |
+| `created_at` | `timestamptz` | Action timestamp |
+
+**RLS:** Readable by users with `view_analytics` permission. Insert requires `actor_id = auth.uid()`.
+
+**Queried by:** `CommissionerDashboard.js` (Analytics tab)
+
+---
+
 ### `community_questions`
 
 Question bank owned by a specific community. Used when quiz source is "Community Questions Only".
@@ -264,6 +342,8 @@ Question bank owned by a specific community. Used when quiz source is "Community
 | `ai_theme` | `text` | Theme used for AI generation (nullable) |
 | `version_number` | `integer` | Current version number |
 | `version_history` | `jsonb[]` | Array of up to 10 version snapshots |
+| `difficulty_vote_counts` | `jsonb` | Vote tallies `{"easy":0,"medium":0,"hard":0}` — updated by trigger |
+| `computed_difficulty` | `text` | Auto-computed difficulty from player votes (5+ votes, >60% consensus) |
 | `imported_by` | `uuid` | FK → `profiles.id` (nullable; set on CSV import) |
 | `imported_at` | `timestamptz` | Import timestamp (nullable) |
 | `created_at` | `timestamptz` | Creation timestamp |
@@ -282,6 +362,29 @@ Question bank owned by a specific community. Used when quiz source is "Community
 ```
 
 **Queried by:** `QuizScreen.js`, `QuizSourceSelector.js`, `CommunityDetail.js`, `CommunityMarketplace.js`, `MultiplayerLobby.js`, `CommissionerDashboard.js`, `EmbedConfigurator.js`, `AdminDashboard.js`
+
+---
+
+### `question_difficulty_votes`
+
+Player votes on whether a question's difficulty felt accurate. One vote per user per question. A trigger recalculates `community_questions.difficulty_vote_counts` and `computed_difficulty` on each insert/update.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key |
+| `question_id` | `uuid` | FK → `community_questions.id` (CASCADE) |
+| `community_id` | `uuid` | FK → `communities.id` (CASCADE) |
+| `user_id` | `uuid` | FK → `auth.users.id` (CASCADE) |
+| `voted_difficulty` | `text` | `'easy'`, `'medium'`, or `'hard'` |
+| `created_at` | `timestamptz` | Vote timestamp |
+
+**Constraints:** `UNIQUE (question_id, user_id)` — one vote per user per question.
+
+**Trigger:** `trg_recalc_difficulty_votes` fires after insert/update, aggregates votes into `community_questions.difficulty_vote_counts` and sets `computed_difficulty` when 5+ votes with >60% consensus.
+
+**RLS:** Authenticated users can read all votes, insert/update only their own.
+
+**Queried by:** `QuizScreen.js` (upsert on vote), `CommissionerDashboard.js` (reads via `community_questions` columns)
 
 ---
 
@@ -1124,3 +1227,49 @@ question_text,correct_answer,incorrect_answer_1,incorrect_answer_2,incorrect_ans
 "Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello","Art","medium",""
 "What is the chemical symbol for gold?","Au","Ag","Fe","Cu","Science","easy","Au comes from the Latin word aurum"
 ```
+
+---
+
+## Planned Tables (Not Yet Migrated)
+
+The following tables are specced in `docs/CRM_CONTACTS_SPEC.md` but have no migration files yet:
+
+| Table | Description |
+|-------|-------------|
+| `organizations` | Ownership wrapper, future billing anchor |
+| `organization_members` | Multi-user org access (owner/admin/viewer) |
+| `contacts` | Unified contact identity per org (email + profile_id + tags + notes + status) |
+| `contact_communities` | Contact ↔ community junction table |
+| `contact_activity` | Event stream (every interaction, timestamped, typed) |
+
+These will also add `organization_id` FK to `communities`.
+
+---
+
+## Migration ↔ Schema Cross-Reference
+
+**Verified:** March 4, 2026
+
+| Migration | Creates/Alters | Documented? |
+|-----------|---------------|-------------|
+| `20260224170000_create_notifications` | `notifications` table | Yes |
+| `20260224180000_create_season_archives` | `season_archives` table, `communities.current_season` | Yes |
+| `20260224190000_add_profile_theme` | `profiles.theme` column | Yes |
+| `20260224212512_add_explanation_column` | `community_questions.explanation` column | Yes |
+| `20260225025948_community_images_policies` | Storage bucket policies only | N/A |
+| `20260226065040_prevent_self_role_escalation` | Trigger on `profiles` | N/A (trigger only) |
+| `20260226070958_temp_query_policies` | Temp function (dropped) | N/A |
+| `20260226071118_harden_commissioner_rls` | RLS policy on `community_members` | N/A (policy only) |
+| `20260226071406_transfer_ownership_rpc` | `transfer_community_ownership()` RPC | N/A (function only) |
+| `20260226072125_restrict_notification_insert` | RLS policy on `notifications` | N/A (policy only) |
+| `20260226072200_temp_query_mp_policies` | Temp function (dropped) | N/A |
+| `20260226072321_cleanup_temp_mp_policies` | Drops temp function | N/A |
+| `20260302120000_granular_permissions` | `community_roles`, `permission_overrides`, `permission_audit_log` tables; `community_members.role_id` | Yes |
+| `20260302140000_email_integrations` | `email_integrations`, `email_sync_logs` tables | Yes |
+| `20260302150000_scheduled_quizzes` | `scheduled_quizzes`, `scheduled_quiz_attempts`, `scheduled_quiz_answers` tables | Yes |
+| `20260302160000_streak_tracking` | `profiles.current_streak`, `.best_streak`, `.last_played_date` | Yes |
+| `20260302170000_email_campaigns` | `email_templates`, `email_campaigns` tables | Yes |
+| `20260302180000_community_sites` | `community_sites` table | Yes |
+| `20260304_difficulty_votes` | `question_difficulty_votes` table; `community_questions.difficulty_vote_counts`, `.computed_difficulty` | Yes |
+
+**Result:** All migrated tables and columns are now documented. No gaps.

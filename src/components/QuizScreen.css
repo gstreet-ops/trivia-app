@@ -265,6 +265,62 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Difficulty Vote Strip ===== */
+.difficulty-vote-strip {
+  text-align: center;
+  background: var(--bg-hover, #F0F2F5);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 16px;
+  animation: explanation-fade-in 0.4s ease;
+}
+.vote-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #54585A);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.vote-pills {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.vote-pill {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 2px solid var(--border-color, #DEE2E6);
+  background: var(--bg-secondary, #fff);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary, #212529);
+}
+.vote-pill:hover:not(:disabled) {
+  border-color: var(--navy, #041E42);
+  background: rgba(4, 30, 66, 0.06);
+}
+.vote-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.vote-pill.selected {
+  border-color: var(--navy, #041E42);
+  background: rgba(4, 30, 66, 0.08);
+  font-weight: 600;
+}
+.vote-thanks {
+  text-align: center;
+  color: var(--correct-text, #2D6A4F);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 14px;
+  animation: explanation-fade-in 0.3s ease;
+}
+
 /* ===== Mobile quiz polish ===== */
 @media (max-width: 768px) {
   .quiz-screen {
@@ -295,5 +351,13 @@
   }
   .quiz-timer-seconds {
     font-size: 1rem;
+  }
+  .vote-pills {
+    gap: 8px;
+  }
+  .vote-pill {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
   }
 }

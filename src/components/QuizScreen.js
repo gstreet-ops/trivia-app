@@ -21,6 +21,11 @@ function QuizScreen({ config, onEnd }) {
   const [timedOutCount, setTimedOutCount] = useState(0);
   const questionDisplayedAtRef = useRef(null);
 
+  // Difficulty voting state
+  const [difficultyVote, setDifficultyVote] = useState(null);
+  const [voteSubmitting, setVoteSubmitting] = useState(false);
+  const [votedQuestions, setVotedQuestions] = useState(new Set());
+
   // Timer state
   const timerEnabled = timerSettings?.enabled === true;
   const timerDuration = timerSettings?.seconds || 30;
@@ -157,6 +162,8 @@ function QuizScreen({ config, onEnd }) {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled.slice(0, requested).map(q => ({
+      id: q.id,
+      difficulty: q.difficulty,
       question: q.question_text,
       correctAnswer: q.correct_answer,
       allAnswers: shuffleArray([q.correct_answer, ...(Array.isArray(q.incorrect_answers) ? q.incorrect_answers : [])]),
@@ -265,6 +272,7 @@ function QuizScreen({ config, onEnd }) {
       setShowResult(false);
       setHintUsed(false);
       setHiddenAnswers([]);
+      setDifficultyVote(null);
     } else {
       // Use ref to avoid stale closure
       const log = answersLogRef.current;
@@ -289,6 +297,27 @@ function QuizScreen({ config, onEnd }) {
     // Add 3 bonus seconds when hint is used
     if (timerEnabled && timerRef.current) {
       bonusTimeRef.current += 3;
+    }
+  };
+
+  const handleDifficultyVote = async (questionId, vote) => {
+    if (voteSubmitting || !questionId) return;
+    setVoteSubmitting(true);
+    setDifficultyVote(vote);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('question_difficulty_votes').upsert({
+        question_id: questionId,
+        community_id: communityId,
+        user_id: user.id,
+        voted_difficulty: vote
+      }, { onConflict: 'question_id,user_id' });
+      setVotedQuestions(prev => new Set(prev).add(questionId));
+    } catch (err) {
+      console.error('Vote failed:', err);
+    } finally {
+      setVoteSubmitting(false);
     }
   };
 
@@ -400,6 +429,33 @@ function QuizScreen({ config, onEnd }) {
             <div className="explanation-header"><LightbulbIcon size={14} /> Why?</div>
             <p className="explanation-text">{currentQuestion.explanation}</p>
           </div>
+        )}
+
+        {showResult && currentQuestion.id && !votedQuestions.has(currentQuestion.id) && !difficultyVote && (
+          <div className="difficulty-vote-strip">
+            <span className="vote-label">How did the difficulty feel?</span>
+            <div className="vote-pills">
+              {[
+                { value: 'easy', emoji: '😴', label: 'Too Easy' },
+                { value: 'medium', emoji: '👌', label: 'Just Right' },
+                { value: 'hard', emoji: '🥵', label: 'Too Hard' }
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  className="vote-pill"
+                  onClick={() => handleDifficultyVote(currentQuestion.id, opt.value)}
+                  disabled={voteSubmitting}
+                  style={{ minHeight: '44px' }}
+                >
+                  {opt.emoji} {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showResult && difficultyVote && currentQuestion.id && (
+          <div className="vote-thanks">Thanks for the feedback!</div>
         )}
 
         <div className="quiz-actions">

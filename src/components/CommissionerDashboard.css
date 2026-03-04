@@ -3163,3 +3163,72 @@
   padding: 4px 10px !important;
   margin-top: 4px;
 }
+
+/* ============================================================
+   Difficulty Vote Bars (expanded question panel)
+   ============================================================ */
+.qt-expand-votes {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--gt-gray-pale);
+  border-radius: var(--radius);
+}
+.qt-vote-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--gt-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.qt-vote-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.qt-vote-bar-fill.easy { background: #2D6A4F; }
+.qt-vote-bar-fill.medium { background: #D4A843; }
+.qt-vote-bar-fill.hard { background: var(--gt-red); }
+
+.qt-vote-mismatch-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: #FFF3CD;
+  color: #856404;
+  border: 1px solid #FFEEBA;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+/* ============================================================
+   Difficulty Mismatch Table (Analytics tab)
+   ============================================================ */
+.mismatch-table {
+  border: 1px solid var(--gt-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.mismatch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--gt-navy);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.mismatch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gt-border);
+  font-size: 13px;
+}
+.mismatch-row:last-child { border-bottom: none; }
+.mismatch-row:hover { background: var(--gt-gray-pale); }

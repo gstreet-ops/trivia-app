@@ -1,36 +1,60 @@
 # Trivia Platform — Project Context
 
 > This file is maintained by Claude across sessions to carry forward project context.
-> It lives in the repo at `.claude/context.md` so both Cowork and Claude Code can read/update it.
-> Commit updates alongside your code changes or as standalone commits after discussion-only sessions.
 
 ## Current State
 
 - **Active branch**: main
-- **Last deployment**: GitHub Pages (https://gstreet-ops.github.io/trivia-app/)
-- **Frontend**: React (GitHub Pages)
+- **Last deployment**: Both apps deployed to GitHub Pages (March 4, 2026)
+- **trivia-app**: https://gstreet-ops.github.io/trivia-app/
+- **quiz-embed**: https://gstreet-ops.github.io/gstreet-ops-quiz-embed/
 - **Backend**: Supabase (us-east-1 region)
-- **Default quiz length**: 3 questions (for testing)
+
+## Phase Status
+
+- **Phase 1 (Site Tools)**: ✅ Complete — 6 site tool widgets + 3 standalone community widgets
+- **Phase 2 (Connections)**: ✅ Mostly complete — only Stripe payments remaining
+- **Phase 3 (Depth)**: ✅ Mostly complete — campaign email, site builder, contact merge shipped; visual workflow builder + discussion forums deferred
+- **CRM/Contacts layer**: Designed (5 tables specced in `docs/CRM_CONTACTS_SPEC.md`) but NOT migrated
 
 ## Architecture Notes
 
 - Georgetown color palette: navy `#041E42`, gray `#54585A`
-- Supabase handles auth, database, and edge functions
-- URL config in Supabase must be set correctly for auth redirects (see `supabase-setup-guide.md`)
-- Anthropic API key lives in Supabase Edge Function Secrets, never in repo
-- Multiple Supabase projects in account (Trivia + Nemo) — always verify correct project in breadcrumb
+- Granular RBAC: fully implemented — `community_roles` table, `permission_overrides`, `permission_audit_log`, `check_community_permission()` RPC, PermissionContext React context, RolesTab UI
+- `communities.id` is `bigint`, NOT `uuid`
+- 15 admin tabs in embed panel, 9 embeddable widgets
+- Campaign email: `email_templates` + `email_campaigns` tables, CampaignComposer wizard
+- Site Builder: `community_sites` table, 5 templates, hosted at `#/site/SLUG`
+- Question difficulty voting: `question_difficulty_votes` table + trigger, auto-computed difficulty
 
-## Active Work
+## Recent Changes (March 2–4, 2026)
 
-_See ROADMAP.md for the full feature/bug backlog._
+- Campaign email builder with segmentation (March 2)
+- Site Builder wizard with templates (March 2)
+- Granular RBAC system — community_roles, permission_overrides, PermissionContext (March 2)
+- Admin undo approve/reject — "Revert to Pending" (March 3)
+- Mobile touch targets audit — 44px minimum (March 3)
+- Contact merge feature — find_duplicate_contacts + merge_contacts RPCs (March 3)
+- Question difficulty voting — post-answer feedback + commissioner mismatch analytics (March 4)
+- Comprehensive docs refresh — ROADMAP, DATABASE_SCHEMA, EMBED_ARCHITECTURE, README (March 4)
+
+## New Direction
+
+- **Reading FC proof-of-concept**: Drop-in trivia widget for sports teams/brands
+- Separate project repo planned
+- Validates embed architecture as B2B offering
 
 ## Known Issues & Blockers
 
-_None currently tracked. Add items here as they come up._
+- Auth.users orphaned on user delete — manual cleanup needed
+- Sentry confirmation still pending
+- GitHub Pages CSS caching — use inline styles for critical layout
+- Project file copies (Claude Project) drift from repo — canonical source is always `docs/`
 
-## Session Log
-
-### 2026-02-27 — Initial context setup
-- Created `.claude/context.md` to carry forward project context between sessions
-- Created `trivia-project-context` skill for Cowork/Claude Code to auto-load this file
-- No code changes to the trivia app itself this session
+## Project Assets
+- **Project Timeline (Gantt Chart):** https://gistpreview.github.io/?1a9d3dc2b33e7081b9412f7fbefbdb0e
+  - Source: GitHub Gist `gstreet-ops/1a9d3dc2b33e7081b9412f7fbefbdb0e`
+  - Update via: `gh gist edit 1a9d3dc2b33e7081b9412f7fbefbdb0e --filename gantt.html gantt.html`
+  - Local file: `gantt.html` (repo root + `public/`)
+- **Live Platform:** https://gstreet-ops.github.io/trivia-app
+- **Hallaron Site:** https://gstreet-ops.github.io/ellie-hallaron-website/index.html

@@ -1,6 +1,6 @@
 # GStreet Platform Roadmap
 
-**Last Updated:** March 2, 2026
+**Last Updated:** March 4, 2026
 **Repo:** trivia-monorepo (apps/trivia-app, apps/quiz-embed, packages/shared)
 
 ---
@@ -63,6 +63,9 @@ trivia-monorepo/
 - Integrations tab: GA4 setup wizard, platform-specific widget install guides, email platform CSV import (Mailchimp/ConvertKit/Beehiiv), Zapier webhook templates, SEO 10-item health check, meta tag generator (OG/Twitter/canonical)
 - Pages tab: page builder with templates, CRUD, slug management
 - Granular RBAC: PermissionContext, RolesTab, community role hierarchy (owner/commissioner/moderator/member)
+- Campaign email builder: CampaignComposer wizard, template management, recipient segmentation (all/engaged/new/custom), send tracking (March 2)
+- Site Builder wizard: 5 templates (Trivia League, Classroom, Brand Engagement, Event, Community Hub), 3 layouts (hero/sidebar/minimal), 5 color presets, live preview, publish to `#/site/SLUG` (March 2)
+- Contact merge: find_duplicate_contacts + merge_contacts RPCs, admin UI (March 3)
 
 ### Embeddable Widgets — ✅ Live (9 total)
 
@@ -110,9 +113,13 @@ All widgets use Shadow DOM, accept theming attributes (bg, surface, primary, acc
 - Daily play streak tracking with Dashboard visualization (30-day dot calendar)
 - In-app notifications, email notifications (Resend), dark mode
 - Admin dashboard (user management, question review, community requests, AI requests, flagged users)
+- Admin undo approve/reject — "Revert to Pending" in Recently Reviewed with confirmation + notification (March 3)
 - Community marketplace (browse, search, filter, request new communities)
 - Legal framework (ToS, Privacy Policy, signup consent)
 - Bot prevention (rate limiting, timing analysis, auto-flagging)
+- Scheduled quizzes — Quiz Night feature with commissioner scheduling, countdown, live play, leaderboard
+- Question difficulty voting — post-answer voting (too easy/just right/too hard), auto-computed difficulty at 5+ votes with 60% threshold, commissioner mismatch analytics (March 4)
+- Mobile touch target fixes — global 44px minimum, 48px quiz answers, icon tap zones, overflow-x fix across 7+ CSS files (March 3)
 
 ### Shared Infrastructure — ✅ Live
 
@@ -121,7 +128,7 @@ All widgets use Shadow DOM, accept theming attributes (bg, surface, primary, acc
 - Shared multiplayer components (RoomCreator, RoomJoin, OpenRoomsBrowser, RoomLobby, LiveGame, GameResults)
 - Shared CommunityChat component with Realtime
 - Shared permissions module
-- Supabase Edge Functions (send-email, generate-questions)
+- Supabase Edge Functions (send-email, generate-questions, sync-subscriber)
 - GitHub Pages deployment for both apps
 - Sentry error monitoring
 
@@ -171,35 +178,63 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 
 ---
 
-## Phase 3 — Depth (Demand-driven)
+## Phase 3 — Depth ✅ MOSTLY SHIPPED
 
-- [x] Campaign email builder with segmentation
-- [x] Site Builder wizard with templates, live preview, and hosted publishing
-- [ ] Visual workflow builder
-- [ ] Full engagement analytics (cohorts, funnels, heatmaps)
-- [ ] Widget studio with conditional display
-- [ ] Discussion forums
-- [ ] Content block editor (Notion-style)
+| Item | Status |
+|------|--------|
+| Campaign email builder with segmentation | ✅ Shipped (March 2) — CampaignComposer wizard, 2 DB tables (email_templates, email_campaigns), template management, recipient segmentation (all/engaged/new/custom), send tracking |
+| Site Builder wizard | ✅ Shipped (March 2) — 5 templates (Trivia League, Classroom, Brand Engagement, Event, Community Hub), 3 layouts (hero/sidebar/minimal), 5 color presets, live preview, publish to `#/site/SLUG`, community_sites table |
+| Contact merge | ✅ Shipped (March 3) — find_duplicate_contacts + merge_contacts RPCs, admin UI |
+| Visual workflow builder | DEFERRED — too complex, no demand signal |
+| Full engagement analytics (cohorts, funnels, heatmaps) | Future |
+| Widget studio with conditional display | DEFERRED — wait for demand |
+| Discussion forums | Future |
+| Content block editor (Notion-style) | DEFERRED |
 
 ---
 
 ## Trivia Platform Backlog
 
-### Near-term
-- [x] Grand Master badge — earn all 6 original badges
-- [x] Community Champion badge — play 25 community games
-- [x] Streak tracking with badges — Duolingo-style daily play streaks, 3 streak badges (On Fire, Week Warrior, Unstoppable), Dashboard streak card + 30-day dot calendar, UserProfile streak display
-
-### Medium-term
+### Remaining
 - [ ] Member question submissions with approval flow
 - [ ] Server-side RLS role enforcement (Phase 2)
-- [ ] Question difficulty auto-rating
-- [x] Admin undo approve/reject — "Revert to Pending" with confirmation + notification
+- [ ] Mobile app (React Native / Capacitor)
 
-### Longer-term
+### Completed (moved from backlog)
+- [x] Grand Master badge — earn all 6 original badges
+- [x] Community Champion badge — play 25 community games
+- [x] Streak tracking with badges — Duolingo-style daily play streaks, 3 streak badges (On Fire 3-day, Week Warrior 7-day, Unstoppable 30-day), Dashboard streak card + 30-day dot calendar, UserProfile streak display
+- [x] Question difficulty auto-rating — via player difficulty voting system (March 4)
+- [x] Admin undo approve/reject — "Revert to Pending" with confirmation + notification (March 3)
 - [x] Scheduled quizzes — Quiz Night feature with commissioner scheduling, countdown, live play, leaderboard
-- [ ] Question difficulty voting
-- [ ] Mobile app (React Native)
+- [x] Question difficulty voting — post-answer feedback, auto-computed difficulty at 5+ votes with 60% threshold, commissioner mismatch analytics (March 4)
+
+---
+
+## CRM / Contacts Layer — Designed (Not Yet Migrated)
+
+5 new tables specced in `docs/CRM_CONTACTS_SPEC.md`. No migrations created yet.
+
+- `organizations` — ownership wrapper, future billing anchor
+- `organization_members` — multi-user org access (owner/admin/viewer)
+- `contacts` — unified identity per org (email + profile_id + tags + notes + status)
+- `contact_communities` — contact↔community junction
+- `contact_activity` — event stream (every interaction, timestamped, typed)
+
+Implementation phases: A (schema + triggers) → B (Contacts Tab UI) → C (activity feed, scores, CSV) → D (webhooks, segment export, broadcast targeting)
+
+---
+
+## New Direction — Trivia Engagement as a Service
+
+The Reading FC proof-of-concept represents a shift from platform-building to client delivery. The model:
+
+- **Drop-in trivia widget** pre-seeded with client-specific questions (e.g., Reading FC history, players, match stats)
+- **Redesigned site mockup** showing seamless integration into an existing team/brand website
+- **Repeatable playbook** — the same approach works for any sports team, brand, or organization that wants to engage their audience with trivia
+- **Separate project repo** planned for the POC delivery, with the embed widget system as the technical foundation
+
+This validates the embed architecture as a B2B offering: one Supabase backend, per-client communities, themed widgets dropped into client sites.
 
 ---
 
@@ -210,9 +245,9 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 | Community leaderboard staleness | Mitigated — live computation with season_start fallback |
 | GitHub Pages CSS caching | Workaround — inline styles for critical layout |
 | No email confirmation on signup | By design — frictionless onboarding |
-| Admin can't undo approve/reject | Fixed — "Revert to Pending" in Recently Reviewed section |
 | Auth.users orphaned on user delete | Open — manual cleanup needed |
 | Sentry confirmation pending | Open |
+| Project file copies drift from repo | Canonical source is always the repo `docs/` folder |
 
 ---
 
@@ -229,3 +264,13 @@ All 6 site tool widgets + 3 standalone community widgets shipped. Each has admin
 | 2026-02-28 | Multi-profile with dirty-state tracking | A/B testing, per-page theming, data loss prevention |
 | 2026-03-02 | Cross-widget analytics in AnalyticsTab | Unified view vs separate tab — keeps navigation clean |
 | 2026-03-02 | Widget Library in SettingsTab | All 9 widget snippets centralized with copy buttons |
+| 2026-03-02 | Campaign email in embed admin | Site owners need to communicate with subscribers without external tools |
+| 2026-03-02 | Site Builder with templates | "Zero to live site in 5 minutes" — deterministic templates, no AI |
+| 2026-03-03 | Mobile touch targets audit | 23/24 elements undersized — CSS-only fix, no layout changes |
+| 2026-03-03 | Reading FC as POC direction | Shift from platform-building to client delivery |
+
+---
+
+## Code TODOs
+
+No `TODO`, `FIXME`, `HACK`, or `XXX` comments found in `src/**/*.{js,jsx,css}` as of March 4, 2026.

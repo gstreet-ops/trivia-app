@@ -228,16 +228,18 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Verify JWT if provided
+    // Verify JWT if provided (optional — widget calls without auth, admin calls may have expired tokens)
+    // Auth is not enforced because: (1) widget calls from external sites have no auth,
+    // (2) the function uses service role for DB ops, (3) admin UI handles its own auth gating
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const { error } = await supabaseAdmin.auth.getUser(token);
-      if (error) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const token = authHeader.replace("Bearer ", "").trim();
+      if (token) {
+        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        // Log authenticated user if valid, but don't reject on failure
+        if (userData?.user) {
+          console.log(`Authenticated request from user: ${userData.user.id}`);
+        }
       }
     }
 

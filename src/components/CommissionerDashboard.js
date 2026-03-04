@@ -820,6 +820,21 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
     setDeleteCommunityLoading(false);
   };
 
+  const handleAcceptComputedDifficulty = async (questionId, computedDifficulty) => {
+    try {
+      const { error } = await supabase
+        .from('community_questions')
+        .update({ difficulty: computedDifficulty })
+        .eq('id', questionId)
+        .eq('community_id', communityId);
+      if (error) throw error;
+      showToast(`Difficulty updated to ${computedDifficulty}`);
+      fetchCommissionerData();
+    } catch (err) {
+      showToast(`Failed: ${err.message}`, 'error');
+    }
+  };
+
   const handleDeleteQuestion = (questionId) => {
     setConfirmDialog({
       message: 'Are you sure you want to delete this question?',
@@ -2441,6 +2456,36 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                                 </div>
                               )}
 
+                              {/* Difficulty Vote Bars */}
+                              {(() => {
+                                const vc = question.difficulty_vote_counts;
+                                const total = vc ? (vc.easy || 0) + (vc.medium || 0) + (vc.hard || 0) : 0;
+                                if (total === 0) return null;
+                                return (
+                                  <div className="qt-expand-votes">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gt-navy)' }}>Player Votes ({total})</span>
+                                      {question.computed_difficulty && question.computed_difficulty !== question.difficulty && (
+                                        <span className="qt-vote-mismatch-badge">Mismatch</span>
+                                      )}
+                                    </div>
+                                    {['easy', 'medium', 'hard'].map(d => {
+                                      const c = vc[d] || 0;
+                                      const pct = total > 0 ? (c / total * 100) : 0;
+                                      return (
+                                        <div key={d} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                          <span style={{ fontSize: '11px', width: '52px', textTransform: 'capitalize', color: 'var(--gt-text-muted)' }}>{d}</span>
+                                          <div className="qt-vote-bar-track">
+                                            <div className={`qt-vote-bar-fill ${d}`} style={{ width: `${pct}%` }} />
+                                          </div>
+                                          <span style={{ fontSize: '11px', color: 'var(--gt-text-muted)', minWidth: '28px' }}>{c}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
+
                               {/* Media thumbnails */}
                               {(question.image_url || question.video_url) && (
                                 <div className="qt-expand-media">
@@ -3764,6 +3809,54 @@ function CommissionerDashboard({ communityId, currentUserId, onBack }) {
                       ))}
                     </div>
                   </div>
+
+                  {/* Difficulty Mismatches */}
+                  {(() => {
+                    const mismatched = questions.filter(q => q.computed_difficulty && q.computed_difficulty !== q.difficulty);
+                    if (mismatched.length === 0) return null;
+                    return (
+                      <div className="analytics-chart">
+                        <h3>Difficulty Mismatches ({mismatched.length})</h3>
+                        <p style={{ fontSize: '12px', color: 'var(--gt-text-muted)', margin: '0 0 12px' }}>
+                          Questions where player votes suggest a different difficulty than what's set.
+                        </p>
+                        <div className="mismatch-table">
+                          <div className="mismatch-header">
+                            <span style={{ flex: 3 }}>Question</span>
+                            <span style={{ flex: 1, textAlign: 'center' }}>Set As</span>
+                            <span style={{ flex: 1, textAlign: 'center' }}>Players Say</span>
+                            <span style={{ flex: 1, textAlign: 'center' }}>Votes</span>
+                            <span style={{ flex: 1, textAlign: 'center' }}>Action</span>
+                          </div>
+                          {mismatched.map(q => {
+                            const vc = q.difficulty_vote_counts || {};
+                            const total = (vc.easy || 0) + (vc.medium || 0) + (vc.hard || 0);
+                            return (
+                              <div key={q.id} className="mismatch-row">
+                                <span style={{ flex: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.question_text}</span>
+                                <span style={{ flex: 1, textAlign: 'center' }}>
+                                  <span className={`qt-chip qt-chip-${q.difficulty}`}>{q.difficulty}</span>
+                                </span>
+                                <span style={{ flex: 1, textAlign: 'center' }}>
+                                  <span className={`qt-chip qt-chip-${q.computed_difficulty}`}>{q.computed_difficulty}</span>
+                                </span>
+                                <span style={{ flex: 1, textAlign: 'center', fontSize: '13px' }}>{total}</span>
+                                <span style={{ flex: 1, textAlign: 'center' }}>
+                                  <button
+                                    className="btn-primary"
+                                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                                    onClick={() => handleAcceptComputedDifficulty(q.id, q.computed_difficulty)}
+                                  >
+                                    Accept
+                                  </button>
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {Object.keys(analytics.tagUsage).length > 0 && (
                     <div className="analytics-chart">
