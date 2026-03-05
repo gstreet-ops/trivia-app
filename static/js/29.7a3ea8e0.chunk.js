@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunk_trivia_monorepo_trivia_app=self.webpackChunk_trivia_monorepo_trivia_app||[]).push([[29],{7029(e,n,p){p.d(n,{SplashScreen:()=>a});const a=(0,p(9758).F3)("SplashScreen",{web:()=>p.e(799).then(p.bind(p,4799)).then(e=>new e.SplashScreenWeb)})}}]);
+//# sourceMappingURL=29.7a3ea8e0.chunk.js.map
